@@ -8,7 +8,7 @@ import { supabaseServer } from "@/lib/supabase/server"; // ✅ use the function,
 export type OrgRole = "OWNER" | "ADMIN" | "EMPLOYER" | "EMPLOYEE";
 
 export async function requireUser() {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data?.user) {

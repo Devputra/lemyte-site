@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
   // Verify attempt ownership
   const { data: attempt } = await supabaseAdmin
-    .from("gate.attempts" as any)
+    .schema("gate").from("attempts")
     .select("id, user_id")
     .eq("id", input.attemptId)
     .single();
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   }
 
   const { data: report, error } = await supabaseAdmin
-    .from("gate.errata_reports" as any)
+    .schema("gate").from("errata_reports")
     .insert({
       question_id: input.questionId,
       question_version_id: input.questionVersionId,

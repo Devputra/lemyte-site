@@ -1,6 +1,7 @@
 // src/lib/gate/redis.ts
-// Redis key schema + atomic update helpers for GATE attempt sessions
+// Redis key schema + optimistic-concurrency update helpers for GATE attempt sessions
 
+import "server-only";
 import Redis from "ioredis";
 import type { AttemptSession, AttemptEvent } from "./contracts";
 
@@ -10,7 +11,10 @@ let redisClient: Redis | null = null;
 export function getRedis(): Redis {
   if (!redisClient) {
     const url = process.env.REDIS_URL;
-    if (!url) throw new Error("REDIS_URL environment variable is required");
+    if (!url) {
+      throw new Error("REDIS_URL environment variable is required");
+    }
+
     redisClient = new Redis(url, {
       maxRetriesPerRequest: 3,
       retryStrategy(times) {
@@ -18,6 +22,7 @@ export function getRedis(): Redis {
       },
     });
   }
+
   return redisClient;
 }
 
@@ -47,13 +52,14 @@ export async function setAttemptSession(
 ): Promise<void> {
   const redis = getRedis();
   const key = attemptKey(session.attemptId);
-  const ttl = durationSeconds + 6 * 3600; // duration + 6 hours
+  const ttl = durationSeconds + 6 * 3600;
+
   await redis.set(key, JSON.stringify(session), "EX", ttl);
 }
 
 /**
  * Retrieve an attempt session from Redis.
- * Returns null if not found (may indicate Redis data loss).
+ * Returns null if not found.
  */
 export async function getAttemptSession(
   attemptId: string
@@ -61,15 +67,29 @@ export async function getAttemptSession(
   const redis = getRedis();
   const raw = await redis.get(attemptKey(attemptId));
   if (!raw) return null;
-  return JSON.parse(raw) as AttemptSession;
+
+  try {
+    return JSON.parse(raw) as AttemptSession;
+  } catch (err) {
+    console.error("[gate/redis] Failed to parse attempt session", {
+      attemptId,
+      err,
+    });
+    throw new Error("Corrupted attempt session in Redis");
+  }
 }
 
 /**
- * Atomically update an attempt session.
- * Uses a Lua script to GET + transform + SET in one round-trip.
+ * Optimistically update an attempt session with WATCH/MULTI.
  *
- * The updater function receives the current session and returns the modified session.
- * If the session doesn't exist, returns null.
+ * This is not as strong as a Lua script, but it is materially safer than
+ * plain GET -> SET and good enough for MVP traffic.
+ *
+ * Returns:
+ * - updated session on success
+ * - null if session does not exist
+ *
+ * Throws if repeated write conflicts occur.
  */
 export async function atomicUpdateSession(
   attemptId: string,
@@ -77,26 +97,53 @@ export async function atomicUpdateSession(
 ): Promise<AttemptSession | null> {
   const redis = getRedis();
   const key = attemptKey(attemptId);
+  const MAX_RETRIES = 5;
 
-  // Use WATCH/MULTI for optimistic concurrency
-  // For higher throughput, switch to Lua scripts
-  const raw = await redis.get(key);
-  if (!raw) return null;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    await redis.watch(key);
 
-  const session = JSON.parse(raw) as AttemptSession;
-  const updated = updater(session);
-  updated.versionCounter = (updated.versionCounter ?? 0) + 1;
+    const raw = await redis.get(key);
+    if (!raw) {
+      await redis.unwatch();
+      return null;
+    }
 
-  // Preserve the existing TTL
-  const ttl = await redis.ttl(key);
-  if (ttl > 0) {
-    await redis.set(key, JSON.stringify(updated), "EX", ttl);
-  } else {
-    // Fallback: set a generous TTL
-    await redis.set(key, JSON.stringify(updated), "EX", 7 * 3600);
+    let session: AttemptSession;
+    try {
+      session = JSON.parse(raw) as AttemptSession;
+    } catch (err) {
+      await redis.unwatch();
+      console.error("[gate/redis] Failed to parse session during atomic update", {
+        attemptId,
+        err,
+      });
+      throw new Error("Corrupted attempt session in Redis");
+    }
+
+    const updated = updater(session);
+    updated.versionCounter = (updated.versionCounter ?? 0) + 1;
+
+    const ttl = await redis.ttl(key);
+    const nextTtl = ttl > 0 ? ttl : 7 * 3600;
+
+    const multi = redis.multi();
+    multi.set(key, JSON.stringify(updated), "EX", nextTtl);
+
+    const execResult = await multi.exec();
+
+    // execResult === null means watched key changed before commit
+    if (execResult !== null) {
+      return updated;
+    }
+
+    // Conflict: retry
+    console.warn("[gate/redis] atomicUpdateSession retry due to concurrent modification", {
+      attemptId,
+      retry: attempt,
+    });
   }
 
-  return updated;
+  throw new Error("Failed to update attempt session after concurrent retries");
 }
 
 /**
@@ -116,6 +163,7 @@ export async function deleteAttemptSession(attemptId: string): Promise<void> {
  */
 export async function emitAttemptEvent(event: AttemptEvent): Promise<void> {
   const redis = getRedis();
+
   await redis.xadd(
     ATTEMPT_EVENTS_STREAM,
     "*",
@@ -137,6 +185,7 @@ export async function readEvents(
   blockMs: number = 5000
 ): Promise<Array<{ id: string; fields: Record<string, string> }>> {
   const redis = getRedis();
+
   const result = await redis.xread(
     "COUNT", count,
     "BLOCK", blockMs,
@@ -146,12 +195,15 @@ export async function readEvents(
   if (!result) return [];
 
   const events: Array<{ id: string; fields: Record<string, string> }> = [];
+
   for (const [, entries] of result) {
     for (const [id, fieldArray] of entries) {
       const fields: Record<string, string> = {};
+
       for (let i = 0; i < fieldArray.length; i += 2) {
         fields[fieldArray[i]] = fieldArray[i + 1];
       }
+
       events.push({ id, fields });
     }
   }

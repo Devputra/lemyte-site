@@ -2,676 +2,647 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   BookOpen, CalendarDays, Users, Sparkles,
   CheckCircle2, Mail, ArrowRight, BarChart3,
   Quote, Clock, GraduationCap, ShieldCheck,
-  Phone, Menu, X,
+  Phone, Menu, X, Target, Award, Layers,
+  Building2, Zap, FileCheck, ChevronRight,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import PosterRotator from "@/components/ui/posterrotator";
-import { Anchor, Container, Section, FadeIn, Badges } from "@/components/LandingPrimitives";
+import { Anchor, Container } from "@/components/LandingPrimitives";
 
-/* ---------------- Types ---------------- */
-
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
 type LeadResponse = { ok: boolean; error?: string; downloadUrl?: string; requireConfirm?: boolean };
-type ApiResponse = { ok: boolean; error?: string };
+type ApiResponse  = { ok: boolean; error?: string };
 
-/* ---------------- Main Page ---------------- */
+/* ------------------------------------------------------------------ */
+/*  Micro-components                                                   */
+/* ------------------------------------------------------------------ */
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <p className="mb-3 inline-block rounded-full border border-[#193BC8]/20 bg-[#193BC8]/5 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-[#193BC8]">
+    {children}
+  </p>
+);
 
-function LearnamyteLanding() {
-  // “Notify me” form
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+const SectionHeading = ({ children, sub }: { children: React.ReactNode; sub?: React.ReactNode }) => (
+  <div className="mx-auto max-w-2xl text-center">
+    <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">{children}</h2>
+    {sub && <p className="mt-3 text-base text-gray-500">{sub}</p>}
+  </div>
+);
 
-  // Honeypot shared by forms
-  const [hp, setHp] = useState("");
+const Metric = ({ value, label }: { value: string; label: string }) => (
+  <div className="text-center">
+    <div className="text-3xl font-extrabold text-[#193BC8] sm:text-4xl">{value}</div>
+    <div className="mt-1 text-xs font-medium uppercase tracking-wide text-gray-500">{label}</div>
+  </div>
+);
 
-  // Brochure form state (modal-like overlay)
-  const [brochureOpen, setBrochureOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<null | "FOQIC" | "Python" | "DASQL" | "DVPBI">(null);
-  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
-  const [leadEmail, setLeadEmail] = useState("");
-  const [leadPhone, setLeadPhone] = useState("");
-  const [leadMsg, setLeadMsg] = useState<string | null>(null);
-  const [leadBusy, setLeadBusy] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+/* ------------------------------------------------------------------ */
+/*  Main Component                                                     */
+/* ------------------------------------------------------------------ */
+export default function LearnamyteLanding() {
+  /* ---- form / modal states (preserved exactly) ---- */
+  const [email, setEmail]         = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [msg, setMsg]             = useState<string | null>(null);
+  const [hp, setHp]               = useState("");
+
+  const [brochureOpen, setBrochureOpen]       = useState(false);
+  const [selectedCourse, setSelectedCourse]   = useState<null | "FOQIC" | "Python" | "DASQL" | "DVPBI">(null);
+  const [selectedTitle, setSelectedTitle]     = useState<string | null>(null);
+  const [leadEmail, setLeadEmail]             = useState("");
+  const [leadPhone, setLeadPhone]             = useState("");
+  const [leadMsg, setLeadMsg]                 = useState<string | null>(null);
+  const [leadBusy, setLeadBusy]               = useState(false);
+  const [mobileOpen, setMobileOpen]           = useState(false);
+  const [verifyToken, setVerifyToken]         = useState("");
+  const [verifyNote, setVerifyNote]           = useState<string | null>(null);
+
+  /* ---- handlers (preserved exactly) ---- */
+  function goVerifyToken() {
+    setVerifyNote(null);
+    const t = verifyToken.trim();
+    if (!t) { setVerifyNote("Enter a certificate token."); return; }
+    window.location.href = `/verify/${encodeURIComponent(t)}`;
+  }
 
   function isApiResponse(x: unknown): x is ApiResponse {
     return typeof x === "object" && x !== null && "ok" in x && typeof (x as { ok: unknown }).ok === "boolean";
   }
 
   async function handleSubscribe(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg(null);
+    e.preventDefault(); setMsg(null);
     if (!email) return setMsg("Please enter your email.");
-    if (hp) return; // bot
+    if (hp) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
+      const res  = await fetch("/api/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
       const text = await res.text();
       let parsed: unknown = null;
-      try { parsed = JSON.parse(text); } catch { /* ignore */ }
-
+      try { parsed = JSON.parse(text); } catch { /* ok */ }
       const payload: ApiResponse | null = isApiResponse(parsed) ? parsed : null;
-
-      if (res.ok && payload?.ok) {
-        setMsg("You're on the list! Check your inbox to confirm.");
-        setEmail("");
-      } else {
-        const errMsg = payload?.error || `Request failed (${res.status})`;
-        setMsg(errMsg);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Network error.";
-      setMsg(message);
-    } finally {
-      setLoading(false);
-    }
+      if (res.ok && payload?.ok) { setMsg("You're on the list! Check your inbox to confirm."); setEmail(""); }
+      else { setMsg(payload?.error || `Request failed (${res.status})`); }
+    } catch (err) { setMsg(err instanceof Error ? err.message : "Network error."); }
+    finally { setLoading(false); }
   }
 
   async function submitBrochure(course: "FOQIC" | "Python" | "DASQL" | "DVPBI", e: React.FormEvent) {
-    e.preventDefault();
-    setLeadMsg(null);
-    if (!leadEmail || !leadPhone) {
-      setLeadMsg("Please enter your email and mobile number.");
-      return;
-    }
-    if (hp) return; // bot
-
+    e.preventDefault(); setLeadMsg(null);
+    if (!leadEmail || !leadPhone) { setLeadMsg("Please enter your email and mobile number."); return; }
+    if (hp) return;
     setLeadBusy(true);
     try {
-      const res = await fetch("/api/lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: leadEmail, phone: leadPhone, course }),
-      });
-
+      const res  = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: leadEmail, phone: leadPhone, course }) });
       const data = (await res.json().catch(() => ({}))) as LeadResponse;
-
-      if (res.status === 202 || data.requireConfirm) {
-        setLeadMsg(
-  "Almost there! Please confirm your email from your inbox. After you confirm, your brochure will download automatically.",
-);
-
-        return;
-      }
-
-      if (!res.ok || !data.ok || !data.downloadUrl) {
-        setLeadMsg(data?.error || `Request failed (${res.status})`);
-        return;
-      }
-
-      setLeadEmail("");
-      setLeadPhone("");
-      setBrochureOpen(false);
-      setSelectedCourse(null);
-      setSelectedTitle(null);
+      if (res.status === 202 || data.requireConfirm) { setLeadMsg("Almost there! Confirm your email from your inbox. After you confirm, your brochure will download automatically."); return; }
+      if (!res.ok || !data.ok || !data.downloadUrl) { setLeadMsg(data?.error || `Request failed (${res.status})`); return; }
+      setLeadEmail(""); setLeadPhone(""); setBrochureOpen(false); setSelectedCourse(null); setSelectedTitle(null);
       window.location.href = data.downloadUrl;
-    } catch (err) {
-      const m = err instanceof Error ? err.message : "Network error";
-      setLeadMsg(m);
-    } finally {
-      setLeadBusy(false);
-    }
+    } catch (err) { setLeadMsg(err instanceof Error ? err.message : "Network error"); }
+    finally { setLeadBusy(false); }
   }
 
-  const features = [
-    { icon: BookOpen, title: "Workshops that work", desc: "Live, cohort-based classes designed with measurable outcomes." },
-    { icon: Users, title: "Verified experts", desc: "We vet instructors for real-world impact, not just credentials." },
-    { icon: CalendarDays, title: "Weekend Sessions", desc: "Sat–Sun plus weekday projects and support." },
-    { icon: BarChart3, title: "Trackable progress", desc: "Capstone projects, and analytics to prove learning and reviews." },
-  ] as const;
-
+  /* ---- data ---- */
   const categories = [
-    {
-      title: "Prompt Engineering",
-      copy: "Master prompt engineering to unlock the full potential of AI tools and workflows.",
-      items: ["Prompt basics", "Advanced prompting techniques", "Real-world use cases", "Hands-on labs & projects"],
-    },
-    {
-      title: "Data Visualization with Power BI",
-      copy: "Transform raw data into insights with Microsoft Power BI.",
-      items: ["Data modeling & cleaning", "Interactive dashboards", "DAX formulas & calculations", "Business-ready reports"],
-    },
-    {
-      title: "Data Optimization with Python",
-      copy: "Develop complete optimization tools using Python, pandas, and tkinter.",
-      items: ["Pandas for data handling", "Pivot tables & summaries", "Visualization with Matplotlib", "Tkinter for UI design", "Regex for text processing", "OOPs in Python", "SMTP for automation"],
-    },
-    {
-      title: "Data Analysis with SQL",
-      copy: "Learn SQL & DBMS from fundamentals to practical applications.",
-      items: ["Basic queries", "Advance Functions & Joins", "Constraints", "Subqueries", "Transactions", "Indexes, Views & Normalization"],
-    },
-    {
-      title: "Fundamentals of Quantum Information and Computing",
-      copy: "Learn quantum computing from the principles of quantum mechanics to hands-on circuits and algorithms.",
-      items: ["Qubits & superposition", "Quantum gates & circuits", "Entanglement & teleportation", "Grover’s & Deutsch–Jozsa algorithms", "Quantum Fourier Transform (QFT)", "Error correction basics", "Intro to Qiskit programming"],
-    },
-    {
-      title: "One-on-One Program (Personal Development)",
-      copy: "A personalised 1:1 learning plan designed around your schedule. We train you step-by-step until you reach your career goal.",
-      items: ["Machine Learning", "Generative AI", "LLMs", "Data Science", "Cybersecurity", "Cloud Engineering", "Mathematics", "Robotics", "IOT"],
-    },
-  ] as const;
+    { title: "Prompt Engineering", copy: "Master prompt engineering to unlock the full potential of AI tools and workflows.", items: ["Prompt basics", "Advanced prompting techniques", "Real-world use cases", "Hands-on labs & projects"], course: null as "FOQIC" | "Python" | "DASQL" | "DVPBI" | null },
+    { title: "Data Visualization with Power BI", copy: "Transform raw data into insights with Microsoft Power BI.", items: ["Data modeling & cleaning", "Interactive dashboards", "DAX formulas & calculations", "Business-ready reports"], course: "DVPBI" as const },
+    { title: "Data Optimization with Python", copy: "Develop complete optimization tools using Python, pandas, and tkinter.", items: ["Pandas for data handling", "Pivot tables & summaries", "Matplotlib visualization", "Tkinter for UI design", "OOPs in Python", "SMTP automation"], course: "Python" as const },
+    { title: "Data Analysis with SQL", copy: "Learn SQL & DBMS from fundamentals to practical applications.", items: ["Basic queries", "Advanced Joins", "Constraints", "Subqueries", "Transactions", "Normalization"], course: "DASQL" as const },
+    { title: "Quantum Information & Computing", copy: "From quantum mechanics principles to hands-on circuits and algorithms.", items: ["Qubits & superposition", "Quantum gates & circuits", "Entanglement & teleportation", "Grover's algorithm", "Quantum Fourier Transform", "Intro to Qiskit"], course: "FOQIC" as const },
+    { title: "1-on-1 Personal Development", copy: "A personalised learning plan designed around your schedule and career goals.", items: ["Machine Learning", "Generative AI", "Data Science", "Cybersecurity", "Cloud Engineering", "Mathematics"], course: null },
+  ];
 
   const plans = [
-    {
-      name: "Single Course",
-      tag: "Most popular",
-      price: "₹4,999",
-      period: "per course",
-      highlights: ["Access to one full workshop", "Live expert-led sessions", "Hands-on projects", "Certificate of completion"],
-      href: "/enroll/single",
-      featured: false,
-    },
-    {
-      name: "Bundle (2 Courses)",
-      tag: "Best value",
-      price: "₹7,999",
-      period: "one-time",
-      highlights: ["Choose any 2 courses", "Structured learning path", "Project feedback from instructors", "Save ₹2,000 vs buying separately"],
-      href: "/enroll/bundle",
-      featured: false,
-    },
-    {
-      name: "Teams & Corporates",
-      tag: "For companies",
-      price: "Custom",
-       period: "tailored pricing",
-      highlights: ["Improve operational efficiency by 20–40%", "Automate manual workflows with in-house tools", "Private cohorts tailored to your stack", "Manager dashboard + progress tracking"],
-      href: "/sales",
-      featured: false,
-    },
-    {
-      name: "Personal Development",
-      tag: "1:1 Mentorship",
-      price: "Custom",
-      period: "talk to us",
-      highlights: ["Personalized career-aligned learning plan", "1:1 mentorship with weekly check-ins", "Portfolio-building projects", "Weekly progress tracking and nudges"],
-      href: "/sales",
-      featured: false,
-    },
-  ] as const;
+    { name: "Single Course", price: "₹4,999", period: "per course", highlights: ["One full workshop", "Live expert-led sessions", "Hands-on projects", "Certificate of completion"], href: "/enroll/single", featured: false },
+    { name: "Bundle (2 Courses)", price: "₹7,999", period: "one-time", highlights: ["Choose any 2 courses", "Structured learning path", "Project feedback from instructors", "Save ₹2,000 vs separately"], href: "/enroll/bundle", featured: true },
+    { name: "Teams & Corporates", price: "Custom", period: "tailored pricing", highlights: ["Improve operational efficiency 20–40%", "Automate workflows with in-house tools", "Private cohorts for your stack", "Manager dashboard + tracking"], href: "/sales", featured: false },
+    { name: "Personal Development", price: "Custom", period: "talk to us", highlights: ["Career-aligned learning plan", "1:1 mentorship with weekly check-ins", "Portfolio-building projects", "Weekly progress nudges"], href: "/sales", featured: false },
+  ];
 
   const faqs = [
     { q: "When are the classes?", a: "Weekend sessions run Sat–Sun for 4–6 weeks." },
-    { q: "Do I get a certificate?", a: "Yes. Complete the course and Capstone projects to earn a certificate." },
+    { q: "Do I get a certificate?", a: "Yes. Complete the course and Capstone projects to earn a verifiable certificate." },
     { q: "Is there a refund policy?", a: "Full refund before the 2nd live session. Transfers allowed to later sessions." },
     { q: "Do you provide 24/7 support?", a: "Yes, we provide 24/7 support during the course period." },
-  ] as const;
+  ];
 
+  const NAV_LINKS = [
+    { label: "GATE Mocks", href: "/gate" },
+    { label: "Workshops", href: "#catalog" },
+    { label: "Certificates", href: "#certificates" },
+    { label: "Blog", href: "/blog" },
+    { label: "Corporate", href: "#about" },
+    { label: "Pricing", href: "#pricing" },
+    { label: "Contact", href: "#contact" },
+  ];
+
+  /* ================================================================ */
+  /*  RENDER                                                          */
+  /* ================================================================ */
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30" style={{ color: "#193CB8" }}>
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:rounded focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground">Skip to content</a>
+    <div className="min-h-screen bg-white text-gray-900">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:rounded focus:bg-[#193BC8] focus:px-3 focus:py-2 focus:text-white">Skip to content</a>
 
-{/* Header */}
-<header className="sticky top-0 z-40 w-full border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50" role="banner">
-  <Container>
-    <div className="flex h-16 items-center justify-between">
-      {/* Logo */}
-      <Anchor
-        href="/"
-        className="flex items-center gap-2 font-bold tracking-tight"
-        aria-label="Learnamyte home"
-      >
-        <img
-          src="/Official_Logo.png"
-          alt="Learnamyte Logo"
-          className="h-8 w-8 object-contain"
-        />
-        <span className="text-base sm:text-lg">Learnamyte</span>
-      </Anchor>
-
-      {/* Desktop nav */}
-      <nav className="hidden items-center gap-4 text-sm md:flex" aria-label="Primary">
-        <a href="#catalog" className="text-muted-foreground hover:text-foreground">Courses</a>
-        <a href="#features" className="text-muted-foreground hover:text-foreground">Features</a>
-        <a href="#pricing" className="text-muted-foreground hover:text-foreground">Pricing</a>
-        <a href="#contact" className="text-muted-foreground hover:text-foreground">Contact</a>
-        <a href="#about" className="text-muted-foreground hover:text-foreground">About</a>
-      </nav>
-
-      {/* Mobile menu button */}
-      <button
-        type="button"
-        className="inline-flex items-center justify-center rounded-md p-2 md:hidden"
-        aria-label="Toggle navigation"
-        onClick={() => setMobileOpen((prev) => !prev)}
-      >
-        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </button>
-    </div>
-  </Container>
-
-  {/* Mobile nav panel */}
-  {mobileOpen && (
-    <div className="border-t bg-background md:hidden">
-      <Container>
-        <nav className="flex flex-col gap-2 py-3 text-sm" aria-label="Mobile Primary">
-          <a
-            href="#catalog"
-            className="text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(false)}
-          >
-            Courses
-          </a>
-          <a
-            href="#features"
-            className="text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(false)}
-          >
-            Features
-          </a>
-          <a
-            href="#pricing"
-            className="text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(false)}
-          >
-            Pricing
-          </a>
-          <a
-            href="#contact"
-            className="text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(false)}
-          >
-            Contact
-          </a>
-          <a
-            href="#about"
-            className="text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(false)}
-          >
-            About
-          </a>
-        </nav>
-      </Container>
-    </div>
-  )}
-</header>
-
-
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(75%_75%_at_50%_0%,hsl(var(--primary)/0.08),transparent_60%)]" />
+      {/* ========== HEADER ========== */}
+      <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-lg" role="banner">
         <Container>
-          <div className="grid grid-cols-1 items-center gap-10 py-16 sm:py-24 md:grid-cols-2">
-            <FadeIn>
-              <Badges />
-              <h1 className="mt-4 text-4xl font-extrabold leading-tight sm:text-5xl">
-                Learn from experts. <span className="text-primary">Build what matters.</span>
-              </h1>
-              <p className="mt-4 text-lg text-muted-foreground">
-                “Weekend workshops for professionals and students. Expert-led hands-on projects & Corporate training workshops.”
-              </p>
-              <ul className="mt-4 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2"><Clock className="h-4 w-4" aria-hidden /> Sat–Sun, 4–6 weeks, 16–24 hours total</li>
-                <li className="flex items-center gap-2"><GraduationCap className="h-4 w-4" aria-hidden /> Capstone projects, reviews, and weekday support</li>
-                <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" aria-hidden /> Course completion certificate</li>
-              </ul>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Anchor href="/workshops">{/* CTA reserved */}</Anchor>
-              </div>
-              <p className="mt-4 text-xs text-muted-foreground">No spam. No sales call.</p>
-            </FadeIn>
+          <div className="flex h-16 items-center justify-between">
+            <Anchor href="/" className="flex items-center gap-2.5 font-bold tracking-tight" aria-label="Learnamyte home">
+              <img src="/Official_Logo.png" alt="Learnamyte" className="h-8 w-8 object-contain" />
+              <span className="text-lg text-gray-900">Learnamyte</span>
+            </Anchor>
 
-            <FadeIn delay={150}>
-              <Section
-                id="gallery"
-                eyebrow="Visual Highlights"
-                title="Explore Learnamyte"
-                subtitle="A glimpse into our workshops and certifications"
-              >
+            <nav className="hidden items-center gap-6 text-sm font-medium lg:flex" aria-label="Primary">
+              {NAV_LINKS.map((l) => (
+                <a key={l.label} href={l.href} className="text-gray-500 transition-colors hover:text-gray-900">{l.label}</a>
+              ))}
+            </nav>
+
+            <div className="hidden items-center gap-3 lg:flex">
+              <Anchor href="/gate/demo">
+                <Button size="sm" className="bg-[#193BC8] text-white hover:bg-[#1230a0] gap-1.5 rounded-lg">
+                  Start Free Demo <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Anchor>
+            </div>
+
+            <button type="button" className="inline-flex items-center justify-center rounded-md p-2 lg:hidden" aria-label="Toggle navigation" onClick={() => setMobileOpen((p) => !p)}>
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </Container>
+
+        {mobileOpen && (
+          <div className="border-t border-gray-100 bg-white lg:hidden">
+            <Container>
+              <nav className="flex flex-col gap-1 py-4 text-sm" aria-label="Mobile">
+                {NAV_LINKS.map((l) => (
+                  <a key={l.label} href={l.href} className="rounded-lg px-3 py-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900" onClick={() => setMobileOpen(false)}>{l.label}</a>
+                ))}
+                <Anchor href="/gate/demo" className="mt-2" onClick={() => setMobileOpen(false)}>
+                  <Button size="sm" className="w-full bg-[#193BC8] text-white hover:bg-[#1230a0] rounded-lg">Start Free Demo</Button>
+                </Anchor>
+              </nav>
+            </Container>
+          </div>
+        )}
+      </header>
+
+      {/* ========== HERO ========== */}
+      <section className="relative overflow-hidden border-b border-gray-100">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[#193BC8]/[0.03] to-transparent" />
+        <Container>
+          <div className="grid grid-cols-1 items-center gap-12 py-20 sm:py-28 lg:grid-cols-2">
+            {/* Left */}
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#193BC8]/20 bg-[#193BC8]/5 px-3 py-1 text-xs font-semibold text-[#193BC8]">
+                <Zap className="h-3.5 w-3.5" /> Now live — GATE CS/IT Mock Tests
+              </div>
+
+              <h1 className="mt-6 text-4xl font-extrabold leading-[1.1] tracking-tight text-gray-900 sm:text-5xl lg:text-[3.25rem]">
+                Practice like the exam.<br />
+                <span className="text-[#193BC8]">Prove what you know.</span>
+              </h1>
+
+              <p className="mt-5 max-w-lg text-lg leading-relaxed text-gray-500">
+                High-fidelity GATE mocks, expert-led workshops, and verifiable certificates — built for outcomes, not pageviews.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Anchor href="/gate/demo">
+                  <Button size="lg" className="bg-[#193BC8] text-white hover:bg-[#1230a0] gap-2 rounded-lg px-6 text-sm font-semibold shadow-lg shadow-[#193BC8]/20">
+                    Start Free GATE Demo <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Anchor>
+                <Anchor href="#catalog">
+                  <Button size="lg" variant="outline" className="gap-2 rounded-lg px-6 text-sm font-semibold border-gray-200 text-gray-700 hover:bg-gray-50">
+                    Explore Workshops
+                  </Button>
+                </Anchor>
+              </div>
+
+              {/* Trust strip */}
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-gray-400">
+                {[
+                  [ShieldCheck, "Real exam simulation"],
+                  [BarChart3, "Deep analytics"],
+                  [Award, "Verified certificates"],
+                  [Users, "Expert instructors"],
+                ].map(([Icon, text]) => (
+                  <span key={text as string} className="flex items-center gap-1.5">
+                    <Icon className="h-3.5 w-3.5 text-[#193BC8]/60" /> {text as string}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Right — PosterRotator */}
+            <div className="relative">
+              <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4 shadow-sm">
                 <PosterRotator />
-              </Section>
-            </FadeIn>
+              </div>
+            </div>
           </div>
         </Container>
       </section>
 
       <main id="main">
-        {/* Features */}
-        <Section
-          id="features"
-          eyebrow="Why Learnamyte"
-          title="Designed for outcomes"
-          subtitle="Everything we build reinforces expert credibility, quality, and innovation."
-        >
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {features.map((f) => (
-              <Card key={f.title} className="h-full">
-                <CardHeader>
-                  <f.icon className="h-5 w-5" aria-hidden />
-                  <CardTitle className="mt-2 text-xl">{f.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{f.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </Section>
 
-        {/* Catalog */}
-        <Section
-          id="catalog"
-          eyebrow="What you can learn"
-          title="Our Courses"
-          subtitle="Follow a guided path or pick a one-off workshop, your call."
-        >
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {categories.map((c) => {
-              const isFOQIC = c.title === "Fundamentals of Quantum Information and Computing";
-              const isDVPBI = c.title === "Data Visualization with Power BI";
-              const isPython = c.title === "Data Optimization with Python";
-              const isDASQL = c.title === "Data Analysis with SQL";
-              const brochureCourse: "Python" | "FOQIC" | "DASQL" | "DVPBI" |null = isPython ? "Python" : isFOQIC ? "FOQIC" : isDASQL ? "DASQL" : isDVPBI ? "DVPBI" : null;
+        {/* ========== PRODUCT CHOOSER ========== */}
+        <section className="border-b border-gray-100 py-20 sm:py-24">
+          <Container>
+            <SectionLabel>Products</SectionLabel>
+            <SectionHeading sub="Mock tests, workshops, certificates, and corporate training — pick your path.">
+              Everything you need to learn and prove it
+            </SectionHeading>
 
-              return (
-                <Card key={c.title} className="h-full">
-                  <CardHeader>
-                    <CardTitle>{c.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{c.copy}</p>
-                  </CardHeader>
+            <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { icon: Target, title: "GATE Mock Tests", desc: "65-question CS/IT simulator with TCS iON-style palette, real scoring, and deep analytics.", cta: "Start Free Demo", href: "/gate/demo", accent: true },
+                { icon: BookOpen, title: "Workshops", desc: "Weekend cohort-based programs with live instruction, hands-on projects, and capstone reviews.", cta: "Browse courses", href: "#catalog", accent: false },
+                { icon: FileCheck, title: "Certificates", desc: "Tamper-proof digital certificates issued on completion. Instantly verifiable by token.", cta: "Verify a certificate", href: "#certificates", accent: false },
+                { icon: Building2, title: "Corporate Training", desc: "Custom cohorts for teams. Tailored stack, private dashboards, and measurable ROI.", cta: "Talk to us", href: "#contact", accent: false },
+              ].map((p) => (
+                <Anchor key={p.title} href={p.href} className="group">
+                  <div className={`flex h-full flex-col rounded-xl border p-6 transition-all duration-200 ${p.accent ? "border-[#193BC8]/30 bg-[#193BC8]/[0.02] shadow-sm" : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"}`}>
+                    <p.icon className={`h-6 w-6 ${p.accent ? "text-[#193BC8]" : "text-gray-400 group-hover:text-[#193BC8]"} transition-colors`} />
+                    <h3 className="mt-4 text-base font-bold text-gray-900">{p.title}</h3>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-500">{p.desc}</p>
+                    <span className={`mt-4 inline-flex items-center gap-1 text-sm font-semibold ${p.accent ? "text-[#193BC8]" : "text-gray-500 group-hover:text-[#193BC8]"} transition-colors`}>
+                      {p.cta} <ChevronRight className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
+                </Anchor>
+              ))}
+            </div>
+          </Container>
+        </section>
 
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {c.items.map((i) => (
-                        <span key={i} className="rounded-full border px-2 py-1 text-xs text-muted-foreground">
-                          {i}
-                        </span>
-                      ))}
-                    </div>
+        {/* ========== GATE MOCKS SPOTLIGHT ========== */}
+        <section className="py-20 sm:py-24">
+          <Container>
+            <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+              <div>
+                <SectionLabel>Flagship Product</SectionLabel>
+                <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                  GATE CS/IT Mock Tests
+                </h2>
+                <p className="mt-4 max-w-md text-base leading-relaxed text-gray-500">
+                  The closest thing to the real exam. 65 questions, 180-minute timer, server-authoritative scoring, and a review flow that actually teaches you.
+                </p>
+                <ul className="mt-6 space-y-3">
+                  {[
+                    "TCS iON-style palette with exact color semantics",
+                    "MCQ, MSQ, NAT — with GATE-correct negative marking",
+                    "Subject-wise, topic-wise, and question-level analytics",
+                    "Errata-protected scores with audit trail",
+                    "Virtual scientific calculator built-in",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-sm text-gray-600">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#193BC8]" /> {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <Anchor href="/gate/demo">
+                    <Button className="bg-[#193BC8] text-white hover:bg-[#1230a0] gap-2 rounded-lg shadow-lg shadow-[#193BC8]/20">
+                      Start Free Demo <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Anchor>
+                  <Anchor href="/gate/pricing">
+                    <Button variant="outline" className="rounded-lg border-gray-200">View plans</Button>
+                  </Anchor>
+                </div>
+              </div>
+              {/* Right — mock dashboard illustration */}
+              <div className="rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-[#193BC8]/10 flex items-center justify-center"><Target className="h-5 w-5 text-[#193BC8]" /></div>
+                    <div><div className="text-sm font-bold text-gray-900">GATE CS/IT Full Mock</div><div className="text-xs text-gray-400">65 questions · 100 marks · 180 min</div></div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-lg bg-white border border-gray-100 p-3 text-center"><div className="text-xl font-extrabold text-[#193BC8]">72.33</div><div className="text-[10px] text-gray-400 mt-0.5">Score / 100</div></div>
+                    <div className="rounded-lg bg-white border border-gray-100 p-3 text-center"><div className="text-xl font-extrabold text-emerald-600">94.2</div><div className="text-[10px] text-gray-400 mt-0.5">Percentile</div></div>
+                    <div className="rounded-lg bg-white border border-gray-100 p-3 text-center"><div className="text-xl font-extrabold text-gray-900">58/65</div><div className="text-[10px] text-gray-400 mt-0.5">Attempted</div></div>
+                  </div>
+                  <div className="flex gap-2">
+                    {["GA", "DSA", "DBMS", "OS", "CN", "TOC", "Math"].map((s) => (
+                      <span key={s} className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Container>
+        </section>
 
-                    {brochureCourse ? (
+        {/* ========== TRUST METRICS ========== */}
+        <section className="border-y border-gray-100 bg-gray-50/50 py-14">
+          <Container>
+            <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+              <Metric value="500+" label="Learners trained" />
+              <Metric value="2,000+" label="Mock attempts" />
+              <Metric value="150+" label="Certificates issued" />
+              <Metric value="6" label="Expert workshops" />
+            </div>
+          </Container>
+        </section>
+
+        {/* ========== FEATURES ========== */}
+        <section id="features" className="py-20 sm:py-24">
+          <Container>
+            <SectionLabel>Why Learnamyte</SectionLabel>
+            <SectionHeading sub="Everything we build reinforces credibility, quality, and measurable outcomes.">
+              Designed for results, not vanity metrics
+            </SectionHeading>
+
+            <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { icon: Target, title: "Real exam simulation", desc: "Server-authoritative timer, palette, offline lock, and auto-submit — identical to TCS iON." },
+                { icon: Layers, title: "Explanation-first review", desc: "Every question reviewed with worked solutions, not just an answer key." },
+                { icon: BookOpen, title: "Learn by building", desc: "Weekend workshops with capstone projects, not passive video content." },
+                { icon: ShieldCheck, title: "Verified outcomes", desc: "Digital certificates with tamper-proof verification by token." },
+              ].map((f) => (
+                <div key={f.title} className="rounded-xl border border-gray-100 bg-white p-6 transition-shadow hover:shadow-sm">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#193BC8]/5">
+                    <f.icon className="h-5 w-5 text-[#193BC8]" />
+                  </div>
+                  <h3 className="mt-4 text-base font-bold text-gray-900">{f.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-500">{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </section>
+
+        {/* ========== CERTIFICATES ========== */}
+        <section id="certificates" className="border-t border-gray-100 bg-gray-50/30 py-20 sm:py-24">
+          <Container>
+            <div className="mx-auto max-w-lg text-center">
+              <SectionLabel>Certificates</SectionLabel>
+              <h2 className="mt-3 text-2xl font-extrabold text-gray-900 sm:text-3xl">Verify any Learnamyte certificate</h2>
+              <p className="mt-3 text-sm text-gray-500">Enter the certificate token to check authenticity and view details.</p>
+
+              <div className="mt-6 flex gap-2">
+                <Input
+                  placeholder="Enter certificate token"
+                  className="rounded-lg"
+                  value={verifyToken}
+                  onChange={(e) => setVerifyToken(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && goVerifyToken()}
+                />
+                <Button onClick={goVerifyToken} className="rounded-lg bg-[#193BC8] text-white hover:bg-[#1230a0] shrink-0">
+                  Verify
+                </Button>
+              </div>
+              {verifyNote && <p className="mt-2 text-xs text-red-500">{verifyNote}</p>}
+              <p className="mt-3 text-xs text-gray-400">URL format: <span className="font-mono">/verify/&lt;token&gt;</span></p>
+            </div>
+          </Container>
+        </section>
+
+        {/* ========== WORKSHOP CATALOG ========== */}
+        <section id="catalog" className="py-20 sm:py-24">
+          <Container>
+            <SectionLabel>Workshops</SectionLabel>
+            <SectionHeading sub="Cohort-based, expert-led sessions. Sat–Sun, 4–6 weeks, with weekday project support.">
+              Learn by doing, not watching
+            </SectionHeading>
+
+            <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {categories.map((c) => (
+                <div key={c.title} className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 transition-shadow hover:shadow-sm">
+                  <h3 className="text-base font-bold text-gray-900">{c.title}</h3>
+                  <p className="mt-2 text-sm text-gray-500">{c.copy}</p>
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {c.items.map((i) => (
+                      <span key={i} className="rounded-full border border-gray-100 bg-gray-50 px-2.5 py-0.5 text-[11px] font-medium text-gray-500">{i}</span>
+                    ))}
+                  </div>
+                  <div className="mt-auto pt-5">
+                    {c.course ? (
                       <Button
-                        type="button"
-                        className="mt-4 bg-black text-white hover:bg-[#193BC8]"
+                        size="sm"
+                        className="bg-gray-900 text-white hover:bg-[#193BC8] rounded-lg text-xs"
                         disabled={leadBusy}
-                        onClick={() => {
-                          setSelectedCourse(brochureCourse);
-                          setSelectedTitle(c.title);
-                          setLeadEmail("");
-                          setLeadPhone("");
-                          setLeadMsg(null);
-                          setBrochureOpen(true);
-                        }}
+                        onClick={() => { setSelectedCourse(c.course!); setSelectedTitle(c.title); setLeadEmail(""); setLeadPhone(""); setLeadMsg(null); setBrochureOpen(true); }}
                       >
                         Download brochure
                       </Button>
                     ) : (
-                      <Button className="mt-4 text-[#193BC8]" variant="outline" disabled>
-                        Coming soon
-                      </Button>
+                      <Button size="sm" variant="outline" className="rounded-lg text-xs" disabled>Coming soon</Button>
                     )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </Section>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </section>
 
-        {/* Simple modal for brochure form */}
+        {/* Brochure modal */}
         {brochureOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          >
-            <div
-              className="absolute inset-0 bg-black/50"
-              onClick={() => {
-                if (!leadBusy) {
-                  setBrochureOpen(false);
-                  setSelectedCourse(null);
-                  setSelectedTitle(null);
-                }
-              }}
-            />
-            <div className="relative z-10 w-full max-w-md rounded-xl border bg-white p-6 shadow-xl">
-              <h3 className="text-lg font-semibold">
-                {selectedTitle ?? "Download brochure"}
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Enter your email and mobile number to get the PDF.
-              </p>
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { if (!leadBusy) { setBrochureOpen(false); setSelectedCourse(null); setSelectedTitle(null); } }} />
+            <div className="relative z-10 w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl">
+              <h3 className="text-lg font-bold text-gray-900">{selectedTitle ?? "Download brochure"}</h3>
+              <p className="mt-1 text-sm text-gray-500">Enter your details to get the PDF.</p>
 
-              <form className="mt-4 space-y-2" onSubmit={(e) => {
-                if (!selectedCourse) return;
-                submitBrochure(selectedCourse, e);
-              }}>
-                <Input
-                  type="email"
-                  placeholder="Your email"
-                  value={leadEmail}
-                  onChange={(e) => setLeadEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-                <Input
-                  type="tel"
-                  placeholder="Mobile number"
-                  value={leadPhone}
-                  onChange={(e) => setLeadPhone(e.target.value)}
-                  required
-                  autoComplete="tel"
-                />
+              <form className="mt-5 space-y-3" onSubmit={(e) => { if (!selectedCourse) return; submitBrochure(selectedCourse, e); }}>
+                <Input type="email" placeholder="Your email" className="rounded-lg" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} required autoComplete="email" />
+                <Input type="tel" placeholder="Mobile number" className="rounded-lg" value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} required autoComplete="tel" />
+                <input type="text" value={hp} onChange={(e) => setHp(e.target.value)} className="hidden" tabIndex={-1} aria-hidden />
 
-                {/* honeypot */}
-                <input
-                  type="text"
-                  value={hp}
-                  onChange={(e) => setHp(e.target.value)}
-                  className="hidden"
-                  tabIndex={-1}
-                  aria-hidden
-                />
-
-                <div className="mt-2 flex gap-2">
-                  <Button type="submit" disabled={leadBusy} className="bg-black text-white hover:bg-[#193BC8]">
-                    {leadBusy ? "Preparing..." : "Get PDF"}
+                <div className="flex gap-2 pt-1">
+                  <Button type="submit" disabled={leadBusy} className="bg-[#193BC8] text-white hover:bg-[#1230a0] rounded-lg">
+                    {leadBusy ? "Preparing…" : "Get PDF"}
                   </Button>
-                  <Button
-                    type="button"
-                    className="bg-white text-black hover:text-[#CF0000]"
-                    variant="outline"
-                    onClick={() => {
-                      if (leadBusy) return;
-                      setBrochureOpen(false);
-                      setSelectedCourse(null);
-                      setSelectedTitle(null);
-                    }}
-                  >
+                  <Button type="button" variant="outline" className="rounded-lg" onClick={() => { if (leadBusy) return; setBrochureOpen(false); setSelectedCourse(null); setSelectedTitle(null); }}>
                     Cancel
                   </Button>
                 </div>
-
-                {leadMsg && <p className="text-xs text-muted-foreground mt-2">{leadMsg}</p>}
+                {leadMsg && <p className="text-xs text-gray-500 mt-1">{leadMsg}</p>}
               </form>
             </div>
           </div>
         )}
 
-        {/* Testimonials */}
-        <Section id="social-proof" eyebrow="Social proof" title="Loved by learners & teams">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {[
-              { quote: "The workshop playbooks and hands-on labs helped our team ship a Python tool in a week.", name: "Aravind", role: "Business Analyst, E-commerce" },
-              { quote: "Finally a platform that cares about outcomes. Our completion and retention doubled.", name: "Amarnath", role: "Application Engineer, SaaS" },
-              { quote: "Crystal clear content. You feel guided by pros who actually do the work.", name: "Kavi", role: "Analyst, Apparel" },
-            ].map((t) => (
-              <Card key={t.name} className="h-full">
-                <CardContent className="pt-6">
-                  <Quote className="mb-4 h-6 w-6" aria-hidden />
-                  <p className="text-sm">{t.quote}</p>
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    {t.name} • {t.role}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </Section>
+        {/* ========== TESTIMONIALS ========== */}
+        <section id="social-proof" className="border-t border-gray-100 bg-gray-50/30 py-20 sm:py-24">
+          <Container>
+            <SectionLabel>Testimonials</SectionLabel>
+            <SectionHeading>Trusted by learners and teams</SectionHeading>
 
-        {/* Pricing */}
-        <Section
-          id="pricing"
-          eyebrow="Plans"
-          title="Pick the learning path that fits you"
-          subtitle="Start with a single workshop, bundle two for savings, or design a custom plan for your team."
-        >
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {plans.map((p) => (
-              <Card key={p.name} className={p.featured ? "border-primary shadow-lg" : ""}>
-                <CardHeader>
-                  <CardTitle className="flex items-baseline justify-between">
-                    <span>{p.name}</span>
-                    <span className="text-2xl font-extrabold">{p.price}</span>
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground">{p.period}</p>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm">
+            <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-3">
+              {[
+                { quote: "The workshop playbooks and hands-on labs helped our team ship a Python tool in a week.", name: "Aravind", role: "Business Analyst, E-commerce" },
+                { quote: "Finally a platform that cares about outcomes. Our completion and retention doubled.", name: "Amarnath", role: "Application Engineer, SaaS" },
+                { quote: "Crystal clear content. You feel guided by pros who actually do the work.", name: "Kavi", role: "Analyst, Apparel" },
+              ].map((t) => (
+                <div key={t.name} className="rounded-xl border border-gray-100 bg-white p-6">
+                  <Quote className="h-5 w-5 text-[#193BC8]/30" />
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{t.quote}</p>
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#193BC8]/10 text-xs font-bold text-[#193BC8]">{t.name[0]}</div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">{t.name}</div>
+                      <div className="text-xs text-gray-400">{t.role}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </section>
+
+        {/* ========== PRICING ========== */}
+        <section id="pricing" className="py-20 sm:py-24">
+          <Container>
+            <SectionLabel>Pricing</SectionLabel>
+            <SectionHeading sub="Start with a single workshop, bundle for savings, or get a custom team plan.">
+              Pick the path that fits you
+            </SectionHeading>
+
+            <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {plans.map((p) => (
+                <div key={p.name} className={`flex flex-col rounded-xl border p-6 transition-shadow ${p.featured ? "border-[#193BC8]/30 shadow-md shadow-[#193BC8]/5" : "border-gray-100 hover:shadow-sm"}`}>
+                  {p.featured && <span className="mb-3 inline-block self-start rounded-full bg-[#193BC8]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#193BC8] uppercase">Best value</span>}
+                  <h3 className="text-base font-bold text-gray-900">{p.name}</h3>
+                  <div className="mt-2"><span className="text-2xl font-extrabold text-gray-900">{p.price}</span> <span className="text-xs text-gray-400">{p.period}</span></div>
+                  <ul className="mt-5 flex-1 space-y-2">
                     {p.highlights.map((h) => (
-                      <li key={h} className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden /> {h}
+                      <li key={h} className="flex items-start gap-2 text-sm text-gray-500">
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#193BC8]" /> {h}
                       </li>
                     ))}
                   </ul>
-                  <Anchor href={p.href} className="mt-6 block" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </Section>
+                  <Anchor href={p.href} className="mt-5">
+                    <Button size="sm" variant={p.featured ? "default" : "outline"} className={`w-full rounded-lg ${p.featured ? "bg-[#193BC8] text-white hover:bg-[#1230a0]" : ""}`}>
+                      {p.price === "Custom" ? "Talk to us" : "Get started"}
+                    </Button>
+                  </Anchor>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </section>
 
-        {/* FAQ */}
-        <Section id="faq" eyebrow="FAQ" title="Common questions">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {faqs.map((f) => (
-              <Card key={f.q}>
-                <CardHeader>
-                  <CardTitle className="text-base">{f.q}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">{f.a}</CardContent>
-              </Card>
-            ))}
-          </div>
-        </Section>
+        {/* ========== FAQ ========== */}
+        <section id="faq" className="border-t border-gray-100 bg-gray-50/30 py-20 sm:py-24">
+          <Container>
+            <SectionLabel>FAQ</SectionLabel>
+            <SectionHeading>Common questions</SectionHeading>
+            <div className="mx-auto mt-14 grid max-w-3xl grid-cols-1 gap-4 md:grid-cols-2">
+              {faqs.map((f) => (
+                <div key={f.q} className="rounded-xl border border-gray-100 bg-white p-5">
+                  <h3 className="text-sm font-bold text-gray-900">{f.q}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-500">{f.a}</p>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </section>
 
-        {/* About */}
-        <Section
-          id="about"
-          eyebrow="Our approach"
-          title="Learning, engineered"
-          subtitle="We combine subject-matter expertise, instructional design, and analytics to deliver real outcomes."
-        >
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>For learners</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>Structured paths with projects and checkpoints.</p>
-                <p>Live sessions for accountability and feedback.</p>
-                <p>Portfolio-ready artifacts to showcase skills.</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>For teams</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>Instructor-led live virtual or in-person sessions</p>
-                <p>Personal training tailored to your stack and goals.</p>
-                <p>Integrations for LMS exports.</p>
-              </CardContent>
-            </Card>
-          </div>
-        </Section>
+        {/* ========== ABOUT ========== */}
+        <section id="about" className="py-20 sm:py-24">
+          <Container>
+            <SectionLabel>Our approach</SectionLabel>
+            <SectionHeading sub="Subject-matter expertise, instructional design, and analytics — combined to deliver real outcomes.">
+              Learning, engineered
+            </SectionHeading>
+            <div className="mx-auto mt-14 grid max-w-3xl grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="rounded-xl border border-gray-100 p-6">
+                <GraduationCap className="h-6 w-6 text-[#193BC8]" />
+                <h3 className="mt-3 text-base font-bold text-gray-900">For learners</h3>
+                <ul className="mt-3 space-y-1.5 text-sm text-gray-500">
+                  <li>Structured paths with projects and checkpoints</li>
+                  <li>Live sessions for accountability and feedback</li>
+                  <li>Portfolio-ready artifacts to showcase skills</li>
+                </ul>
+              </div>
+              <div className="rounded-xl border border-gray-100 p-6">
+                <Building2 className="h-6 w-6 text-[#193BC8]" />
+                <h3 className="mt-3 text-base font-bold text-gray-900">For teams</h3>
+                <ul className="mt-3 space-y-1.5 text-sm text-gray-500">
+                  <li>Instructor-led live virtual or in-person sessions</li>
+                  <li>Training tailored to your stack and goals</li>
+                  <li>Integrations for LMS exports and tracking</li>
+                </ul>
+              </div>
+            </div>
+          </Container>
+        </section>
+
+        {/* ========== CTA / CONTACT ========== */}
+        <section id="contact" className="border-t border-gray-100 bg-gray-50/30 py-20 sm:py-24">
+          <Container>
+            <div className="rounded-2xl bg-gray-100 px-8 py-12 text-center sm:px-12 sm:py-16">
+              <h2 className="text-2xl font-extrabold text-[#193BC8] sm:text-3xl">Ready to start?</h2>
+              <p className="mx-auto mt-3 max-w-md text-sm text-gray-500">
+                Take a free GATE demo, explore workshops, or reach out directly.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <Anchor href="/gate/demo">
+                  <Button size="lg" className="bg-white text-[#193BC8] hover:bg-gray-100 gap-2 rounded-lg font-semibold shadow-lg">
+                    Start Free Demo <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Anchor>
+                <Anchor href="mailto:team@learnamyte.com?subject=Learnamyte%20Inquiry">
+                  <Button size="lg" variant="outline" className="bg-white text-[#193BC8] hover:bg-white/10 gap-2 rounded-lg">
+                    <Mail className="h-4 w-4" /> Mail us
+                  </Button>
+                </Anchor>
+                <Anchor href="tel:+916382489221">
+                  <Button size="lg" variant="outline" className="bg-white text-[#193BC8] hover:bg-white/10 gap-2 rounded-lg">
+                    <Phone className="h-4 w-4" /> Call us
+                  </Button>
+                </Anchor>
+              </div>
+            </div>
+          </Container>
+        </section>
       </main>
 
-{/* CTA / Contact */}
-<Section
-  id="contact"
-  eyebrow="Get in touch"
-  title="We’re here to help"
-  subtitle="Reach out anytime for support or course questions."
->
-  <div className="relative">
-    <div className="overflow-hidden rounded-2xl border bg-gradient-to-r from-primary/10 to-primary/5 p-8 shadow-sm sm:p-10">
-      <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h3 className="text-2xl font-bold">Ready to learn by doing?</h3>
-          <p className="mt-2 text-muted-foreground">
-            Join thousands leveling up with expert-led workshops.
-          </p>
-        </div>
-
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-          {/* Email Support */}
-          <Anchor href="mailto:team@learnamyte.com?subject=Learnamyte%20Course%20Inquiry&body=Hello%20Team%2C%0D%0A%0AI%20would%20like%20to%20know%20more%20about%20your%20workshops.">
-            <Button size="lg" variant="outline" className="gap-2">
-              <Mail className="h-4 w-4" aria-hidden /> Mail us
-            </Button>
-          </Anchor>
-
-          {/* Call Button */}
-          <Anchor href="tel:+916382489221">
-            <Button size="lg" variant="outline" className="gap-2">
-              <Phone className="h-4 w-4" aria-hidden /> Call us
-            </Button>
-          </Anchor>
-        </div>
-      </div>
-    </div>
-  </div>
-</Section>
-
-
-      {/* Footer */}
-      <footer className="mt-16 border-t py-10 text-sm" role="contentinfo">
+      {/* ========== FOOTER ========== */}
+      <footer className="border-t border-gray-100 py-12 text-sm" role="contentinfo">
         <Container>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-            <div>
-              <div className="flex items-center gap-2 font-bold"><Sparkles className="h-4 w-4" aria-hidden /> Learnamyte</div>
-              <p className="mt-2 max-w-xs text-muted-foreground">Expert-led workshops that turn knowledge into outcomes.</p>
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-5">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2 font-bold text-gray-900">
+                <img src="/Official_Logo.png" alt="" className="h-6 w-6 object-contain" /> Learnamyte
+              </div>
+              <p className="mt-3 max-w-xs text-sm leading-relaxed text-gray-400">
+                Expert-led learning that turns knowledge into measurable outcomes.
+              </p>
             </div>
-            <div className="grid grid-cols-2 gap-8 md:col-span-3 md:grid-cols-3">
-              <div className="space-y-2">
-                <div className="font-semibold">Product</div>
-                {[{ label: "Workshops", href: "/workshops"},{ label: "Paths", href: "/paths"},{ label: "Pricing", href: "/#pricing"},{ label: "For Teams", href: "/#about"},].map((l)=> (
-                  <Anchor key={l.label} href={l.href} className="block text-muted-foreground hover:text-foreground">{l.label}</Anchor>
-                ))}
+            {[
+              { heading: "Product", links: [{ label: "GATE Mocks", href: "/gate" }, { label: "Free Demo", href: "/gate/demo" }, { label: "Workshops", href: "/#catalog" }, { label: "Pricing", href: "/#pricing" }, { label: "For Teams", href: "/#about" }] },
+              { heading: "Company", links: [{ label: "About", href: "/#about" }, { label: "Blog", href: "/blog" }, { label: "Careers", href: "/careers" }, { label: "Contact", href: "/#contact" }] },
+              { heading: "Legal", links: [{ label: "Terms", href: "/terms" }, { label: "Privacy", href: "/privacy" }] },
+            ].map((col) => (
+              <div key={col.heading}>
+                <div className="font-semibold text-gray-900">{col.heading}</div>
+                <div className="mt-3 flex flex-col gap-2">
+                  {col.links.map((l) => (
+                    <Anchor key={l.label} href={l.href} className="text-gray-400 transition-colors hover:text-gray-700">{l.label}</Anchor>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                <div className="font-semibold">Company</div>
-                {[{ label: "About", href: "/#about"},{ label: "Instructors", href: "/#instructors"},{ label: "Blog", href: "/blog"},{ label: "Careers", href: "/careers"},].map((l)=> (
-                  <Anchor key={l.label} href={l.href} className="block text-muted-foreground hover:text-foreground">{l.label}</Anchor>
-                ))}
-              </div>
-              <div className="space-y-2">
-                <div className="font-semibold">Legal</div>
-                {[{ label: "Terms", href: "/terms"},{ label: "Privacy", href: "/privacy"},{ label: "Contact", href: "/contact"},].map((l)=> (
-                  <Anchor key={l.label} href={l.href} className="block text-muted-foreground hover:text-foreground">{l.label}</Anchor>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
-          <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t pt-6 sm:flex-row">
-            <p className="text-muted-foreground">© {new Date().getFullYear()} Learnamyte. All rights reserved.</p>
-            <p className="text-muted-foreground">Made with care for curious minds.</p>
+          <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-gray-100 pt-6 sm:flex-row sm:items-center">
+            <p className="text-gray-400">© {new Date().getFullYear()} Learnamyte (Dxoctagon Pvt Ltd). All rights reserved.</p>
+            <p className="text-gray-300">Made with care for curious minds.</p>
           </div>
         </Container>
       </footer>
@@ -679,4 +650,3 @@ function LearnamyteLanding() {
   );
 }
 
-export default LearnamyteLanding;

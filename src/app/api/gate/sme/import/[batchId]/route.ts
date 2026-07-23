@@ -12,7 +12,7 @@ export async function GET(
   const { batchId } = await ctx.params;
 
   const { data: batch, error } = await supabaseAdmin
-    .from("gate.import_batches" as any)
+    .schema("gate").from("import_batches")
     .select("id, status, file_name, total_rows, valid_rows, error_rows, error_detail, created_at, completed_at")
     .eq("id", batchId)
     .eq("uploaded_by", user.id)

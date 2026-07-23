@@ -8,7 +8,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const { attemptId } = await ctx.params;
 
   // Validate attempt belongs to user via RLS client
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: at, error: atErr } = await supabase
     .from("attempts")
     .select(`

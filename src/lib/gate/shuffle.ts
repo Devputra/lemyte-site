@@ -1,5 +1,6 @@
 // src/lib/gate/shuffle.ts
 // Deterministic seeded Fisher-Yates shuffle for GATE attempts
+
 import crypto from "crypto";
 
 /**
@@ -22,7 +23,7 @@ function hashToSeed(s: string): number {
 }
 
 /**
- * Mulberry32 PRNG — fast, deterministic, good distribution.
+ * Mulberry32 PRNG — deterministic and fast.
  */
 function mulberry32(seed: number): () => number {
   return function () {
@@ -34,33 +35,36 @@ function mulberry32(seed: number): () => number {
 }
 
 /**
- * Deterministic Fisher-Yates shuffle using a string seed.
- * Same seed + same input always produces the same output.
+ * Deterministic Fisher-Yates shuffle.
  */
 export function seededShuffle<T>(arr: readonly T[], seedStr: string): T[] {
   const rng = mulberry32(hashToSeed(seedStr));
   const a = arr.slice();
+
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
+
   return a;
 }
 
 /**
- * Get the question display order for an attempt.
- * Deterministic: same testVersionQuestionIds + seed → same order.
+ * Get question order for an attempt.
  */
 export function getQuestionOrder(
-  testVersionQuestionIds: string[],
+  questionVersionIds: string[],
   shuffleSeed: string
 ): string[] {
-  return seededShuffle(testVersionQuestionIds, shuffleSeed);
+  return seededShuffle(questionVersionIds, shuffleSeed);
 }
 
 /**
- * Compute SHA-256 hash of the resolved question order for verification.
+ * Hash resolved order for integrity checks.
  */
 export function hashQuestionOrder(order: string[]): string {
-  return crypto.createHash("sha256").update(order.join(",")).digest("hex");
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(order))
+    .digest("hex");
 }

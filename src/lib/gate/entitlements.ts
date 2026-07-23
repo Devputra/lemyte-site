@@ -1,108 +1,173 @@
 // src/lib/gate/entitlements.ts
-// Subscription entitlement checks for GATE
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-export type EntitlementAction = "START_ATTEMPT" | "VIEW_REPORT" | "VIEW_SOLUTIONS";
+export type EntitlementAction =
+  | "START_ATTEMPT"
+  | "VIEW_REPORT"
+  | "VIEW_SOLUTIONS";
 
-interface EntitlementResult {
+export interface EntitlementResult {
   allowed: boolean;
   reason?: string;
+  accessPass?: {
+    id: string;
+    planId: string | null;
+    startsAt: string | null;
+    endsAt: string | null;
+  };
 }
 
-/**
- * Check if a user has an active subscription that entitles them to perform the action.
- *
- * Rules:
- * - Active subscription required for START_ATTEMPT (ranked/practice) and VIEW_REPORT/SOLUTIONS
- * - Mid-test expiry: user is allowed to finish and submit, but report access is gated after exit
- * - Demo mode does NOT require subscription
- */
 export async function checkEntitlement(
   userId: string,
-  action: EntitlementAction
+  _action: EntitlementAction
 ): Promise<EntitlementResult> {
+  const nowIso = new Date().toISOString();
+
   const { data, error } = await supabaseAdmin
-    .from("gate.subscriptions" as any)
-    .select("id, status, current_period_end")
+    .schema("gate")
+    .from("access_passes")
+    .select("id, status, plan_id, starts_at, ends_at")
     .eq("user_id", userId)
     .eq("status", "ACTIVE")
-    .order("current_period_end", { ascending: false })
+    .gt("ends_at", nowIso)
+    .order("ends_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (error) {
-    console.error("[entitlements] Supabase error:", error);
-    return { allowed: false, reason: "Failed to verify subscription status" };
-  }
+    console.error("[gate/entitlements] access_pass lookup failed", {
+      userId,
+      error,
+    });
 
-  if (!data) {
-    return { allowed: false, reason: "No active subscription found" };
-  }
-
-  // Check if subscription period has ended
-  const periodEnd = data.current_period_end
-    ? new Date(data.current_period_end)
-    : null;
-  const now = new Date();
-
-  if (periodEnd && now > periodEnd) {
     return {
       allowed: false,
-      reason: "Subscription period has expired. Please renew to continue.",
+      reason: "Could not verify access right now. Please retry in a moment.",
     };
   }
 
-  return { allowed: true };
+  if (!data) {
+    return {
+      allowed: false,
+      reason: "No active plan found. Please purchase access to continue.",
+    };
+  }
+
+  if (data.starts_at && new Date(data.starts_at) > new Date()) {
+    return {
+      allowed: false,
+      reason: "Your plan has not started yet.",
+    };
+  }
+
+  return {
+    allowed: true,
+    accessPass: {
+      id: data.id as string,
+      planId: (data.plan_id as string | null) ?? null,
+      startsAt: (data.starts_at as string | null) ?? null,
+      endsAt: (data.ends_at as string | null) ?? null,
+    },
+  };
 }
 
-/**
- * Check if a user has an active attempt in progress.
- * Returns the attempt ID if one exists, null otherwise.
- */
 export async function getActiveAttempt(
   userId: string
 ): Promise<string | null> {
   const { data, error } = await supabaseAdmin
-    .from("gate.attempts" as any)
-    .select("id")
+    .schema("gate")
+    .from("attempts")
+    .select("id, created_at")
     .eq("user_id", userId)
     .eq("status", "IN_PROGRESS")
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return data.id;
+  if (error) {
+    console.error("[gate/entitlements] getActiveAttempt failed", {
+      userId,
+      error,
+    });
+    return null;
+  }
+
+  return (data?.id as string | undefined) ?? null;
 }
 
-/**
- * Check the 100-attempt retention cap for a user.
- * If exceeded, returns the ID of the oldest unranked practice attempt to delete.
- */
 export async function checkRetentionCap(
   userId: string
 ): Promise<{ exceeded: boolean; deleteAttemptId?: string }> {
   const { count, error } = await supabaseAdmin
-    .from("gate.attempts" as any)
+    .schema("gate")
+    .from("attempts")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId);
 
-  if (error || count === null || count < 100) {
+  if (error) {
+    console.error("[gate/entitlements] checkRetentionCap count failed", {
+      userId,
+      error,
+    });
     return { exceeded: false };
   }
 
-  // Find oldest unranked practice attempt
-  const { data: oldest } = await supabaseAdmin
-    .from("gate.attempts" as any)
-    .select("id")
+  if (count === null || count < 100) {
+    return { exceeded: false };
+  }
+
+  const { data: oldestPractice, error: oldestErr } = await supabaseAdmin
+    .schema("gate")
+    .from("attempts")
+    .select("id, created_at")
     .eq("user_id", userId)
     .eq("mode", "PRACTICE")
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
-  if (!oldest) {
-    return { exceeded: true }; // All attempts are ranked; cannot auto-delete
+  if (oldestErr) {
+    console.error(
+      "[gate/entitlements] checkRetentionCap oldest practice lookup failed",
+      { userId, error: oldestErr }
+    );
+    return { exceeded: true };
   }
 
-  return { exceeded: true, deleteAttemptId: oldest.id };
+  if (!oldestPractice) {
+    return { exceeded: true };
+  }
+
+  return {
+    exceeded: true,
+    deleteAttemptId: oldestPractice.id as string,
+  };
+}
+
+export async function hasCountedRankedAttempt(
+  userId: string,
+  testVersionId: string
+): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .schema("gate")
+    .from("attempts")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("test_version_id", testVersionId)
+    .eq("mode", "RANKED")
+    .in("status", ["SUBMITTED", "EXPIRED"])
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[gate/entitlements] hasCountedRankedAttempt failed", {
+      userId,
+      testVersionId,
+      error,
+    });
+    return true;
+  }
+
+  return !!data;
 }

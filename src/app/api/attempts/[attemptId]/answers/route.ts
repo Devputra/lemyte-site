@@ -14,7 +14,7 @@ export async function PUT(req: Request, ctx: { params: Promise<{ attemptId: stri
   const user = await requireUser();
   const body = SaveSchema.parse(await req.json());
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: at, error: atErr } = await supabase
     .from("attempts")
     .select("id, ends_at, submitted_at, test_assignments!inner ( employee_id )")

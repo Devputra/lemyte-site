@@ -1,14 +1,13 @@
 // src/app/api/webhooks/razorpay/route.ts
+
 import { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { grantAccessForPaidOrder } from "@/lib/gate/access";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
 
-/**
- * Verify Razorpay webhook HMAC signature.
- */
-function verifySignature(
+function verifyWebhookSignature(
   rawBody: string,
   signature: string,
   secret: string
@@ -17,10 +16,12 @@ function verifySignature(
     .createHmac("sha256", secret)
     .update(rawBody)
     .digest("hex");
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expected)
-  );
+
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 export async function POST(req: NextRequest) {
@@ -34,114 +35,137 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature") ?? "";
 
-    // Verify HMAC signature
-    if (!signature || !verifySignature(rawBody, signature, webhookSecret)) {
+    if (!signature || !verifyWebhookSignature(rawBody, signature, webhookSecret)) {
       return Response.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     const event = JSON.parse(rawBody);
-    const eventId = event.id as string;
-    const eventType = event.event as string;
+    const eventId = (event.id as string) ?? null;
+    const eventType = (event.event as string) ?? null;
 
     if (!eventId || !eventType) {
       return Response.json({ error: "Missing event id or type" }, { status: 400 });
     }
 
-    // ========== IDEMPOTENCY: exactly-once processing ==========
-    const { data: existing } = await supabaseAdmin
-      .from("gate.payment_events" as any)
+    const existing = await supabaseAdmin
+      .schema("gate")
+      .from("payment_events")
       .select("id")
       .eq("provider_event_id", eventId)
       .maybeSingle();
 
-    if (existing) {
+    if (existing.data) {
       return Response.json({ ok: true, deduped: true });
     }
 
-    // Insert event record
-    const { error: insErr } = await supabaseAdmin
-      .from("gate.payment_events" as any)
+    const insertEvent = await supabaseAdmin
+      .schema("gate")
+      .from("payment_events")
       .insert({
+        provider: "razorpay",
         provider_event_id: eventId,
         event_type: eventType,
-        raw_json: event,
+        payload: event,
         status: "RECEIVED",
         received_at: new Date().toISOString(),
       });
 
-    if (insErr) {
-      // If unique constraint violation, another request beat us
-      if (insErr.code === "23505") {
+    if (insertEvent.error) {
+      if (insertEvent.error.code === "23505") {
         return Response.json({ ok: true, deduped: true });
       }
-      console.error("[razorpay webhook] insert error:", insErr);
+
+      console.error("[razorpay webhook] insert error", insertEvent.error);
       return Response.json({ error: "Failed to store event" }, { status: 500 });
     }
 
-    // ========== PROCESS EVENT ==========
-    const now = new Date().toISOString();
+    const processedAt = new Date().toISOString();
+    let finalStatus: "PROCESSED" | "IGNORED" | "FAILED" = "IGNORED";
+    let finalError: string | null = null;
 
-    switch (eventType) {
-      case "subscription.activated":
-      case "subscription.charged": {
-        const subscriptionId = event.payload?.subscription?.entity?.id;
-        const userId = event.payload?.subscription?.entity?.notes?.user_id;
-        const planId = event.payload?.subscription?.entity?.plan_id;
-        const currentEnd = event.payload?.subscription?.entity?.current_end;
+    try {
+      switch (eventType) {
+        case "payment.captured":
+        case "order.paid": {
+          const notes =
+            event.payload?.payment?.entity?.notes ??
+            event.payload?.order?.entity?.notes ??
+            {};
 
-        if (subscriptionId && userId) {
-          await supabaseAdmin
-            .from("gate.subscriptions" as any)
-            .upsert({
-              user_id: userId,
-              provider: "razorpay",
-              provider_subscription_id: subscriptionId,
-              status: "ACTIVE",
-              plan_id: planId ?? null,
-              current_period_end: currentEnd
-                ? new Date(currentEnd * 1000).toISOString()
-                : null,
-              updated_at: now,
-            }, { onConflict: "provider_subscription_id" });
+          const paymentOrderId = notes.payment_order_id as string | undefined;
+          const paymentId =
+            (event.payload?.payment?.entity?.id as string | undefined) ?? null;
+
+          if (paymentOrderId) {
+            await grantAccessForPaidOrder({
+              paymentOrderId,
+              paymentId,
+            });
+            finalStatus = "PROCESSED";
+          } else {
+            console.warn("[razorpay webhook] missing payment_order_id in notes", {
+              eventId,
+              eventType,
+            });
+            finalStatus = "IGNORED";
+          }
+          break;
         }
 
-        await supabaseAdmin
-          .from("gate.payment_events" as any)
-          .update({ status: "PROCESSED", processed_at: now })
-          .eq("provider_event_id", eventId);
+        case "payment.failed": {
+          const notes = event.payload?.payment?.entity?.notes ?? {};
+          const paymentOrderId = notes.payment_order_id as string | undefined;
 
-        break;
-      }
+          if (paymentOrderId) {
+            await supabaseAdmin
+              .schema("gate")
+              .from("payment_orders")
+              .update({
+                status: "FAILED",
+                updated_at: processedAt,
+              })
+              .eq("id", paymentOrderId);
 
-      case "payment.failed": {
-        const subscriptionId = event.payload?.payment?.entity?.subscription_id;
-        if (subscriptionId) {
-          await supabaseAdmin
-            .from("gate.subscriptions" as any)
-            .update({ status: "PAST_DUE", updated_at: now })
-            .eq("provider_subscription_id", subscriptionId);
+            finalStatus = "PROCESSED";
+          } else {
+            finalStatus = "IGNORED";
+          }
+          break;
         }
 
-        await supabaseAdmin
-          .from("gate.payment_events" as any)
-          .update({ status: "PROCESSED", processed_at: now })
-          .eq("provider_event_id", eventId);
-
-        break;
+        default: {
+          finalStatus = "IGNORED";
+          break;
+        }
       }
+    } catch (procErr: any) {
+      console.error("[razorpay webhook] processing failed", {
+        eventId,
+        eventType,
+        procErr,
+      });
 
-      default: {
-        await supabaseAdmin
-          .from("gate.payment_events" as any)
-          .update({ status: "IGNORED", processed_at: now })
-          .eq("provider_event_id", eventId);
-        break;
-      }
+      finalStatus = "FAILED";
+      finalError = String(procErr?.message ?? procErr);
     }
 
-    return Response.json({ ok: true });
-  } catch (err) {
-    console.error("[razorpay webhook] error:", err);
+    await supabaseAdmin
+      .schema("gate")
+      .from("payment_events")
+      .update({
+        status: finalStatus,
+        processed_at: processedAt,
+        error: finalError,
+      })
+      .eq("provider_event_id", eventId);
+
+    if (finalStatus === "FAILED") {
+      return Response.json({ error: "Processing failed" }, { status: 500 });
+    }
+
+    return Response.json({ ok: true, status: finalStatus });
+  } catch (err: any) {
+    console.error("[razorpay webhook] fatal error", err);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

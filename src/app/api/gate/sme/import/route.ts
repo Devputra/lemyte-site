@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   // Verify SME or ADMIN role
   const { data: membership } = await supabaseAdmin
-    .from("gate.memberships" as any)
+    .schema("gate").from("memberships")
     .select("role")
     .eq("user_id", user.id)
     .single();
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   // Create import batch
   const { data: batch, error: batchErr } = await supabaseAdmin
-    .from("gate.import_batches" as any)
+    .schema("gate").from("import_batches")
     .insert({
       uploaded_by: user.id,
       file_name: fileName,
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
 
     // Insert row record
     await supabaseAdmin
-      .from("gate.import_rows" as any)
+      .schema("gate").from("import_rows")
       .insert({
         batch_id: batchId,
         row_number: rowNum,
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
   // Atomic rule: any row fail → reject entire batch
   if (errors.length > 0) {
     await supabaseAdmin
-      .from("gate.import_batches" as any)
+      .schema("gate").from("import_batches")
       .update({
         status: "FAILED",
         valid_rows: rows.length - errors.length,
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
 
   // All rows valid → mark completed (actual DB inserts would happen here)
   await supabaseAdmin
-    .from("gate.import_batches" as any)
+    .schema("gate").from("import_batches")
     .update({
       status: "COMPLETED",
       valid_rows: rows.length,

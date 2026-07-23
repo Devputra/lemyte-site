@@ -2,11 +2,20 @@
 // GATE-correct scoring engine using decimal.js for fractional mark safety
 
 import Decimal from "decimal.js";
-import type { QuestionMeta, GradeResult, AttemptGradeResult, CommittedAnswer } from "./contracts";
+import type {
+  QuestionMeta,
+  GradeResult,
+  AttemptGradeResult,
+  CommittedAnswer,
+} from "./contracts";
 import { isNATCorrect } from "./nat";
 
 // Configure Decimal.js for high precision
 Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
 
 /**
  * Grade a single question according to GATE scoring rules.
@@ -37,10 +46,16 @@ export function gradeQuestion(
     return { earned: 0, maxMarks, correct: false };
   }
 
+  // Defensive: mismatched answer/question type should never score.
+  if (answer.type !== question.type) {
+    return { earned: 0, maxMarks, correct: false };
+  }
+
   switch (question.type) {
     case "MCQ": {
       const selectedIds = answer.selectedOptionIds ?? [];
-      // No selection or multiple selections treated as unanswered for MCQ
+
+      // No selection or multiple selections treated as unanswered/invalid
       if (selectedIds.length !== 1) {
         return { earned: 0, maxMarks, correct: false };
       }
@@ -59,6 +74,7 @@ export function gradeQuestion(
       // Wrong answer: apply negative marking
       // 1-mark: -1/3, 2-mark: -2/3
       const negativeDecimal = new Decimal(-maxMarks).div(3);
+
       return {
         earned: negativeDecimal.toNumber(),
         maxMarks,
@@ -109,6 +125,7 @@ export function gradeQuestion(
       }
 
       const isCorrect = isNATCorrect(normalizedValue, lower, upper);
+
       return {
         earned: isCorrect ? maxMarks : 0,
         maxMarks,
@@ -123,7 +140,7 @@ export function gradeQuestion(
 
 /**
  * Grade an entire attempt. Sums all per-question scores.
- * Score can be fractional (negative marking fractions).
+ * Score can be fractional because of MCQ negative marking.
  */
 export function gradeAttempt(
   questions: QuestionMeta[],
@@ -151,13 +168,14 @@ export function gradeAttempt(
 
   const score = total.toNumber();
   const maxScore = maxTotal.toNumber();
-  const percent = maxScore === 0 ? 0 : total.div(maxTotal).times(100).toNumber();
+  const percent =
+    maxScore === 0 ? 0 : total.div(maxTotal).times(100).toNumber();
   const passed = percent >= passPercent;
 
   return {
-    score,
-    maxScore,
-    percent: Math.round(percent * 100) / 100,
+    score: round2(score),
+    maxScore: round2(maxScore),
+    percent: round2(percent),
     passed,
     perQuestion,
   };

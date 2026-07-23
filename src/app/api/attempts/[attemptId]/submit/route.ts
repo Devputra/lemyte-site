@@ -13,7 +13,7 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
   const user = await requireUser();
   const { attemptId } = await ctx.params;
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: at, error: atErr } = await supabase
     .from("attempts")
     .select(`

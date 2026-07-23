@@ -1,5 +1,5 @@
 // src/lib/gate/contracts.ts
-// Shared types for the GATE Mock Test Platform
+// Shared types for the GATE Mock Test Platform (demo-first vertical slice)
 
 export enum PaletteState {
   Not_Visited = "Not_Visited",
@@ -11,11 +11,11 @@ export enum PaletteState {
 
 export type QuestionType = "MCQ" | "MSQ" | "NAT";
 export type AttemptMode = "RANKED" | "PRACTICE" | "DEMO";
-export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "INVALIDATED";
+export type AttemptStatus = "IN_PROGRESS" | "SUBMITTED" | "EXPIRED" | "ABANDONED";
 
 export interface DraftAnswer {
   type: QuestionType;
-  selectedOptionIds?: string[];
+  selectedOptionIds?: string[]; // logical option ids like ["a"], ["b","d"]
   natRaw?: string;
   natNormalized?: number | null;
   updatedAt: string; // ISO timestamp
@@ -23,7 +23,7 @@ export interface DraftAnswer {
 
 export interface CommittedAnswer {
   type: QuestionType;
-  selectedOptionIds?: string[];
+  selectedOptionIds?: string[]; // logical option ids like ["a"], ["b","d"]
   natRaw?: string;
   natNormalized?: number | null;
   savedAt: string; // ISO timestamp
@@ -40,15 +40,22 @@ export interface AttemptSession {
   endsAt: string;
   lastSeenAt: string;
   shuffleSeed: string;
-  questionOrder: string[]; // question_version_ids in display order
-  optionOrderByQuestion: Record<string, string[]>; // qvId -> option_ids in order (natural by default)
+
+  // question_version_ids in display order
+  questionOrder: string[];
+
+  // qvId -> logical option ids in display order, e.g. { "<qvId>": ["a","b","c","d"] }
+  optionOrderByQuestion: Record<string, string[]>;
+
   currentQuestionId: string;
   palette: Record<string, PaletteState>;
   drafts: Record<string, DraftAnswer>;
   committed: Record<string, CommittedAnswer>;
+
   calculator: {
     memory: number;
   };
+
   focusLostCount: number;
   focusLostSeconds: number;
   versionCounter: number;
@@ -58,24 +65,32 @@ export interface AttemptEvent {
   eventId: string;
   attemptId: string;
   userId: string | null;
-  type: "HEARTBEAT" | "ANSWER_COMMIT" | "PALETTE_UPDATE" | "SUBMIT" | "INVALIDATE";
+  type:
+    | "HEARTBEAT"
+    | "ANSWER_COMMIT"
+    | "PALETTE_UPDATE"
+    | "SUBMIT"
+    | "ABANDON";
   occurredAt: string;
   payload: unknown;
 }
 
 export interface QuestionMeta {
   questionVersionId: string;
-  questionId: string;
   type: QuestionType;
   marks: number;
+
+  // For MCQ/MSQ: logical correct option ids from options_array, e.g. ["a"] or ["b","d"]
   correctOptionIds?: string[];
+
+  // For NAT
   natLowerBound?: number;
   natUpperBound?: number;
   natPrecision?: number;
 }
 
 export interface GradeResult {
-  earned: number; // can be negative (fractional) for MCQ
+  earned: number; // may be negative if you later add negative marking for MCQ
   maxMarks: number;
   correct: boolean;
 }
@@ -93,10 +108,17 @@ export interface AttemptGradeResult {
   }>;
 }
 
+/**
+ * BlueprintProfile combines DB-sourced fields (id, durationSeconds, passPercent)
+ * with exam-structure fields supplied in code from blueprints.ts.
+ * Structure is fixed by the exam format, so it is NOT stored in the DB.
+ */
 export interface BlueprintProfile {
   id: string;
   name: string;
   paperCode: string;
+
+  // Structure — fixed by the exam format, supplied in code (see blueprints.ts).
   totalQuestions: number;
   totalMarks: number;
   gaQuestions: number;
@@ -116,6 +138,8 @@ export interface BlueprintProfile {
   difficultyEasyPct: number;
   difficultyMediumPct: number;
   difficultyHardPct: number;
+
+  // Sourced from the DB row.
   durationSeconds: number;
   passPercent: number;
 }

@@ -1,5 +1,5 @@
 // src/lib/certificateStorage.ts
-import { supabaseAdmin } from "./supabaseAdmin";
+import { supabaseAdmin } from "./supabase/admin";
 
 const CERT_BUCKET = "certificates";
 

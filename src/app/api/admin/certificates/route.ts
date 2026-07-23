@@ -1,6 +1,6 @@
 // src/app/api/admin/certificates/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import {
   generateCertificateId,
   generateVerificationToken,

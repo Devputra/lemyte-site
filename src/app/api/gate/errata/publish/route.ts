@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
   // Verify ADMIN or SME role
   const { data: membership } = await supabaseAdmin
-    .from("gate.memberships" as any)
+    .schema("gate").from("memberships")
     .select("role")
     .eq("user_id", user.id)
     .single();
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
   // Load errata report
   const { data: report, error: reportErr } = await supabaseAdmin
-    .from("gate.errata_reports" as any)
+    .schema("gate").from("errata_reports")
     .select("id, question_id, question_version_id, reported_by")
     .eq("id", input.errataReportId)
     .single();
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
   // Verify new version exists and is PENDING_REVIEW
   const { data: newVersion } = await supabaseAdmin
-    .from("gate.question_versions" as any)
+    .schema("gate").from("question_versions")
     .select("id, question_id, status, creator_id")
     .eq("id", input.newVersionId)
     .single();
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   const now = new Date().toISOString();
 
   await supabaseAdmin
-    .from("gate.question_versions" as any)
+    .schema("gate").from("question_versions")
     .update({
       status: "PUBLISHED",
       approver_id: user.id,
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
 
   // Create errata event
   await supabaseAdmin
-    .from("gate.errata_events" as any)
+    .schema("gate").from("errata_events")
     .insert({
       errata_report_id: input.errataReportId,
       question_id: report.question_id,
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
 
   // Update errata report status
   await supabaseAdmin
-    .from("gate.errata_reports" as any)
+    .schema("gate").from("errata_reports")
     .update({ status: "PUBLISHED" })
     .eq("id", input.errataReportId);
 

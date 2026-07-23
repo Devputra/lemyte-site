@@ -1,6 +1,6 @@
 // src/lib/certificates.ts
 import crypto from "crypto";
-import { supabaseAdmin } from "./supabaseAdmin";
+import { supabaseAdmin } from "./supabase/admin";
 
 export type CertificateStatus = "valid" | "revoked" | "expired" | "pending";
 
