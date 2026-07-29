@@ -39,7 +39,7 @@ export default function ComingSoon() {
         {/* Logo */}
         <div className="flex justify-center items-center gap-2 mb-6">
           <Sparkles className="h-6 w-6 text-purple-600" />
-          <span className="font-bold text-xl">Learnamyte</span>
+          <span className="font-bold text-xl">Lemyte</span>
         </div>
 
         {/* Headline */}
@@ -47,7 +47,7 @@ export default function ComingSoon() {
           🚧 We’re Building Something Awesome
         </h1>
         <p className="text-lg text-muted-foreground mb-6">
-          Learnamyte is almost ready!  
+          Lemyte is almost ready!  
           We’re crafting expert-led workshops and hands-on learning experiences.  
           Be the first to know when we launch.
         </p>
@@ -75,7 +75,7 @@ export default function ComingSoon() {
 
         {/* Footer */}
         <p className="mt-8 text-xs text-gray-500">
-          © {new Date().getFullYear()} Learnamyte. All rights reserved.
+          © {new Date().getFullYear()} Lemyte. All rights reserved.
         </p>
       </div>
     </main>

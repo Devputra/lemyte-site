@@ -2,7 +2,7 @@
 
 import type { CertificateRecord } from "./certificates";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.learnamyte.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.lemyte.com";
 
 export async function sendCertificateEmail(
   cert: CertificateRecord,

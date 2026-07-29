@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 
 export default function PosterRotator() {
   const posters = [
-    { src: "/images/certificate_WM.png", alt: "Learnamyte Certificate Sample" },
+    { src: "/images/certificate_WM.png", alt: "Lemyte Certificate Sample" },
     { src: "/images/FOQIC_poster.png", alt: "FOQIC Workshop Poster" },
     { src: "/images/DOP_poster.png", alt: "Data Optimization with Python Poster" },
     { src: "/images/DASQL_poster.png", alt: "Data Analysis with SQL Poster" },

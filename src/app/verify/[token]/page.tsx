@@ -45,8 +45,8 @@ export async function generateMetadata(
   const { token } = await props.params;
 
   return {
-    title: "Certificate Verification • Learnamyte",
-    description: `Verify a Learnamyte certificate using token ${token}`,
+    title: "Certificate Verification • Lemyte",
+    description: `Verify a Lemyte certificate using token ${token}`,
   };
 }
 
@@ -73,7 +73,7 @@ export default async function VerifyPage(props: VerifyPageProps) {
             </p>
             <Button variant="outline" size="sm" asChild>
               <Link href="/" className="inline-flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" /> Back to Learnamyte
+                <ArrowLeft className="h-4 w-4" /> Back to Lemyte
               </Link>
             </Button>
           </CardContent>
@@ -88,7 +88,7 @@ export default async function VerifyPage(props: VerifyPageProps) {
   const badgeSrc = `/badges/${cert.courseCode}.png`;
   const downloadHref = `/api/certificate/${cert.token}`;
   const verifyBase =
-    process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.learnamyte.com";
+    process.env.NEXT_PUBLIC_BASE_URL ?? "https://lemyte.com";
 
   /* --------- Valid Certificate UI --------- */
 
@@ -103,10 +103,10 @@ export default async function VerifyPage(props: VerifyPageProps) {
           >
             <img
               src="/Official_Logo.png"
-              alt="Learnamyte Logo"
+              alt="Lemyte Logo"
               className="h-8 w-8 object-contain"
             />
-            <span className="text-[#193bc8]">Learnamyte</span>
+            <span className="text-[#193bc8]">Lemyte</span>
           </Link>
 
           <Button variant="outline" size="sm" asChild>
@@ -124,7 +124,7 @@ export default async function VerifyPage(props: VerifyPageProps) {
               {isActive ? (
                 <>
                   <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                  <CardTitle>Valid Learnamyte certificate</CardTitle>
+                  <CardTitle>Valid certificate</CardTitle>
                 </>
               ) : (
                 <>
@@ -235,10 +235,10 @@ export default async function VerifyPage(props: VerifyPageProps) {
                 <p>
                   If you suspect tampering, please contact{" "}
                   <a
-                    href="mailto:team@learnamyte.com"
+                    href="mailto:team@lemyte.com"
                     className="underline hover:text-[#193BC8]"
                   >
-                    team@learnamyte.com
+                    team@lemyte.com
                   </a>
                   .
                 </p>

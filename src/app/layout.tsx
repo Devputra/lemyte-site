@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LEARNAMYTE",
-  description: "Product of Appobang",
+  title: "Lemyte - Knowledge is supreme",
+  description:
+    "Lemyte is a STEM assessment platform. Calibrated GATE mock tests, PYQ practice, exam-like attempts, and report-first analytics for serious aspirants.",
 };
 
 export default function RootLayout({

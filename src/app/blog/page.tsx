@@ -23,16 +23,16 @@ import {
 const gateBlogPageContent = {
   seo: {
     title:
-      "Learnamyte GATE CS Blog | Mock Test Strategy, PYQ Analysis & Score Improvement",
+      "Lemyte GATE CS Blog | Mock Test Strategy, PYQ Analysis & Score Improvement",
     description:
-      "Explore premium GATE CS preparation content from Learnamyte — mock test strategy, PYQ breakdowns, exam pattern guidance, score improvement frameworks, and practical preparation insights.",
+      "Explore premium GATE CS preparation content from Lemyte — mock test strategy, PYQ breakdowns, exam pattern guidance, score improvement frameworks, and practical preparation insights.",
   },
 
   hero: {
-    eyebrow: "LEARNAMYTE INSIGHTS",
+    eyebrow: "LEMYTE INSIGHTS",
     title: "Where Serious GATE Preparation Becomes Structured Progress.",
     subtitle:
-      "Not recycled exam fluff. Not generic motivation. Learnamyte brings together mock test strategy, PYQ intelligence, subject-wise improvement frameworks, and practical exam guidance built for aspirants who want measurable growth.",
+      "Not recycled exam fluff. Not generic motivation. Lemyte brings together mock test strategy, PYQ intelligence, subject-wise improvement frameworks, and practical exam guidance built for aspirants who want measurable growth.",
     primaryCta: {
       label: "Start Free Mock",
       href: "/gate/demo",
@@ -138,8 +138,8 @@ const gateBlogPageContent = {
     ],
   },
 
-  whyLearnamyteSection: {
-    title: "Why Read Learnamyte?",
+  whyLemyteSection: {
+    title: "Why Read Lemyte?",
     points: [
       {
         title: "Built Around Real Performance",
@@ -154,7 +154,7 @@ const gateBlogPageContent = {
       {
         title: "Connected to a Real Product",
         description:
-          "This content hub works hand in hand with the Learnamyte GATE Mock Test Series, so the advice is practical, product-aware, and implementation-ready.",
+          "This content hub works hand in hand with the Lemyte GATE Mock Test Series, so the advice is practical, product-aware, and implementation-ready.",
       },
     ],
   },
@@ -163,7 +163,7 @@ const gateBlogPageContent = {
     label: "SMART PRACTICE STARTS HERE",
     title: "Practice Like the Real Exam. Review Like a Top Performer.",
     description:
-      "Experience exam-style mocks, cleaner reporting, structured performance review, and subject-focused progress tracking with Learnamyte GATE Mock Test Series.",
+      "Experience exam-style mocks, cleaner reporting, structured performance review, and subject-focused progress tracking with Lemyte GATE Mock Test Series.",
     primaryCta: {
       label: "Try Free Demo",
       href: "/gate/demo",
@@ -199,7 +199,7 @@ const gateBlogPageContent = {
   closingSection: {
     title: "Preparation Gets Better When It Becomes Measurable.",
     description:
-      "The difference between average preparation and serious preparation is not effort alone. It is structure, feedback, and the discipline to improve from evidence. Learnamyte exists to make that process sharper.",
+      "The difference between average preparation and serious preparation is not effort alone. It is structure, feedback, and the discipline to improve from evidence. Lemyte exists to make that process sharper.",
     cta: {
       label: "Begin Your First Mock",
       href: "/gate/demo",
@@ -306,7 +306,7 @@ export default function BlogPage() {
                 L
               </div>
               <div>
-                <div className="text-sm font-black leading-none text-black">Learnamyte</div>
+                <div className="text-sm font-black leading-none text-black">Lemyte</div>
                 <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-black/45">
                   GATE Insights
                 </div>
@@ -506,14 +506,14 @@ export default function BlogPage() {
         </Container>
       </section>
 
-      {/* Why Learnamyte */}
+      {/* Why Lemyte */}
       <section className="border-y border-black/5 bg-black/[0.015] py-16 sm:py-20">
         <Container>
           <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
             <div>
               <SectionEyebrow>Why It Matters</SectionEyebrow>
               <h2 className="text-3xl font-black tracking-[-0.04em] text-black sm:text-5xl">
-                {gateBlogPageContent.whyLearnamyteSection.title}
+                {gateBlogPageContent.whyLemyteSection.title}
               </h2>
               <p className="mt-5 text-base font-medium leading-8 text-black/60">
                 The blog should not be a dumping ground. It should push students toward sharper decisions, cleaner practice, and measurable improvement.
@@ -521,7 +521,7 @@ export default function BlogPage() {
             </div>
 
             <div className="space-y-4">
-              {gateBlogPageContent.whyLearnamyteSection.points.map((point) => (
+              {gateBlogPageContent.whyLemyteSection.points.map((point) => (
                 <div
                   key={point.title}
                   className="rounded-[1.75rem] border border-black/10 bg-white p-6 shadow-[0_16px_45px_rgba(0,0,0,0.04)]"

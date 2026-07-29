@@ -28,7 +28,7 @@ Copy `.env.example` to `.env.local` and fill in values.
 | `RAZORPAY_KEY_ID` | Razorpay API key | `rzp_live_xxx` |
 | `RAZORPAY_KEY_SECRET` | Razorpay secret | `xxx` |
 | `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook signing secret | `xxx` |
-| `GATE_S3_BUCKET` | S3 bucket for media | `learnamyte-gate-media` |
+| `GATE_S3_BUCKET` | S3 bucket for media | `lemyte-gate-media` |
 | `GATE_S3_REGION` | S3 region | `ap-south-1` |
 | `AWS_ACCESS_KEY_ID` | AWS credentials | `AKIA...` |
 | `AWS_SECRET_ACCESS_KEY` | AWS credentials | `xxx` |
@@ -142,7 +142,7 @@ npx vitest run src/lib/gate/__tests__/palette.test.ts
 
 ## 7. Applying Homepage Changes
 
-The file `src/components/LearnamyteLanding.tsx.patch` contains a human-readable diff with 5 changes:
+The file `src/components/LemyteLanding.tsx.patch` contains a human-readable diff with 5 changes:
 
 1. **Desktop nav**: Add "GATE Mocks" link before "Courses"
 2. **Mobile nav**: Add "GATE Mocks" link at top

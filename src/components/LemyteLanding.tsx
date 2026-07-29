@@ -49,7 +49,7 @@ const Metric = ({ value, label }: { value: string; label: string }) => (
 /* ------------------------------------------------------------------ */
 /*  Main Component                                                     */
 /* ------------------------------------------------------------------ */
-export default function LearnamyteLanding() {
+export default function LemyteLanding() {
   /* ---- form / modal states (preserved exactly) ---- */
   const [email, setEmail]         = useState("");
   const [loading, setLoading]     = useState(false);
@@ -157,9 +157,9 @@ export default function LearnamyteLanding() {
       <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-lg" role="banner">
         <Container>
           <div className="flex h-16 items-center justify-between">
-            <Anchor href="/" className="flex items-center gap-2.5 font-bold tracking-tight" aria-label="Learnamyte home">
-              <img src="/Official_Logo.png" alt="Learnamyte" className="h-8 w-8 object-contain" />
-              <span className="text-lg text-gray-900">Learnamyte</span>
+            <Anchor href="/" className="flex items-center gap-2.5 font-bold tracking-tight" aria-label="Lemyte home">
+              <img src="/Official_Logo.png" alt="Lemyte" className="h-8 w-8 object-contain" />
+              <span className="text-lg text-gray-900">Lemyte</span>
             </Anchor>
 
             <nav className="hidden items-center gap-6 text-sm font-medium lg:flex" aria-label="Primary">
@@ -362,7 +362,7 @@ export default function LearnamyteLanding() {
         {/* ========== FEATURES ========== */}
         <section id="features" className="py-20 sm:py-24">
           <Container>
-            <SectionLabel>Why Learnamyte</SectionLabel>
+            <SectionLabel>Why Lemyte</SectionLabel>
             <SectionHeading sub="Everything we build reinforces credibility, quality, and measurable outcomes.">
               Designed for results, not vanity metrics
             </SectionHeading>
@@ -391,7 +391,7 @@ export default function LearnamyteLanding() {
           <Container>
             <div className="mx-auto max-w-lg text-center">
               <SectionLabel>Certificates</SectionLabel>
-              <h2 className="mt-3 text-2xl font-extrabold text-gray-900 sm:text-3xl">Verify any Learnamyte certificate</h2>
+              <h2 className="mt-3 text-2xl font-extrabold text-gray-900 sm:text-3xl">Verify any Lemyte certificate</h2>
               <p className="mt-3 text-sm text-gray-500">Enter the certificate token to check authenticity and view details.</p>
 
               <div className="mt-6 flex gap-2">
@@ -597,7 +597,7 @@ export default function LearnamyteLanding() {
                     Start Free Demo <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Anchor>
-                <Anchor href="mailto:team@learnamyte.com?subject=Learnamyte%20Inquiry">
+                <Anchor href="mailto:team@lemyte.com?subject=Lemyte%20Inquiry">
                   <Button size="lg" variant="outline" className="bg-white text-[#193BC8] hover:bg-white/10 gap-2 rounded-lg">
                     <Mail className="h-4 w-4" /> Mail us
                   </Button>
@@ -619,7 +619,7 @@ export default function LearnamyteLanding() {
           <div className="grid grid-cols-1 gap-10 md:grid-cols-5">
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 font-bold text-gray-900">
-                <img src="/Official_Logo.png" alt="" className="h-6 w-6 object-contain" /> Learnamyte
+                <img src="/Official_Logo.png" alt="" className="h-6 w-6 object-contain" /> Lemyte
               </div>
               <p className="mt-3 max-w-xs text-sm leading-relaxed text-gray-400">
                 Expert-led learning that turns knowledge into measurable outcomes.
@@ -641,7 +641,7 @@ export default function LearnamyteLanding() {
             ))}
           </div>
           <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-gray-100 pt-6 sm:flex-row sm:items-center">
-            <p className="text-gray-400">© {new Date().getFullYear()} Learnamyte (Dxoctagon Pvt Ltd). All rights reserved.</p>
+            <p className="text-gray-400">© {new Date().getFullYear()} Lemyte - DXOCTAGON (OPC) Private Limited. All rights reserved.</p>
             <p className="text-gray-300">Made with care for curious minds.</p>
           </div>
         </Container>

@@ -72,7 +72,7 @@ export async function issueCertificate(input: {
       course_name: input.courseName,
       course_code: input.courseCode,
       completed_on: input.completedOn,
-      issued_by: "Learnamyte",
+      issued_by: "Lemyte",
       status: "valid",
     })
     .select()
