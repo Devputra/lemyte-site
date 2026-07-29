@@ -29,8 +29,8 @@ export default function Page() {
           <Image
             src="/white_lemyte_logo.png"
             alt="Lemyte"
-            width={2200}
-            height={800}
+            width={6000}
+            height={3375}
             priority
             className="h-auto w-[92vw] max-w-none object-contain"
           />
