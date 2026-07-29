@@ -2,6 +2,7 @@
 import "katex/dist/katex.min.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -25,7 +26,13 @@ export default function GateLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4">
           <Link href="/" className="shrink-0 text-lg font-black tracking-tight">
-            lemyte<span className="text-[#193bc8]">/&gt;</span>
+            <Image
+              src="/white_lemyte_logo.png"
+              alt="Lemyte"
+              width={6000}
+              height={3375}
+              className="h-10 w-auto object-contain"
+            />
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
@@ -81,7 +88,13 @@ export default function GateLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm text-zinc-500 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="font-black tracking-tight text-zinc-950">
-              lemyte<span className="text-[#193bc8]">/&gt;</span>
+              <Image
+              src="/white_lemyte_logo.png"
+              alt="Lemyte"
+              width={6000}
+              height={3375}
+              className="h-10 w-auto object-contain"
+            />
             </div>
             <p className="mt-1 text-xs">
               © {new Date().getFullYear()} DXOCTAGON (OPC) Pvt Ltd. Built for measurable preparation.

@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { atomicUpdateSession, emitAttemptEvent } from "@/lib/gate/redis";
-import { gradeQuestion } from "@/lib/gate/scoring";
+import { gradeAttempt } from "@/lib/gate/scoring";
 import type { CommittedAnswer, QuestionMeta, QuestionType } from "@/lib/gate/contracts";
 import crypto from "crypto";
 
@@ -29,10 +29,6 @@ function isAuthorizedActor(params: {
   }
 
   return false;
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
 }
 
 function extractCorrectOptionIds(optionsArray: unknown): string[] {
@@ -228,18 +224,6 @@ export async function POST(
       saved_at: string;
     }> = [];
 
-    const questionScoreRows: Array<{
-      attempt_id: string;
-      question_version_id: string;
-      earned_marks: number;
-      max_marks: number;
-      correct: boolean;
-      created_at: string;
-    }> = [];
-
-    let score = 0;
-    let maxScore = 0;
-
     for (const questionVersionId of questionOrder) {
       const meta = questionMetaMap.get(questionVersionId);
 
@@ -258,22 +242,6 @@ export async function POST(
       }
 
       const answer = (committed[questionVersionId] ?? null) as CommittedAnswer | null;
-      const result = gradeQuestion(meta, answer);
-
-      const earned = round2(Number(result.earned));
-      const maxMarks = round2(Number(result.maxMarks));
-
-      score += earned;
-      maxScore += maxMarks;
-
-      questionScoreRows.push({
-        attempt_id: attemptId,
-        question_version_id: questionVersionId,
-        earned_marks: earned,
-        max_marks: maxMarks,
-        correct: Boolean(result.correct),
-        created_at: now.toISOString(),
-      });
 
       if (answer) {
         answerRows.push({
@@ -296,11 +264,23 @@ export async function POST(
       }
     }
 
-    score = round2(score);
-    maxScore = round2(maxScore);
+    const questions = questionOrder.map((id) => questionMetaMap.get(id)!);
+    const committedAnswers: Record<string, CommittedAnswer | null> = {};
+    for (const questionVersionId of questionOrder) {
+      committedAnswers[questionVersionId] = (committed[questionVersionId] ?? null) as CommittedAnswer | null;
+    }
 
-    const percent = maxScore <= 0 ? 0 : round2((score / maxScore) * 100);
-    const passed = percent >= passPercent;
+    const graded = gradeAttempt(questions, committedAnswers, passPercent);
+    const { score, maxScore, percent, passed } = graded;
+
+    const questionScoreRows = graded.perQuestion.map((pq) => ({
+      attempt_id: attemptId,
+      question_version_id: pq.questionVersionId,
+      earned_marks: pq.earned,
+      max_marks: pq.maxMarks,
+      correct: pq.correct,
+      created_at: now.toISOString(),
+    }));
 
     // -----------------------------------------------------------------------
     // Persist durable report tables

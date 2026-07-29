@@ -121,6 +121,24 @@ describe("generateBlueprint", () => {
     }
   });
 
+  it("should produce a paper of exactly 65 questions totalling 100 marks", () => {
+    const inventory = buildSufficientInventory();
+    const result = generateBlueprint(CS_IT_PROFILE, inventory);
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    const { gaQuestions, coreQuestions } = result.result;
+    expect(gaQuestions).toHaveLength(10);
+    expect(coreQuestions).toHaveLength(55);
+
+    const total = [...gaQuestions, ...coreQuestions].reduce((s, q) => s + q.marks, 0);
+    expect(total).toBe(100);
+
+    expect(coreQuestions.filter((q) => q.marks === 1)).toHaveLength(25);
+    expect(coreQuestions.filter((q) => q.marks === 2)).toHaveLength(30);
+  });
+
   it("should exclude questions with activeUsageCount >= 2", () => {
     const inventory = buildSufficientInventory().map((q) => ({
       ...q,

@@ -194,9 +194,13 @@ export default function Page() {
       {/* Full-width footer */}
       <footer className="w-full border-t border-neutral-100 px-[5vw] py-8">
         <div className="flex flex-col gap-6 text-sm text-neutral-500 lg:flex-row lg:items-center lg:justify-between">
-          <div className="text-lg font-black tracking-[-0.04em] text-black">
-            lemyte<span className="text-[#193bc8]">/&gt;</span>
-          </div>
+          <Image
+            src="/white_lemyte_logo.png"
+            alt="lemyte"
+            width={6000}
+            height={3375}
+            className="h-10 w-auto object-contain"
+          />
 
           <div>© 2026 DXOCTAGON (OPC) Pvt Ltd.</div>
         </div>

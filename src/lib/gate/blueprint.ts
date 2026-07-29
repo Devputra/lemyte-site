@@ -42,11 +42,108 @@ function eligible(questions: InventoryQuestion[]): InventoryQuestion[] {
 }
 
 /**
- * Deterministically choose a target within a range.
- * Strategy: prefer the midpoint, biased towards the lower end.
+ * Allocate targets across ranges so they sum exactly to `total`.
+ * Starts at each minimum, then distributes the remainder proportionally
+ * to available headroom. Returns null if `total` is unreachable.
  */
-function chooseTarget(min: number, max: number): number {
-  return Math.floor((min + max) / 2);
+function allocateTargets(
+  total: number,
+  ranges: { min: number; max: number }[]
+): number[] | null {
+  const minSum = ranges.reduce((s, r) => s + r.min, 0);
+  const maxSum = ranges.reduce((s, r) => s + r.max, 0);
+  if (total < minSum || total > maxSum) return null;
+
+  const targets = ranges.map((r) => r.min);
+  const headroom = ranges.map((r) => r.max - r.min);
+  const totalHeadroom = headroom.reduce((a, b) => a + b, 0);
+
+  let remaining = total - minSum;
+  const initial = remaining;
+
+  if (totalHeadroom > 0) {
+    for (let i = 0; i < targets.length; i++) {
+      const share = Math.min(
+        headroom[i],
+        Math.floor((initial * headroom[i]) / totalHeadroom)
+      );
+      targets[i] += share;
+      remaining -= share;
+    }
+  }
+  for (let i = 0; i < targets.length && remaining > 0; i++) {
+    const capacity = ranges[i].max - targets[i];
+    const add = Math.min(capacity, remaining);
+    targets[i] += add;
+    remaining -= add;
+  }
+  return targets;
+}
+
+/**
+ * Split each type's target into 1-mark and 2-mark counts so that totals
+ * across all types hit exactly need1 and need2, and no cell exceeds what
+ * the pool actually holds. Returns an error string if no valid split exists.
+ */
+function allocateMarksSplit(
+  typeTargets: number[],
+  pools: InventoryQuestion[][],
+  need1: number,
+  need2: number
+): { ones: number[]; twos: number[] } | { error: string } {
+  const n = typeTargets.length;
+  const labels = ["MCQ", "MSQ", "NAT"];
+
+  if (typeTargets.reduce((a, b) => a + b, 0) !== need1 + need2) {
+    return {
+      error: `Core targets sum to ${typeTargets.reduce((a, b) => a + b, 0)} but marks split needs ${need1 + need2}`,
+    };
+  }
+
+  const avail1 = pools.map((p) => p.filter((q) => q.marks === 1).length);
+  const avail2 = pools.map((p) => p.filter((q) => q.marks === 2).length);
+
+  const ranges: { min: number; max: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const min = Math.max(0, typeTargets[i] - avail2[i]);
+    const max = Math.min(typeTargets[i], avail1[i]);
+    if (min > max) {
+      return {
+        error:
+          `Core ${labels[i]} (target ${typeTargets[i]}): needs at least ${min} 1-mark ` +
+          `but only ${avail1[i]} available (2-mark pool: ${avail2[i]})`,
+      };
+    }
+    ranges.push({ min, max });
+  }
+
+  const ones = allocateTargets(need1, ranges);
+  if (!ones) {
+    return {
+      error: `Cannot allocate ${need1} 1-mark questions across core types within available inventory`,
+    };
+  }
+
+  const twos = typeTargets.map((t, i) => t - ones[i]);
+  for (let i = 0; i < n; i++) {
+    if (twos[i] < 0 || twos[i] > avail2[i]) {
+      return {
+        error: `Core ${labels[i]}: needs ${twos[i]} 2-mark but only ${avail2[i]} available`,
+      };
+    }
+  }
+  return { ones, twos };
+}
+
+function selectByMarks(
+  pool: InventoryQuestion[],
+  count1: number,
+  count2: number
+): InventoryQuestion[] {
+  return [
+    ...pool.filter((q) => q.marks === 1).slice(0, count1),
+    ...pool.filter((q) => q.marks === 2).slice(0, count2),
+  ];
 }
 
 /**
@@ -81,23 +178,29 @@ export function generateBlueprint(
   }
 
   // ========== CORE SECTION ==========
-  // Choose type split targets within ranges
-  const coreMcqTarget = chooseTarget(profile.coreMcqMin, profile.coreMcqMax);
-  const coreMsqTarget = chooseTarget(profile.coreMsqMin, profile.coreMsqMax);
-  const coreNatTarget = profile.coreQuestions - coreMcqTarget - coreMsqTarget;
-
-  // Validate NAT target is in range
-  if (coreNatTarget < profile.coreNatMin || coreNatTarget > profile.coreNatMax) {
-    failures.push(
-      `Core NAT target ${coreNatTarget} not in range [${profile.coreNatMin}, ${profile.coreNatMax}]`
-    );
-  }
-
-  // Core 1-mark and 2-mark breakdown per type
-  // We need: 25×1-mark + 30×2-mark across MCQ/MSQ/NAT
+  // Core pools by type
   const coreMcq = corePool.filter((q) => q.type === "MCQ");
   const coreMsq = corePool.filter((q) => q.type === "MSQ");
   const coreNat = corePool.filter((q) => q.type === "NAT");
+
+  // Choose type split targets within ranges, summing exactly to coreQuestions
+  const typeTargets = allocateTargets(profile.coreQuestions, [
+    { min: profile.coreMcqMin, max: profile.coreMcqMax },
+    { min: profile.coreMsqMin, max: profile.coreMsqMax },
+    { min: profile.coreNatMin, max: profile.coreNatMax },
+  ]);
+
+  if (!typeTargets) {
+    failures.push(
+      `Core type ranges cannot sum to ${profile.coreQuestions} ` +
+        `(MCQ ${profile.coreMcqMin}-${profile.coreMcqMax}, ` +
+        `MSQ ${profile.coreMsqMin}-${profile.coreMsqMax}, ` +
+        `NAT ${profile.coreNatMin}-${profile.coreNatMax})`
+    );
+    return { success: false, failingConstraints: failures };
+  }
+
+  const [coreMcqTarget, coreMsqTarget, coreNatTarget] = typeTargets;
 
   if (coreMcq.length < coreMcqTarget) {
     failures.push(`Core MCQ: need ${coreMcqTarget}, have ${coreMcq.length}`);
@@ -107,21 +210,6 @@ export function generateBlueprint(
   }
   if (coreNat.length < coreNatTarget) {
     failures.push(`Core NAT: need ${coreNatTarget}, have ${coreNat.length}`);
-  }
-
-  // Check 1-mark and 2-mark availability
-  const core1Mark = corePool.filter((q) => q.marks === 1);
-  const core2Mark = corePool.filter((q) => q.marks === 2);
-
-  if (core1Mark.length < profile.core1MarkCount) {
-    failures.push(
-      `Core 1-mark: need ${profile.core1MarkCount}, have ${core1Mark.length}`
-    );
-  }
-  if (core2Mark.length < profile.core2MarkCount) {
-    failures.push(
-      `Core 2-mark: need ${profile.core2MarkCount}, have ${core2Mark.length}`
-    );
   }
 
   // Difficulty ratio check
@@ -155,10 +243,21 @@ export function generateBlueprint(
   const selectedGa2 = gaMcq2.slice(0, profile.ga2MarkCount);
   const gaQuestions = [...selectedGa1, ...selectedGa2];
 
-  // Core selection by type
-  const selectedCoreMcq = selectByTypeAndMarks(coreMcq, coreMcqTarget, profile.core1MarkCount, profile.core2MarkCount, coreMcqTarget);
-  const selectedCoreMsq = selectByTypeAndMarks(coreMsq, coreMsqTarget, profile.core1MarkCount, profile.core2MarkCount, coreMsqTarget);
-  const selectedCoreNat = selectByTypeAndMarks(coreNat, coreNatTarget, profile.core1MarkCount, profile.core2MarkCount, coreNatTarget);
+  // Core selection: split each type's target across 1-mark/2-mark to hit exact totals
+  const marksSplit = allocateMarksSplit(
+    [coreMcqTarget, coreMsqTarget, coreNatTarget],
+    [coreMcq, coreMsq, coreNat],
+    profile.core1MarkCount,
+    profile.core2MarkCount
+  );
+
+  if ("error" in marksSplit) {
+    return { success: false, failingConstraints: [marksSplit.error] };
+  }
+
+  const selectedCoreMcq = selectByMarks(coreMcq, marksSplit.ones[0], marksSplit.twos[0]);
+  const selectedCoreMsq = selectByMarks(coreMsq, marksSplit.ones[1], marksSplit.twos[1]);
+  const selectedCoreNat = selectByMarks(coreNat, marksSplit.ones[2], marksSplit.twos[2]);
 
   const coreQuestions = [...selectedCoreMcq, ...selectedCoreMsq, ...selectedCoreNat];
 
@@ -175,19 +274,4 @@ export function generateBlueprint(
       difficultyHardCount: hardTarget,
     },
   };
-}
-
-/**
- * Select questions from a pool balancing marks distribution.
- */
-function selectByTypeAndMarks(
-  pool: InventoryQuestion[],
-  count: number,
-  _total1Mark: number,
-  _total2Mark: number,
-  _typeTarget: number
-): InventoryQuestion[] {
-  // Simple selection: take first `count` from pool
-  // In production, this should optimize for marks and difficulty distribution
-  return pool.slice(0, count);
 }

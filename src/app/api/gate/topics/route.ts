@@ -39,24 +39,25 @@ export async function GET() {
     return Response.json({ error: "Failed to load topics" }, { status: 500 });
   }
 
-  // Compute PYQ counts per topic. We do one query and bucket in app code.
-  const { data: qvRows, error: qvErr } = await supabaseAdmin
+  // Compute PYQ counts per topic using Postgres aggregate view.
+  // This avoids Supabase/PostgREST's 1000-row response limit.
+  const { data: topicCountRows, error: qvErr } = await supabaseAdmin
     .schema("gate")
-    .from("question_versions")
-    .select("topic_id")
-    .eq("source_kind", "PYQ")
-    .eq("status", "PUBLISHED")
-    .not("topic_id", "is", null);
+    .from("topic_pyq_counts")
+    .select("topic_id, pyq_count");
 
   if (qvErr) {
-    console.error("[gate/topics] question count query failed", qvErr);
-    return Response.json({ error: "Failed to count questions" }, { status: 500 });
+    console.error("[gate/topics] topic count query failed", qvErr);
+    return Response.json(
+      { error: "Failed to count questions" },
+      { status: 500 }
+    );
   }
 
   const counts = new Map<string, number>();
-  for (const row of qvRows ?? []) {
-    const tid = row.topic_id as string;
-    counts.set(tid, (counts.get(tid) ?? 0) + 1);
+
+  for (const row of topicCountRows ?? []) {
+    counts.set(String(row.topic_id), Number(row.pyq_count ?? 0));
   }
 
   const topicCounts: TopicCount[] = Array.from(counts.entries()).map(
@@ -69,6 +70,7 @@ export async function GET() {
       code: s.code as string,
       name: s.name as string,
     })),
+
     topics: (topics ?? []).map((t) => ({
       id: t.id as string,
       subjectId: (t.subject_id as string | null) ?? null,
@@ -77,6 +79,7 @@ export async function GET() {
       sectionKind: t.section_kind as string,
       pyqCount: counts.get(t.id as string) ?? 0,
     })),
+
     pyqCounts: topicCounts,
   });
 }

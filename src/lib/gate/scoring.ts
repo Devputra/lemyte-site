@@ -13,10 +13,6 @@ import { isNATCorrect } from "./nat";
 // Configure Decimal.js for high precision
 Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
-
 /**
  * Grade a single question according to GATE scoring rules.
  *
@@ -173,9 +169,9 @@ export function gradeAttempt(
   const passed = percent >= passPercent;
 
   return {
-    score: round2(score),
-    maxScore: round2(maxScore),
-    percent: round2(percent),
+    score,
+    maxScore,
+    percent,
     passed,
     perQuestion,
   };
