@@ -46,6 +46,8 @@ export async function GET() {
     .from("topic_pyq_counts")
     .select("topic_id, pyq_count");
 
+  console.log("[DIAGNOSTIC] topic_pyq_counts rows:", topicCountRows?.length, JSON.stringify(topicCountRows));
+
   if (qvErr) {
     console.error("[gate/topics] topic count query failed", qvErr);
     return Response.json(
