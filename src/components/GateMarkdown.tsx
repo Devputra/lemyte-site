@@ -1,7 +1,8 @@
 "use client";
 
 import type React from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Options } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 
@@ -106,8 +107,31 @@ function createMarkdownComponents(variant: ImageVariant) {
         </code>
       );
     },
+
+    table: ({ children, ...rest }: React.TableHTMLAttributes<HTMLTableElement>) => (
+      <div className="my-3 overflow-x-auto">
+        <table className="border-collapse text-sm" {...rest}>
+          {children}
+        </table>
+      </div>
+    ),
+
+    th: ({ children, ...rest }: React.ThHTMLAttributes<HTMLTableCellElement>) => (
+      <th className="border border-gray-300 bg-gray-50 px-3 py-1.5 text-left font-semibold" {...rest}>
+        {children}
+      </th>
+    ),
+
+    td: ({ children, ...rest }: React.TdHTMLAttributes<HTMLTableCellElement>) => (
+      <td className="border border-gray-300 px-3 py-1.5" {...rest}>
+        {children}
+      </td>
+    ),
   };
 }
+
+// singleTilde off: "~" is common in question text (e.g. "~10 ms") and must not become strikethrough.
+const REMARK_PLUGINS = [remarkMath, [remarkGfm, { singleTilde: false }]] satisfies Options["remarkPlugins"];
 
 interface GateMarkdownProps {
   content: string;
@@ -123,7 +147,7 @@ export default function GateMarkdown({
   return (
     <div className={`gate-markdown prose prose-sm max-w-none ${className ?? ""}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={REMARK_PLUGINS}
         rehypePlugins={[rehypeKatex]}
         components={createMarkdownComponents("question")}
       >
@@ -147,7 +171,7 @@ export function GateOptionMarkdown({
   return (
     <div className={`gate-option-markdown ${className ?? ""}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={REMARK_PLUGINS}
         rehypePlugins={[rehypeKatex]}
         components={{
           ...createMarkdownComponents("option"),
