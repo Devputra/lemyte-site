@@ -84,7 +84,7 @@ function createMarkdownComponents(variant: ImageVariant) {
       src?: string | Blob;
     }) => <GateImage src={src} alt={alt} variant={variant} {...props} />,
 
-    code: ({ className, children, ...rest }: any) => {
+    code: ({ className, children, ...rest }: React.HTMLAttributes<HTMLElement>) => {
       const isBlock = className?.startsWith("language-");
 
       if (isBlock) {

@@ -22,6 +22,7 @@ import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { checkEntitlement } from "@/lib/gate/entitlements";
+import { handleRouteError } from "@/lib/gate/errors";
 
 export const runtime = "nodejs";
 
@@ -215,14 +216,7 @@ export async function POST(req: NextRequest) {
       questionCount: chosen.length,
       durationSeconds,
     });
-  } catch (err: any) {
-    if (err?.issues) {
-      return Response.json(
-        { error: "Invalid request body", details: err.issues },
-        { status: 400 }
-      );
-    }
-    console.error("[gate/practice/topic] error", err);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err: unknown) {
+    return handleRouteError(err, "gate/practice/topic");
   }
 }

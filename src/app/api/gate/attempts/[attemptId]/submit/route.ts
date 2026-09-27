@@ -5,50 +5,15 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { atomicUpdateSession, emitAttemptEvent } from "@/lib/gate/redis";
 import { gradeAttempt } from "@/lib/gate/scoring";
+import { isAuthorizedActor } from "@/lib/gate/auth";
+import { extractCorrectOptionIds } from "@/lib/gate/options";
+import { getErrorMessage } from "@/lib/gate/errors";
 import type { CommittedAnswer, QuestionMeta, QuestionType } from "@/lib/gate/contracts";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
 
 const DEMO_COOKIE_NAME = "lm_demo_token";
-
-function isAuthorizedActor(params: {
-  ownerUserId: string | null;
-  ownerGuestToken: string | null;
-  authUserId: string | null;
-  demoCookie: string | null;
-}): boolean {
-  const { ownerUserId, ownerGuestToken, authUserId, demoCookie } = params;
-
-  if (ownerUserId) {
-    return authUserId === ownerUserId;
-  }
-
-  if (ownerGuestToken) {
-    return demoCookie === ownerGuestToken;
-  }
-
-  return false;
-}
-
-function extractCorrectOptionIds(optionsArray: unknown): string[] {
-  if (!Array.isArray(optionsArray)) return [];
-
-  return optionsArray
-    .filter((opt: any) => {
-      if (!opt || typeof opt !== "object") return false;
-
-      return (
-        opt.isCorrect === true ||
-        opt.is_correct === true ||
-        opt.correct === true ||
-        opt.isAnswer === true ||
-        opt.answer === true
-      );
-    })
-    .map((opt: any) => String(opt.id ?? ""))
-    .filter(Boolean);
-}
 
 async function loadPassPercent(testVersionId: string): Promise<number> {
   const { data: tv, error: tvErr } = await supabaseAdmin
@@ -165,7 +130,7 @@ export async function POST(
 
       if (session.status === "IN_PROGRESS") {
         session.status = "SUBMITTED";
-        (session as any).submittedAt = now.toISOString();
+        session.submittedAt = now.toISOString();
       }
 
       session.lastSeenAt = now.toISOString();
@@ -189,8 +154,8 @@ export async function POST(
     }
 
     const submittedAt =
-      typeof (updated as any).submittedAt === "string"
-        ? (updated as any).submittedAt
+      typeof updated.submittedAt === "string"
+        ? updated.submittedAt
         : now.toISOString();
 
     const questionOrder = Array.isArray(updated.questionOrder) ? updated.questionOrder : [];
@@ -415,8 +380,8 @@ export async function POST(
       },
       { status: 200 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[gate/attempts/[attemptId]/submit] POST error:", err);
-    return Response.json({ error: err?.message ?? "Internal server error" }, { status: 500 });
+    return Response.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

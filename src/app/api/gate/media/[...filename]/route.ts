@@ -170,8 +170,13 @@ export async function GET(
     }
 
     return new Response(stream, { status: 200, headers });
-  } catch (err: any) {
-    if (err?.name === "NoSuchKey" || err?.$metadata?.httpStatusCode === 404) {
+  } catch (err: unknown) {
+    const isNotFound =
+      err instanceof Error && err.name === "NoSuchKey" ||
+      (err != null && typeof err === "object" && "$metadata" in err &&
+        (err as { $metadata: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 404);
+
+    if (isNotFound) {
       return Response.json({ error: "Not found" }, { status: 404 });
     }
 

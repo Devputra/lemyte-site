@@ -12,13 +12,23 @@ export type AccessPassRecord = {
   endsAt: string;
 };
 
-function addMonths(d: Date, n: number): Date {
+export function addMonths(d: Date, n: number): Date {
   const out = new Date(d);
   out.setMonth(out.getMonth() + n);
   return out;
 }
 
-function toAccessPass(row: any): AccessPassRecord {
+interface AccessPassRow {
+  id: unknown;
+  user_id: unknown;
+  plan_id: unknown;
+  payment_order_id: unknown;
+  status: unknown;
+  starts_at: unknown;
+  ends_at: unknown;
+}
+
+function toAccessPass(row: AccessPassRow): AccessPassRecord {
   return {
     id: String(row.id),
     userId: String(row.user_id),

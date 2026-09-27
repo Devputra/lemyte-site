@@ -7,6 +7,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { atomicUpdateSession, emitAttemptEvent } from "@/lib/gate/redis";
 import { onSaveAndNext } from "@/lib/gate/palette";
 import { validateAndNormalizeNAT } from "@/lib/gate/nat";
+import { isAuthorizedActor } from "@/lib/gate/auth";
+import { handleRouteError } from "@/lib/gate/errors";
 import type { DraftAnswer } from "@/lib/gate/contracts";
 import crypto from "crypto";
 
@@ -20,25 +22,6 @@ const AnswerSchema = z.object({
   selectedOptionIds: z.array(z.string()).optional(),
   natRaw: z.string().optional(),
 });
-
-function isAuthorizedActor(params: {
-  ownerUserId: string | null;
-  ownerGuestToken: string | null;
-  authUserId: string | null;
-  demoCookie: string | null;
-}): boolean {
-  const { ownerUserId, ownerGuestToken, authUserId, demoCookie } = params;
-
-  if (ownerUserId) {
-    return authUserId === ownerUserId;
-  }
-
-  if (ownerGuestToken) {
-    return demoCookie === ownerGuestToken;
-  }
-
-  return false;
-}
 
 export async function PUT(
   req: NextRequest,
@@ -109,7 +92,7 @@ export async function PUT(
       );
 
       if (natResult !== null && !natResult.valid) {
-        return Response.json({ error: (natResult as any).error }, { status: 400 });
+        return Response.json({ error: natResult.error }, { status: 400 });
       }
 
       natNormalized = natResult && natResult.valid ? natResult.normalized : null;
@@ -154,9 +137,9 @@ export async function PUT(
 
       // Save current answer and transition palette state.
       onSaveAndNext(
-        session.palette as any,
-        session.drafts as any,
-        session.committed as any,
+        session.palette,
+        session.drafts,
+        session.committed,
         payload.questionId
       );
 
@@ -200,15 +183,7 @@ export async function PUT(
       paletteState: updated.palette[payload.questionId],
       savedAt: now.toISOString(),
     });
-  } catch (err: any) {
-    if (err?.issues) {
-      return Response.json(
-        { error: "Invalid request body", details: err.issues },
-        { status: 400 }
-      );
-    }
-
-    console.error("[gate/attempts/[attemptId]/answer] PUT error:", err);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err: unknown) {
+    return handleRouteError(err, "gate/attempts/[attemptId]/answer");
   }
 }

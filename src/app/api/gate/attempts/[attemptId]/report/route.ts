@@ -5,38 +5,14 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { checkEntitlement } from "@/lib/gate/entitlements";
 import { getAttemptSession } from "@/lib/gate/redis";
+import { isAuthorizedActor } from "@/lib/gate/auth";
+import { extractCorrectOptionIds, normalizeOptions } from "@/lib/gate/options";
+import { safeNumber, round2, computeDurationUsedSeconds, deriveResultsFromQuestionScores } from "@/lib/gate/report-helpers";
+import { getErrorMessage } from "@/lib/gate/errors";
 
 export const runtime = "nodejs";
 
 const DEMO_COOKIE_NAME = "lm_demo_token";
-
-function isAuthorizedActor(params: {
-  ownerUserId: string | null;
-  ownerGuestToken: string | null;
-  authUserId: string | null;
-  demoCookie: string | null;
-}): boolean {
-  const { ownerUserId, ownerGuestToken, authUserId, demoCookie } = params;
-
-  if (ownerUserId) {
-    return authUserId === ownerUserId;
-  }
-
-  if (ownerGuestToken) {
-    return demoCookie === ownerGuestToken;
-  }
-
-  return false;
-}
-
-function safeNumber(v: unknown, fallback = 0): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
 
 function hasAnswer(answer: {
   selected_option_ids: string[] | null;
@@ -50,105 +26,6 @@ function hasAnswer(answer: {
       (answer.nat_value_raw && answer.nat_value_raw.trim().length > 0) ||
       answer.nat_value_normalized !== null
   );
-}
-
-function extractCorrectOptionIds(optionsArray: unknown): string[] {
-  if (!Array.isArray(optionsArray)) return [];
-
-  return optionsArray
-    .filter((opt: any) => {
-      if (!opt || typeof opt !== "object") return false;
-
-      return (
-        opt.isCorrect === true ||
-        opt.is_correct === true ||
-        opt.correct === true ||
-        opt.isAnswer === true ||
-        opt.answer === true
-      );
-    })
-    .map((opt: any) => String(opt.id ?? ""))
-    .filter(Boolean);
-}
-
-function normalizeOptions(
-  optionsArray: unknown,
-  selectedOptionIds: string[] | null
-): Array<{
-  id: string;
-  markdown: string;
-  text: string;
-  isCorrect: boolean;
-  isSelected: boolean;
-}> {
-  if (!Array.isArray(optionsArray)) return [];
-
-  const selected = new Set((selectedOptionIds ?? []).map(String));
-
-  return optionsArray
-    .filter((opt: any) => opt && typeof opt === "object")
-    .map((opt: any) => {
-      const id = String(opt.id ?? "");
-      const isCorrect =
-        opt.isCorrect === true ||
-        opt.is_correct === true ||
-        opt.correct === true ||
-        opt.isAnswer === true ||
-        opt.answer === true;
-
-      return {
-        id,
-        markdown: String(opt.markdown ?? ""),
-        text: String(opt.markdown ?? ""),
-        isCorrect,
-        isSelected: selected.has(id),
-      };
-    })
-    .filter((opt) => opt.id.length > 0);
-}
-
-function computeDurationUsedSeconds(
-  startedAt: string | null | undefined,
-  submittedAt: string | null | undefined,
-  endsAt: string | null | undefined
-): number {
-  const start = startedAt ? new Date(startedAt).getTime() : NaN;
-  const end = submittedAt
-    ? new Date(submittedAt).getTime()
-    : endsAt
-    ? new Date(endsAt).getTime()
-    : NaN;
-
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
-    return 0;
-  }
-
-  return Math.max(0, Math.floor((end - start) / 1000));
-}
-
-function deriveResultsFromQuestionScores(
-  questionScores: Array<{
-    earned_marks: number;
-    max_marks: number;
-  }>,
-  passPercent: number
-) {
-  const score = round2(
-    questionScores.reduce((sum, row) => sum + safeNumber(row.earned_marks), 0)
-  );
-  const maxScore = round2(
-    questionScores.reduce((sum, row) => sum + safeNumber(row.max_marks), 0)
-  );
-  const percent = maxScore > 0 ? round2((score / maxScore) * 100) : 0;
-  const passed = percent >= passPercent;
-
-  return {
-    score,
-    max_score: maxScore,
-    percent,
-    passed,
-    source: "derived_from_question_scores" as const,
-  };
 }
 
 export async function GET(
@@ -287,7 +164,10 @@ export async function GET(
           .eq("test_version_id", attempt.test_version_id)
           .order("question_order", { ascending: true }),
 
-        getAttemptSession(attemptId).catch(() => null),
+        getAttemptSession(attemptId).catch((redisErr) => {
+          console.warn("[gate/attempts/[attemptId]/report] Redis session fetch failed, using DB only", redisErr);
+          return null;
+        }),
       ]);
 
     if (resultsRes.error) {
@@ -406,7 +286,7 @@ export async function GET(
     }
 
     const versionsById = new Map(
-      (versions ?? []).map((v: any) => [String(v.id), v])
+      (versions ?? []).map((v) => [String(v.id), v])
     );
 
     const answersByQid = new Map(
@@ -418,7 +298,7 @@ export async function GET(
     );
 
     const reviewQuestions = idsForQuestionLoad.map((questionVersionId, index) => {
-      const v: any = versionsById.get(questionVersionId);
+      const v = versionsById.get(questionVersionId);
       const a = answersByQid.get(questionVersionId) ?? null;
       const s = scoresByQid.get(questionVersionId) ?? null;
 
@@ -580,8 +460,8 @@ export async function GET(
       questionScores,
       answers,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[gate/attempts/[attemptId]/report] GET error:", err);
-    return Response.json({ error: err?.message ?? "Internal server error" }, { status: 500 });
+    return Response.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

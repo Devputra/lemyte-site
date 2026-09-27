@@ -16,6 +16,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { safeJson } from "@/lib/fetch-helpers";
+
 type FilterKey = "ALL" | "CORRECT" | "WRONG" | "UNANSWERED";
 type ResultStatus = "CORRECT" | "WRONG" | "UNANSWERED";
 
@@ -274,7 +276,7 @@ export default function GateReportPage() {
           cache: "no-store",
         });
 
-        const data = await res.json().catch(() => ({}));
+        const data = await safeJson(res);
 
         if (res.status === 202) {
           if (alive) {
@@ -289,11 +291,11 @@ export default function GateReportPage() {
         }
 
         if (alive) {
-          setReport(data);
+          setReport(data as AttemptReport);
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (alive) {
-          setError(e?.message ?? "Failed to load report");
+          setError(e instanceof Error ? e.message : "Failed to load report");
         }
       } finally {
         if (alive) {

@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, BarChart3, Calculator, Clock3, MonitorCheck } from "lucide-react";
+import { safeJson } from "@/lib/fetch-helpers";
 
 const demoPoints = [
   ["No payment", "Start without buying a plan."],
@@ -29,15 +30,15 @@ export default function GateDemoPage() {
         body: JSON.stringify({ mode: "DEMO" }),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = await safeJson(res);
 
       if (!res.ok) {
         throw new Error(data.error ?? `Failed to start demo (${res.status})`);
       }
 
       router.push(`/gate/attempt/${data.attemptId}`);
-    } catch (err: any) {
-      setError(err?.message ?? "Failed to start demo");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to start demo");
     } finally {
       setLoading(false);
     }

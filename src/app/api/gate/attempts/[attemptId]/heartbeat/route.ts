@@ -5,6 +5,8 @@ import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 import { atomicUpdateSession, emitAttemptEvent } from "@/lib/gate/redis";
 import { onVisitQuestion } from "@/lib/gate/palette";
+import { isAuthorizedActor } from "@/lib/gate/auth";
+import { handleRouteError } from "@/lib/gate/errors";
 import type { DraftAnswer } from "@/lib/gate/contracts";
 import crypto from "crypto";
 
@@ -12,9 +14,17 @@ export const runtime = "nodejs";
 
 const DEMO_COOKIE_NAME = "lm_demo_token";
 
+const DraftAnswerSchema = z.object({
+  type: z.enum(["MCQ", "MSQ", "NAT"]),
+  selectedOptionIds: z.array(z.string()).optional(),
+  natRaw: z.string().optional(),
+  natNormalized: z.number().nullable().optional(),
+  updatedAt: z.string().optional(),
+});
+
 const HeartbeatSchema = z.object({
   currentQuestionId: z.string().uuid(),
-  draftAnswer: z.any().optional(),
+  draftAnswer: DraftAnswerSchema.optional(),
   calcState: z.object({ memory: z.number() }).optional(),
   focusLostDelta: z
     .object({
@@ -23,25 +33,6 @@ const HeartbeatSchema = z.object({
     })
     .optional(),
 });
-
-function isAuthorizedActor(params: {
-  ownerUserId: string | null;
-  ownerGuestToken: string | null;
-  authUserId: string | null;
-  demoCookie: string | null;
-}): boolean {
-  const { ownerUserId, ownerGuestToken, authUserId, demoCookie } = params;
-
-  if (ownerUserId) {
-    return authUserId === ownerUserId;
-  }
-
-  if (ownerGuestToken) {
-    return demoCookie === ownerGuestToken;
-  }
-
-  return false;
-}
 
 export async function PUT(
   req: NextRequest,
@@ -91,11 +82,11 @@ export async function PUT(
       session.lastSeenAt = now.toISOString();
       session.currentQuestionId = payload.currentQuestionId;
 
-      onVisitQuestion(session.palette as any, payload.currentQuestionId);
+      onVisitQuestion(session.palette, payload.currentQuestionId);
 
       if (payload.draftAnswer) {
         session.drafts[payload.currentQuestionId] = {
-          ...(payload.draftAnswer as Partial<DraftAnswer>),
+          ...payload.draftAnswer,
           updatedAt: now.toISOString(),
         } as DraftAnswer;
       }
@@ -144,15 +135,7 @@ export async function PUT(
       serverTime: now.toISOString(),
       remainingMs: Math.max(0, remaining),
     });
-  } catch (err: any) {
-    if (err?.issues) {
-      return Response.json(
-        { error: "Invalid request body", details: err.issues },
-        { status: 400 }
-      );
-    }
-
-    console.error("[gate/attempts/[attemptId]/heartbeat] PUT error:", err);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err: unknown) {
+    return handleRouteError(err, "gate/attempts/[attemptId]/heartbeat");
   }
 }

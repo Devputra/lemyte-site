@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createRazorpayOrder } from "@/lib/gate/razorpay";
+import { handleRouteError, getErrorMessage } from "@/lib/gate/errors";
 
 export const runtime = "nodejs";
 
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
           payment_order_id: String(ord.id),
         },
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[gate/checkout/create-order] Razorpay create failed", err);
 
       await supabaseAdmin
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
         .from("payment_orders")
         .update({
           status: "FAILED",
-          raw_payload: { error: String(err?.message ?? err) },
+          raw_payload: { error: getErrorMessage(err) },
           updated_at: new Date().toISOString(),
         })
         .eq("id", ord.id);
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest) {
       .from("payment_orders")
       .update({
         provider_order_id: rzpOrder.id,
-        raw_payload: rzpOrder as any,
+        raw_payload: rzpOrder as unknown as Record<string, unknown>,
         updated_at: new Date().toISOString(),
       })
       .eq("id", ord.id);
@@ -121,15 +122,7 @@ export async function POST(req: NextRequest) {
         email: auth.user.email ?? null,
       },
     });
-  } catch (err: any) {
-    if (err?.issues) {
-      return Response.json(
-        { error: "Invalid request body", details: err.issues },
-        { status: 400 }
-      );
-    }
-
-    console.error("[gate/checkout/create-order] error", err);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err: unknown) {
+    return handleRouteError(err, "gate/checkout/create-order");
   }
 }

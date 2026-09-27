@@ -53,7 +53,7 @@ export async function GET() {
 
   const activePass =
     passes.find(
-      (p: any) =>
+      (p) =>
         p.status === "ACTIVE" &&
         (!p.starts_at || new Date(p.starts_at) <= new Date(nowIso)) &&
         (!p.ends_at || new Date(p.ends_at) > new Date(nowIso))
@@ -84,9 +84,9 @@ export async function GET() {
     }
   }
 
-  const inProgress = attempts.find((a: any) => a.status === "IN_PROGRESS") ?? null;
+  const inProgress = attempts.find((a) => a.status === "IN_PROGRESS") ?? null;
 
-  const tvIds = Array.from(new Set(attempts.map((a: any) => a.test_version_id)));
+  const tvIds = Array.from(new Set(attempts.map((a) => a.test_version_id)));
   const tvTitles = new Map<string, { title: string; kind: string }>();
 
   if (tvIds.length > 0) {
@@ -105,8 +105,8 @@ export async function GET() {
   }
 
   const submittedIds = attempts
-    .filter((a: any) => a.status === "SUBMITTED" || a.status === "EXPIRED")
-    .map((a: any) => a.id as string);
+    .filter((a) => a.status === "SUBMITTED" || a.status === "EXPIRED")
+    .map((a) => a.id as string);
 
   const resultsById = new Map<
     string,
@@ -140,9 +140,9 @@ export async function GET() {
   }
 
   const recentSubmitted = attempts
-    .filter((a: any) => a.status === "SUBMITTED")
+    .filter((a) => a.status === "SUBMITTED")
     .slice(0, PERF_LIMIT_ATTEMPTS)
-    .map((a: any) => a.id as string);
+    .map((a) => a.id as string);
 
   const perfBySubject: Record<
     string,
@@ -160,7 +160,7 @@ export async function GET() {
       console.warn("[gate/me/dashboard] scores join failed", scoresErr);
     } else if (scores && scores.length > 0) {
       const qvIds = Array.from(
-        new Set(scores.map((s: any) => s.question_version_id as string))
+        new Set(scores.map((s) => s.question_version_id as string))
       );
 
       const { data: qvs } = await supabaseAdmin
@@ -223,7 +223,7 @@ export async function GET() {
         }
       : null,
     inProgressAttemptId: inProgress?.id ?? null,
-    recentAttempts: attempts.map((a: any) => {
+    recentAttempts: attempts.map((a) => {
       const tv = tvTitles.get(a.test_version_id as string);
       const r = resultsById.get(a.id as string);
 

@@ -7,7 +7,7 @@ type SendParams = { to: string; subject: string; html: string };
 
 /* Minimal local transporter type so TypeScript doesn't require nodemailer types */
 type TransporterLike = {
-  sendMail: (opts: { from?: string; to: string; subject: string; html: string }) => Promise<any>;
+  sendMail: (opts: { from?: string; to: string; subject: string; html: string }) => Promise<unknown>;
 };
 
 let cachedTransporter: TransporterLike | null = null;

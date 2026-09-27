@@ -6,6 +6,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { verifyCheckoutSignature } from "@/lib/gate/razorpay";
 import { grantAccessForPaidOrder } from "@/lib/gate/access";
+import { handleRouteError } from "@/lib/gate/errors";
 
 export const runtime = "nodejs";
 
@@ -75,15 +76,7 @@ export async function POST(req: NextRequest) {
         endsAt: accessPass.endsAt,
       },
     });
-  } catch (err: any) {
-    if (err?.issues) {
-      return Response.json(
-        { error: "Invalid request body", details: err.issues },
-        { status: 400 }
-      );
-    }
-
-    console.error("[gate/checkout/verify] error", err);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err: unknown) {
+    return handleRouteError(err, "gate/checkout/verify");
   }
 }

@@ -59,6 +59,8 @@ export interface AttemptSession {
   focusLostCount: number;
   focusLostSeconds: number;
   versionCounter: number;
+
+  submittedAt?: string;
 }
 
 export interface AttemptEvent {

@@ -3,6 +3,7 @@
 import { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { grantAccessForPaidOrder } from "@/lib/gate/access";
+import { getErrorMessage } from "@/lib/gate/errors";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -138,7 +139,7 @@ export async function POST(req: NextRequest) {
           break;
         }
       }
-    } catch (procErr: any) {
+    } catch (procErr: unknown) {
       console.error("[razorpay webhook] processing failed", {
         eventId,
         eventType,
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest) {
       });
 
       finalStatus = "FAILED";
-      finalError = String(procErr?.message ?? procErr);
+      finalError = getErrorMessage(procErr);
     }
 
     await supabaseAdmin
@@ -164,7 +165,7 @@ export async function POST(req: NextRequest) {
     }
 
     return Response.json({ ok: true, status: finalStatus });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[razorpay webhook] fatal error", err);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }

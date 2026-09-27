@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, Layers3, Search } from "lucide-react";
+import { safeJson } from "@/lib/fetch-helpers";
 
 interface Subject {
   id: string;
@@ -77,7 +78,7 @@ export default function TopicPracticePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topicId: selectedTopicId, count }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await safeJson(res);
 
       if (res.status === 401) {
         router.push("/gate/auth/sign-in?next=/gate/practice/topics");
@@ -96,7 +97,7 @@ export default function TopicPracticePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "PRACTICE", testVersionId: data.testVersionId }),
       });
-      const startData = await startRes.json().catch(() => ({}));
+      const startData = await safeJson(startRes);
       if (startRes.status === 409 && startData.attemptId) {
         router.push(`/gate/attempt/${startData.attemptId}`);
         return;
@@ -105,8 +106,8 @@ export default function TopicPracticePage() {
         throw new Error(startData.error ?? `Failed to start attempt (${startRes.status})`);
       }
       router.push(`/gate/attempt/${startData.attemptId}`);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to start topic practice");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to start topic practice");
       setBusy(false);
     }
   }

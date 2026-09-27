@@ -5,6 +5,8 @@ import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 import { atomicUpdateSession, emitAttemptEvent } from "@/lib/gate/redis";
 import { onClear } from "@/lib/gate/palette";
+import { isAuthorizedActor } from "@/lib/gate/auth";
+import { handleRouteError } from "@/lib/gate/errors";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -14,25 +16,6 @@ const DEMO_COOKIE_NAME = "lm_demo_token";
 const ClearSchema = z.object({
   questionId: z.string().uuid(),
 });
-
-function isAuthorizedActor(params: {
-  ownerUserId: string | null;
-  ownerGuestToken: string | null;
-  authUserId: string | null;
-  demoCookie: string | null;
-}): boolean {
-  const { ownerUserId, ownerGuestToken, authUserId, demoCookie } = params;
-
-  if (ownerUserId) {
-    return authUserId === ownerUserId;
-  }
-
-  if (ownerGuestToken) {
-    return demoCookie === ownerGuestToken;
-  }
-
-  return false;
-}
 
 export async function PUT(
   req: NextRequest,
@@ -80,9 +63,9 @@ export async function PUT(
       }
 
       onClear(
-        session.palette as any,
-        session.drafts as any,
-        session.committed as any,
+        session.palette,
+        session.drafts,
+        session.committed,
         questionId
       );
 
@@ -121,15 +104,7 @@ export async function PUT(
       paletteState: updated.palette[questionId],
       clearedAt: now.toISOString(),
     });
-  } catch (err: any) {
-    if (err?.issues) {
-      return Response.json(
-        { error: "Invalid request body", details: err.issues },
-        { status: 400 }
-      );
-    }
-
-    console.error("[gate/attempts/[attemptId]/clear] PUT error:", err);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err: unknown) {
+    return handleRouteError(err, "gate/attempts/[attemptId]/clear");
   }
 }

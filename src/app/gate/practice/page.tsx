@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpenCheck, Clock3, Filter, RefreshCw, Search } from "lucide-react";
+import { safeJson } from "@/lib/fetch-helpers";
 
 interface CatalogTest {
   id: string;
@@ -76,7 +77,7 @@ export default function GatePracticePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "PRACTICE", testVersionId: testId }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await safeJson(res);
 
       if (res.status === 401) {
         router.push("/gate/auth/sign-in?next=/gate/practice");
@@ -95,8 +96,8 @@ export default function GatePracticePage() {
       }
 
       router.push(`/gate/attempt/${data.attemptId}`);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to start practice test");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to start practice test");
       setBusyId(null);
     }
   }

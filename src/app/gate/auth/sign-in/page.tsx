@@ -58,8 +58,8 @@ export default function GateStudentSignInPage() {
 
       router.replace(next);
       router.refresh();
-    } catch (err: any) {
-      setMsg(err?.message ?? "Unable to sign in. Please try again.");
+    } catch (err: unknown) {
+      setMsg(err instanceof Error ? err.message : "Unable to sign in. Please try again.");
     } finally {
       setBusy(false);
     }

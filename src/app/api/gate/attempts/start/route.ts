@@ -38,6 +38,7 @@ import {
   emitAttemptEvent,
   deleteAttemptSession,
 } from "@/lib/gate/redis";
+import { handleRouteError } from "@/lib/gate/errors";
 import { PaletteState } from "@/lib/gate/contracts";
 import type { AttemptSession } from "@/lib/gate/contracts";
 import crypto from "crypto";
@@ -325,7 +326,7 @@ export async function POST(req: NextRequest) {
     }
 
     const questionVersionIds = tvQuestions.map(
-      (q: any) => q.question_version_id as string
+      (q) => q.question_version_id as string
     );
 
     // ========== SHUFFLE ==========
@@ -420,7 +421,7 @@ export async function POST(req: NextRequest) {
         for (const qv of questionVersions) {
           const qvId = qv.id as string;
           const options = Array.isArray(qv.options_array) ? qv.options_array : [];
-          optionOrderByQuestion[qvId] = options.map((opt: any) => String(opt.id));
+          optionOrderByQuestion[qvId] = options.map((opt: unknown) => String((opt as Record<string, unknown>).id));
         }
       }
 
@@ -481,28 +482,23 @@ export async function POST(req: NextRequest) {
       }
 
       return response;
-    } catch (initErr: any) {
+    } catch (initErr: unknown) {
       console.error("[gate/attempts/start] post-insert init failed", initErr);
       try {
         await deleteAttemptSession(attemptId);
-      } catch {}
+      } catch (cleanupErr: unknown) {
+        console.warn("[gate/attempts/start] session cleanup failed", cleanupErr);
+      }
       await cleanupAttempt(attemptId);
       return Response.json(
         {
           error: "Failed to initialize attempt session",
-          debug: initErr?.message ?? String(initErr),
+          debug: initErr instanceof Error ? initErr.message : String(initErr),
         },
         { status: 500 }
       );
     }
-  } catch (err: any) {
-    if (err?.issues) {
-      return Response.json(
-        { error: "Invalid request body", details: err.issues },
-        { status: 400 }
-      );
-    }
-    console.error("[gate/attempts/start] error", err);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+  } catch (err: unknown) {
+    return handleRouteError(err, "gate/attempts/start");
   }
 }

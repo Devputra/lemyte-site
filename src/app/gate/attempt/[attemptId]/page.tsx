@@ -13,6 +13,7 @@ import { useParams, useRouter } from "next/navigation";
 import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
 import { PaletteState } from "@/lib/gate/contracts";
 import type { DraftAnswer } from "@/lib/gate/contracts";
+import { safeJson } from "@/lib/fetch-helpers";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -623,9 +624,9 @@ export default function GateAttemptPage() {
         setCalcMemory(data.calculator?.memory ?? 0);
         endsAtRef.current = new Date(data.endsAt).getTime();
         setRemainingMs(Math.max(0, data.remainingMs ?? endsAtRef.current - Date.now()));
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (alive) {
-          setError(e?.message ?? "Failed to load attempt");
+          setError(e instanceof Error ? e.message : "Failed to load attempt");
         }
       } finally {
         if (alive) setLoading(false);
@@ -846,8 +847,8 @@ export default function GateAttemptPage() {
       if (currentIdx < questionOrder.length - 1) {
         setCurrentQvId(questionOrder[currentIdx + 1]);
       }
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to save answer");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to save answer");
     }
   }
 
@@ -872,8 +873,8 @@ export default function GateAttemptPage() {
       if (data.paletteState) {
         setPalette((p) => ({ ...p, [currentQvId]: data.paletteState }));
       }
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to mark question");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to mark question");
     }
   }
 
@@ -908,8 +909,8 @@ export default function GateAttemptPage() {
           return next;
         });
       }
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to clear response");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to clear response");
     }
   }
 
@@ -921,7 +922,7 @@ export default function GateAttemptPage() {
         method: "POST",
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data = await safeJson(res);
 
       if (!res.ok) {
         throw new Error(
@@ -930,8 +931,8 @@ export default function GateAttemptPage() {
       }
 
       router.replace(`/gate/report/${attemptId}`);
-    } catch (e: any) {
-      setError(e?.message ?? "Submit failed");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Submit failed");
     } finally {
       setSubmitBusy(false);
       setSubmitModalOpen(false);

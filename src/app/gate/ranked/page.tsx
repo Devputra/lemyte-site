@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowRight, Clock3, ShieldAlert, Trophy } from "lucide-react";
+import { safeJson } from "@/lib/fetch-helpers";
 
 interface CatalogTest {
   id: string;
@@ -64,7 +65,7 @@ export default function GateRankedPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "RANKED", testVersionId: testId }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await safeJson(res);
 
       if (res.status === 401) {
         router.push("/gate/auth/sign-in?next=/gate/ranked");
@@ -88,8 +89,8 @@ export default function GateRankedPage() {
       }
 
       router.push(`/gate/attempt/${data.attemptId}`);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to start ranked test");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to start ranked test");
       setBusyId(null);
     }
   }

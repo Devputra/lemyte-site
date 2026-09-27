@@ -73,8 +73,8 @@ export default function GateStudentSignUpPage() {
 
       router.replace(next);
       router.refresh();
-    } catch (err: any) {
-      setMsg(err?.message ?? "Unable to create account. Please try again.");
+    } catch (err: unknown) {
+      setMsg(err instanceof Error ? err.message : "Unable to create account. Please try again.");
     } finally {
       setBusy(false);
     }

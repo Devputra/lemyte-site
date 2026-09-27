@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, ShieldCheck } from "lucide-react";
+import { safeJson } from "@/lib/fetch-helpers";
 
 interface Plan {
   id: string;
@@ -17,7 +18,8 @@ interface Plan {
 
 declare global {
   interface Window {
-    Razorpay?: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Razorpay?: new (opts: Record<string, unknown>) => { open: () => void; on: (event: string, cb: (resp: Record<string, unknown>) => void) => void };
   }
 }
 
@@ -121,7 +123,7 @@ export default function GatePricingPage() {
         return;
       }
 
-      const data = await res.json().catch(() => ({}));
+      const data = await safeJson(res);
       if (!res.ok) {
         throw new Error(data.error ?? `Checkout failed (${res.status})`);
       }
@@ -143,7 +145,7 @@ export default function GatePricingPage() {
         prefill: data.user?.email ? { email: data.user.email } : undefined,
         notes: { payment_order_id: data.paymentOrderId },
         theme: { color: "#193bc8" },
-        handler: async (response: any) => {
+        handler: async (response: Record<string, string>) => {
           try {
             const verify = await fetch("/api/gate/checkout/verify", {
               method: "POST",
@@ -155,13 +157,13 @@ export default function GatePricingPage() {
                 razorpaySignature: response.razorpay_signature,
               }),
             });
-            const vjson = await verify.json().catch(() => ({}));
+            const vjson = await safeJson(verify);
             if (!verify.ok) {
               throw new Error(vjson.error ?? "Verification failed");
             }
             router.push("/gate/dashboard?welcome=1");
-          } catch (e: any) {
-            setError(e?.message ?? "Verification failed");
+          } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : "Verification failed");
             setBusyPlanId(null);
           }
         },
@@ -170,14 +172,15 @@ export default function GatePricingPage() {
         },
       });
 
-      rzp.on("payment.failed", (resp: any) => {
-        setError(resp?.error?.description ?? "Payment failed");
+      rzp.on("payment.failed", (resp: Record<string, unknown>) => {
+        const errObj = resp?.error as Record<string, unknown> | undefined;
+        setError((errObj?.description as string) ?? "Payment failed");
         setBusyPlanId(null);
       });
 
       rzp.open();
-    } catch (e: any) {
-      setError(e?.message ?? "Checkout failed");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Checkout failed");
       setBusyPlanId(null);
     }
   }

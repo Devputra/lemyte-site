@@ -6,6 +6,9 @@ import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getAttemptSession, emitAttemptEvent } from "@/lib/gate/redis";
+import { isAuthorizedActor } from "@/lib/gate/auth";
+import { handleRouteError } from "@/lib/gate/errors";
+import type { OptionRecord } from "@/lib/gate/options";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
@@ -25,25 +28,6 @@ type QuestionContent = {
   }>;
   section: string;
 };
-
-function isAuthorizedActor(params: {
-  ownerUserId: string | null;
-  ownerGuestToken: string | null;
-  authUserId: string | null;
-  demoCookie: string | null;
-}): boolean {
-  const { ownerUserId, ownerGuestToken, authUserId, demoCookie } = params;
-
-  if (ownerUserId) {
-    return authUserId === ownerUserId;
-  }
-
-  if (ownerGuestToken) {
-    return demoCookie === ownerGuestToken;
-  }
-
-  return false;
-}
 
 async function loadQuestionContent(
   questionVersionIds: string[],
@@ -80,11 +64,14 @@ async function loadQuestionContent(
   const questions: Record<string, QuestionContent> = {};
   for (const v of versions ?? []) {
     const options = Array.isArray(v.options_array)
-      ? v.options_array.map((opt: any) => ({
-          id: String(opt.id),
-          markdown: String(opt.markdown ?? ""),
-          text: String(opt.markdown ?? ""),
-        }))
+      ? v.options_array.map((opt: unknown) => {
+          const o = opt as OptionRecord;
+          return {
+            id: String(o.id ?? ""),
+            markdown: String((o as Record<string, unknown>).markdown ?? ""),
+            text: String((o as Record<string, unknown>).markdown ?? ""),
+          };
+        })
       : [];
 
     questions[String(v.id)] = {
@@ -265,11 +252,7 @@ export async function GET(
       },
       { status: 500 }
     );
-  } catch (err: any) {
-    console.error("[gate/attempts/[attemptId]] GET error:", err);
-    return Response.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    return handleRouteError(err, "gate/attempts/[attemptId]");
   }
 }
