@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { atomicUpdateSession, emitAttemptEvent } from "@/lib/gate/redis";
 import { gradeAttempt } from "@/lib/gate/scoring";
 import { isAuthorizedActor } from "@/lib/gate/auth";
-import { extractCorrectOptionIds } from "@/lib/gate/options";
+import { extractCorrectOptionIds, extractOptionalCorrectOptionIds } from "@/lib/gate/options";
 import { getErrorMessage } from "@/lib/gate/errors";
 import type { CommittedAnswer, QuestionMeta, QuestionType } from "@/lib/gate/contracts";
 import crypto from "crypto";
@@ -50,7 +50,7 @@ async function loadQuestionMeta(questionVersionIds: string[]): Promise<Map<strin
     .schema("gate")
     .from("question_versions")
     .select(
-      "id, type, marks, options_array, nat_lower_bound, nat_upper_bound, nat_precision"
+      "id, type, marks, options_array, nat_lower_bound, nat_upper_bound, nat_precision, grading_policy"
     )
     .in("id", questionVersionIds);
 
@@ -80,6 +80,9 @@ async function loadQuestionMeta(questionVersionIds: string[]): Promise<Map<strin
           ? undefined
           : Number(row.nat_precision),
       correctOptionIds: type === "NAT" ? undefined : extractCorrectOptionIds(row.options_array),
+      optionalCorrectOptionIds:
+        type === "MSQ" ? extractOptionalCorrectOptionIds(row.options_array) : undefined,
+      marksToAll: row.grading_policy === "MARKS_TO_ALL",
     };
 
     meta.set(String(row.id), q);

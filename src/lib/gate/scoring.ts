@@ -37,6 +37,11 @@ export function gradeQuestion(
 ): GradeResult {
   const maxMarks = question.marks;
 
+  // Official key "marks to all": full marks regardless of the response
+  if (question.marksToAll) {
+    return { earned: maxMarks, maxMarks, correct: true };
+  }
+
   // Unanswered → 0
   if (answer === null || answer === undefined) {
     return { earned: 0, maxMarks, correct: false };
@@ -87,16 +92,19 @@ export function gradeQuestion(
         return { earned: 0, maxMarks, correct: false };
       }
 
-      // All-or-nothing: must select exactly the correct set
+      // All-or-nothing: every required option selected, and nothing outside
+      // the required + optional (key accepts either) options
       const selectedSet = new Set(selectedIds);
-      const correctSet = new Set(correctIds);
+      const optionalSet = new Set(question.optionalCorrectOptionIds ?? []);
 
-      if (selectedSet.size !== correctSet.size) {
-        return { earned: 0, maxMarks, correct: false };
+      for (const id of correctIds) {
+        if (!selectedSet.has(id)) {
+          return { earned: 0, maxMarks, correct: false };
+        }
       }
 
       for (const id of selectedSet) {
-        if (!correctSet.has(id)) {
+        if (!correctIds.includes(id) && !optionalSet.has(id)) {
           return { earned: 0, maxMarks, correct: false };
         }
       }

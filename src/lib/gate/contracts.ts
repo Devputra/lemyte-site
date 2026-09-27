@@ -85,6 +85,12 @@ export interface QuestionMeta {
   // For MCQ/MSQ: logical correct option ids from options_array, e.g. ["a"] or ["b","d"]
   correctOptionIds?: string[];
 
+  // For MSQ: options the official key accepts either way (e.g. key "A;D OR A;C;D" → C optional)
+  optionalCorrectOptionIds?: string[];
+
+  // grading_policy MARKS_TO_ALL: every candidate gets full marks, attempted or not
+  marksToAll?: boolean;
+
   // For NAT
   natLowerBound?: number;
   natUpperBound?: number;

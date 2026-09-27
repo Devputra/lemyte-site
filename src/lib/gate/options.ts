@@ -34,6 +34,19 @@ export function extractCorrectOptionIds(optionsArray: unknown): string[] {
     .filter(Boolean);
 }
 
+/** Ids of options flagged `optional_correct` (accepted whether selected or not). */
+export function extractOptionalCorrectOptionIds(optionsArray: unknown): string[] {
+  if (!Array.isArray(optionsArray)) return [];
+
+  return optionsArray
+    .filter((opt: unknown) => {
+      if (!opt || typeof opt !== "object") return false;
+      return (opt as Record<string, unknown>).optional_correct === true;
+    })
+    .map((opt: unknown) => String((opt as OptionRecord).id ?? ""))
+    .filter(Boolean);
+}
+
 export function normalizeOptions(
   optionsArray: unknown,
   selectedOptionIds: string[] | null

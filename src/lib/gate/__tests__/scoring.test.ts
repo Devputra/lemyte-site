@@ -142,6 +142,62 @@ describe("gradeQuestion", () => {
     });
   });
 
+  describe("MSQ with an optional-correct option (key 'A;D OR A;C;D')", () => {
+    const msqAlt: QuestionMeta = {
+      questionVersionId: "q-alt",
+      type: "MSQ",
+      marks: 2,
+      correctOptionIds: ["a", "d"],
+      optionalCorrectOptionIds: ["c"],
+    };
+    const pick = (ids: string[]): CommittedAnswer => ({
+      type: "MSQ",
+      selectedOptionIds: ids,
+      savedAt: new Date().toISOString(),
+    });
+
+    it("accepts the required set alone", () => {
+      expect(gradeQuestion(msqAlt, pick(["a", "d"])).earned).toBe(2);
+    });
+
+    it("accepts the required set plus the optional option", () => {
+      expect(gradeQuestion(msqAlt, pick(["a", "c", "d"])).earned).toBe(2);
+    });
+
+    it("rejects a selection missing a required option", () => {
+      expect(gradeQuestion(msqAlt, pick(["a", "c"])).earned).toBe(0);
+    });
+
+    it("rejects a selection with an option outside required + optional", () => {
+      expect(gradeQuestion(msqAlt, pick(["a", "b", "d"])).earned).toBe(0);
+    });
+  });
+
+  describe("MARKS_TO_ALL grading policy", () => {
+    const mta: QuestionMeta = {
+      questionVersionId: "q-mta",
+      type: "MCQ",
+      marks: 2,
+      correctOptionIds: [],
+      marksToAll: true,
+    };
+
+    it("awards full marks when unanswered", () => {
+      const result = gradeQuestion(mta, null);
+      expect(result.earned).toBe(2);
+      expect(result.correct).toBe(true);
+    });
+
+    it("awards full marks for any response, with no negative marking", () => {
+      const answer: CommittedAnswer = {
+        type: "MCQ",
+        selectedOptionIds: ["b"],
+        savedAt: new Date().toISOString(),
+      };
+      expect(gradeQuestion(mta, answer).earned).toBe(2);
+    });
+  });
+
   describe("NAT scoring", () => {
     const nat: QuestionMeta = {
       questionVersionId: "q4",
