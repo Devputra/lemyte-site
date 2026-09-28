@@ -1,6 +1,6 @@
 """Draft content for a new paper with an external AI (Gemini API or Codex/ChatGPT).
 
-    python3 draft.py <CODE> <gemini|codex> [q_from q_to]
+    python3 draft.py <CODE> <codex|gemini|github|mistral|openrouter|groq|zhipu> [q_from q_to]
 
 Inputs in .gate-work/<CODE>/: pages/*.png, pdf_q.json, key.json, topics.json.
 Output: draft_<from>_<to>.json = [{q, topic, stem, opts, expl}] (answers are NOT taken from the AI —
@@ -54,7 +54,35 @@ def inputs(code, lo, hi):
             f"OFFICIAL KEY (type, key, marks):\n" + "\n".join(f"Q{q}: {key[str(q)]}" for q in rng) +
             "\n\nPDF TEXT PER QUESTION:\n" + "\n".join(f"Q{q}: {pdfq.get(str(q), '(no text layer; read the page image)')}" for q in rng))
     pages = sorted(os.path.join(w, "pages", f) for f in os.listdir(os.path.join(w, "pages")))
+    span = page_span(w, lo, hi)
+    if span:  # only the pages holding the requested questions (smaller, faster requests)
+        pages = pages[span[0] - 1:span[1]]
     return w, text, pages
+
+
+def page_span(w, lo, hi):
+    """1-based (first, last) page for questions lo..hi from the PDF's 'Q.n' labels, or None."""
+    import fitz
+    from common import QUESTIONS_ROOT
+    meta = json.load(open(f"{w}/meta.json"))
+    folder = os.path.join(QUESTIONS_ROOT, meta["subj"], meta["year"])
+    pdf = [f for f in os.listdir(folder) if f.endswith(".pdf") and "key" not in f.lower()]
+    if len(pdf) != 1:
+        return None
+    d = fitz.open(os.path.join(folder, pdf[0]))
+    at, off, prev = {}, 0, 0
+    for i, p in enumerate(d):
+        for m in re.finditer(r"(?m)^\s*Q\.\s?(?:No\.?\s?)?(\d+)\s*(.*)$", p.get_text()):
+            if re.match(r"(–|-|to\b|Carry|Multiple|Numerical)", m.group(2).strip()):
+                continue
+            n = int(m.group(1))
+            if n <= 2 and prev >= 10 and off == 0:
+                off = 10
+            prev = n
+            at.setdefault(n + off, i + 1)
+    first = max((v for k, v in at.items() if k <= lo), default=1)  # labels can be missing: use neighbours
+    last = min((v for k, v in at.items() if k > hi), default=len(d))
+    return first, max(last, first)
 
 
 def parse_json(s):
@@ -80,10 +108,14 @@ def gemini(code, lo, hi, model="gemini-3.8-flash"):
         except urllib.error.HTTPError as e:
             msg = e.read().decode()[:300]
             if e.code in (429, 503) and "PerDay" not in msg and attempt < 5:
+                print(f"  {code} q{lo}-{hi} {model}: HTTP {e.code}, retry {attempt + 1}", file=sys.stderr, flush=True)
                 time.sleep(60 * (attempt + 1))
                 continue
             raise SystemExit(f"gemini HTTP {e.code}: {msg}")
-    out = "".join(p.get("text", "") for p in resp["candidates"][0]["content"]["parts"])
+    cand = resp["candidates"][0]
+    if "parts" not in cand.get("content", {}):
+        raise SystemExit(f"gemini {code} q{lo}-{hi}: no content, finishReason={cand.get('finishReason')}")
+    out = "".join(p.get("text", "") for p in cand["content"]["parts"])
     return parse_json(out)
 
 
@@ -105,7 +137,14 @@ if __name__ == "__main__":
     code, backend = sys.argv[1:3]
     lo, hi = (int(sys.argv[3]), int(sys.argv[4])) if len(sys.argv) > 4 else (1, 65)
     t0 = time.time()
-    data = gemini(code, lo, hi, os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")) if backend == "gemini" else codex(code, lo, hi)
+    if backend == "gemini":
+        data = gemini(code, lo, hi, os.environ.get("GEMINI_MODEL", "gemini-3.6-flash"))
+    elif backend == "codex":
+        data = codex(code, lo, hi)
+    else:  # github | mistral | openrouter | groq | zhipu (ai.py); keep ranges small on free tiers
+        from ai import chat
+        w, text, pages = inputs(code, lo, hi)
+        data = parse_json(chat(backend, SPEC + "\n\n" + text, pages, model=os.environ.get("AI_MODEL"), max_tokens=16000))
     got = sorted(x["q"] for x in data)
     json.dump(data, open(os.path.join(workdir(code), f"draft_{lo}_{hi}.json"), "w"), ensure_ascii=False, indent=1)
     print(f"{code} {backend} q{lo}-{hi}: {len(data)} items, missing {sorted(set(range(lo, hi + 1)) - set(got))}, {time.time() - t0:.0f}s")
