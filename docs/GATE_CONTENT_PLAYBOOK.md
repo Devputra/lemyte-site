@@ -10,7 +10,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | CS | 2014–2026 (24) + mock | PUBLISHED | Reference ("ideal") format. Not re-audited. |
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
-| EE | 2020–2026 (7) | 2026 **DONE** (DRAFT); 2020–2025 not started | 2026 was already verbatim + correct; only targeted fixes (see below). |
+| EE | 2020–2026 (7) | 2026, 2025 **DONE** (DRAFT); 2020–2024 not started | User: publish all EE together at the end. |
 | CE | 2020–2026, sets 1–2 (14) | DRAFT, not started | Image names use `CE_CORE`/`CE_GE` style. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
@@ -50,6 +50,8 @@ If all clean except a few rows, write a small targeted `fixes.py` in `.gate-work
 ```bash
 # 1. backup + context (topics, S3 names). Folder = S3 path without bucket.
 python3 scripts/gate-content/fetch.py GATE2024_EE EE 2024 EE/pyq/2024_ee
+# 1b. after writing key.json: one-shot triage report (+ .gate-work/<CODE>/audit.txt)
+cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 ```
 2. **Key** → write `.gate-work/<CODE>/key.json` as `{"1": {"type":"MCQ","key":"B","marks":1}, …, "27": {"type":"NAT","key":"2047 to 2047","marks":1}}`
    (MSQ key `A;C`, MTA key `MTA`, alt `A;D OR A;C;D`). Key PDFs vary: text-extractable (parse), scanned (read visually),
@@ -73,6 +75,8 @@ python3 scripts/gate-content/fetch.py GATE2024_EE EE 2024 EE/pyq/2024_ee
 ## Paper log
 
 - **EE 2026** (2026-09-28): stems verbatim, answers = key. Fixed: Q2/Q5 option images, Q41 missing figure, Q37 stem ($A_0 = 105$, not $10^5$ — only 105 gives key −16.67), Q58 missing sentence + MTA, Q28 explanation had physics reversed; 11 explanations rewritten. Backup: `EE/2026/db_backup_GATE2026_EE_2026-09-28.json`.
+
+- **EE 2025** (2026-09-28): full rewrite needed — DB image links were fabricated (names from other papers, fake figure on a matrix question), 9 real figures unlinked, 4 wrong answers (Q4 none, Q14, Q18, Q45), guessed figure explanations. All 65 rewritten verbatim; user's 44 images linked as-is. Q59 key has ± ranges (stored −2.00…−1.94). Buffer questions after Q65 in the PDF are ignored.
 
 ## Known open issues
 
