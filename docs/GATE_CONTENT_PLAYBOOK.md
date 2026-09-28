@@ -11,7 +11,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
 | **EE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** (455 rows) | ChatGPT cross-check pending: EE 2020 Q52–65, EE 2022–2026 (fix via targeted PATCH — apply.py only touches DRAFT rows). |
-| CE | 2020–2026, sets 1–2 (14) | **In progress** (DRAFT). Ready (verbatim, key-checked): 2022-1/2, 2023-1/2, 2024-1/2, 2025-1/2, 2026-1/2. Left: 2021-1/2 (paraphrased + 47 figures unlinked; image names use paper numbering → DB q = n+10), 2020-1/2 (image-only PDFs) | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. |
+| CE | 2020–2026, sets 1–2 (14) | **In progress** (DRAFT). Ready (verbatim, key-checked, explanations cleaned): 2021-1/2 … 2026-1/2 (12 papers). Left: 2020-1/2 (image-only PDFs, stems of figure questions paraphrased). | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
 
@@ -56,7 +56,7 @@ python3 scripts/gate-content/fetch.py GATE2024_EE EE 2024 EE/pyq/2024_ee
 cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 ```
 1c. **Paraphrase check** (triage's stem check only catches *missing* PDF words): `python3 paraphrase.py <CODE> [10]` → rows where >20% of the PDF's words are absent from the DB are rewritten, not verbatim. CE 2020–2022 had "shown in the source figure" summaries instead of stems.
-1d. **Internal notes leak:** grep explanations for `BLOCK_PUBLISH|DRAFT|Lemyte|SME|PYQ fidelity` — earlier drafting left editor notes in student-facing text.
+1d. **Internal notes leak:** grep explanations for `BLOCK_PUBLISH|DRAFT|Lemyte|SME|PYQ fidelity|Source: supplied|supplied key|source figure|flagged for` — earlier drafting left editor notes in student-facing text. `python3 cleanexpl.py <CODE>` strips the provenance lines/phrases (CE 2020–2022 had one on every row).
 1e. **Fix paraphrase without a full rewrite** (answers/explanations fine): write `.gate-work/<CODE>/stems.py` (`STEMS = {q: r'''verbatim…{FIG}…'''}`, `{IMG:file}` links an unlinked S3 image) → `python3 restem.py <CODE> [--dry]`; options via `opts.py` → `reopts.py`. Helpers: `showpdf.py <CODE> q,q` (PDF stem + row figure count), `showopts.py`. CE rows keep options only in `options_array` (not in markdown).
 2. **Key** → `python3 parsekey.py <CODE> <key.pdf>` (handles all text keys seen: 6/7-token rows, wrapped keys, "7 MCQ" merged cells, restart numbering, `A, C` MSQ, `MTA*`), or write `.gate-work/<CODE>/key.json` as `{"1": {"type":"MCQ","key":"B","marks":1}, …, "27": {"type":"NAT","key":"2047 to 2047","marks":1}}`
    (MSQ key `A;C`, MTA key `MTA`, alt `A;D OR A;C;D`). Key PDFs vary: text-extractable (parse), scanned (read visually),
@@ -93,6 +93,7 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 
 - **EE 2021** (2026-09-28): full rewrite (inline tags, Q11/Q12 wrong answers, PENDING Q46, rows' topics misaligned). No user images → cropped 30 (`.gate-work/GATE2021_EE/crops.py`). Codex cross-check: 65/65 agree; fixed Q10 (option D not addressed) and Q51 (wrongly assumed y = 0) explanations. **Layout (IIT Bombay, A4):** table cols x≈72/125/523; figures are embedded images → crop their bboxes directly, but first delete the full-page watermark image (w,h>400) and header images (y1<80). Key PDF: 7 tokens per row (Q, session, type, section, key, marks, neg), EE section numbered 1–55 (DB Q = 10 + n). Q18 match-table rendered as a markdown table.
 
+- **CE 2021–2026** (2026-09-28): answers all matched keys (after fixing the key parser); main defects were **paraphrased stems/options** (2021-1/2 all, 2022-1/2 ~45–57 each, 2024-2 33, 2025-2 25), **unlinked figures** (2021-1: 27 in S3 named with paper numbering → copied to DB numbering; 2021-2: 20 never uploaded), fake text options for figure options ("Source option A: …"), editor notes in explanations, missing MTA (2023-1 Q17/Q59, 2026-1 Q19), 2022-1 Q13 "A OR B" stored as two correct, 2021-2 Q38 options had 9PL/2 instead of 2PL/9 (+ explanation), 2022-2 Q48 figure missing (cropped).
 - **EE 2020** (2026-09-28): full rewrite — DB stems were placeholders ("Circuit value."). **The paper PDF is all images** (no text layer) → transcribed visually; figures cropped from rendered pages (`.gate-work/GATE2020_EE/crops.py`). Key PDF: 6 tokens per row, GA 1–10 then EE 1–55 (DB Q = 10 + n). MTA: Q22, Q52 (MCQ), Q58, Q63 (NAT, bounds null — build.py/apply.py now handle NAT MTA). Q11 "A OR D". Codex cross-check (Q1–51 before the ChatGPT usage limit): fixed Q11/Q16/Q22/Q49 explanations; **Q52–Q65 still to cross-check**.
 
 ## Known open issues

@@ -2,6 +2,8 @@
 import json
 import os
 import subprocess
+import time
+import urllib.error
 import urllib.request
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -30,13 +32,24 @@ HEADERS = {"apikey": KEY, "Authorization": "Bearer " + KEY, "Accept-Profile": "g
            "Content-Profile": "gate", "Content-Type": "application/json"}
 
 
+def _open(req, tries=4):
+    """urlopen with a timeout and retries on transient network errors."""
+    for i in range(tries):
+        try:
+            return json.load(urllib.request.urlopen(req, timeout=60))
+        except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
+            if isinstance(e, urllib.error.HTTPError) and e.code < 500 or i == tries - 1:
+                raise
+            time.sleep(3 * (i + 1))
+
+
 def get(path):
     """GET a PostgREST path (gate schema), paginating past the 1000-row cap."""
     out, off = [], 0
     sep = "&" if "?" in path else "?"
     while True:
         req = urllib.request.Request(f"{URL}/rest/v1/{path}{sep}limit=1000&offset={off}", headers=HEADERS)
-        batch = json.load(urllib.request.urlopen(req))
+        batch = _open(req)
         out += batch
         off += 1000
         if len(batch) < 1000:
@@ -46,7 +59,7 @@ def get(path):
 def patch(path, body):
     req = urllib.request.Request(f"{URL}/rest/v1/{path}", data=json.dumps(body).encode(), method="PATCH",
                                  headers={**HEADERS, "Prefer": "return=representation"})
-    return json.load(urllib.request.urlopen(req))
+    return _open(req)
 
 
 def aws(*args):

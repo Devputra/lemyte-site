@@ -13,5 +13,6 @@ for q, texts in sorted(OPTS.items()):
         x["markdown"] = t
     md = r["markdown_content"]
     if re.search(r"\n\(A\) ", md):  # rows that also list options in the markdown
-        md = re.sub(r"\n\(A\) .*$", "\n" + "  \n".join(f"({x['id'].upper()}) {x['markdown']}" for x in o) + "\n", md, flags=re.S)
+        block = "\n" + "  \n".join(f"({x['id'].upper()}) {x['markdown']}" for x in o) + "\n"
+        md = re.sub(r"\n\(A\) .*$", lambda _: block, md, flags=re.S)
     print(f"Q{q}", len(patch(f"question_versions?id=eq.{r['id']}", {"options_array": o, "markdown_content": md})))
