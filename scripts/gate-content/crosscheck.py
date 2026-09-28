@@ -8,6 +8,9 @@ then compares with the stored key and reviews the explanation. Writes
 Disagreements are prompts to re-check; the official key stays the source of truth.
 --via api (default): OpenAI API, key OPENAI_API_KEY or CHATGPT_ONE_DAY_API in .env.local (paid credit).
 --via codex: `codex exec` signed in with ChatGPT (subscription quota), read-only sandbox in an empty dir.
+--via gemini: Gemini API (GEMINI_API_KEY in .env.local, free tier), default model gemini-3.8-flash (free tier: 20 requests/day; pro models not free) — second opinions only.
+--flagged: only re-send rows the previous run flagged (second opinion; saves quota).
+Token policy: one checker per paper (codex); gemini only for rows codex flagged or could not reach.
 """
 import base64
 import json
@@ -16,12 +19,14 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 from common import ENV, QUESTIONS_ROOT, get, workdir
 
 OPENAI_KEY = ENV.get("OPENAI_API_KEY") or ENV.get("CHATGPT_ONE_DAY_API")
+GEMINI_KEY = ENV.get("GEMINI_API_KEY")
 
 PROMPT = """You are checking a GATE exam question stored in a question bank.
 
@@ -100,6 +105,39 @@ def check_codex(r, subj, year, model):
             return {"error": str(e)[:300]}
 
 
+def check_gemini(r, subj, year, model):
+    if LIMIT_HIT:
+        return {"error": "skipped: quota reached earlier in this run"}
+    parts = [{"text": PROMPT + "\n\n" + question_text(r)}]
+    for img in local_images(r["markdown_content"], subj, year):
+        parts.append({"inline_data": {"mime_type": "image/png", "data": base64.b64encode(open(img, "rb").read()).decode()}})
+    schema = {k: v for k, v in SCHEMA.items() if k != "additionalProperties"}
+    body = {"contents": [{"role": "user", "parts": parts}],
+            "generationConfig": {"responseMimeType": "application/json", "responseSchema": schema}}
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_KEY}"
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+    try:
+        for attempt in range(4):  # 503 "high demand" is common and transient
+            try:
+                resp = json.load(urllib.request.urlopen(req, timeout=600))
+                break
+            except urllib.error.HTTPError as e:
+                e.body = e.read().decode()
+                if e.code != 503 or attempt == 3:  # 429 = free tier's 20 requests/day: give up
+                    raise
+                time.sleep(30 * (attempt + 1))  # transient "high demand"
+        out = json.loads(resp["candidates"][0]["content"]["parts"][-1]["text"])
+        out["tokens"] = resp.get("usageMetadata", {}).get("totalTokenCount")
+        return out
+    except urllib.error.HTTPError as e:
+        err = getattr(e, "body", "")[:300]
+        if e.code == 429:
+            LIMIT_HIT.append(err)
+        return {"error": f"HTTP {e.code}: {err}"}
+    except Exception as e:
+        return {"error": str(e)[:300]}
+
+
 def check(r, subj, year, model):
     text = question_text(r)
     md = r["markdown_content"]
@@ -121,10 +159,11 @@ def main():
     code = sys.argv[1]
     args = sys.argv[2:]
     via = args[args.index("--via") + 1] if "--via" in args else "api"
-    model = args[args.index("--model") + 1] if "--model" in args else ("gpt-5.5" if via == "api" else None)
+    model = args[args.index("--model") + 1] if "--model" in args else \
+        {"api": "gpt-5.5", "gemini": "gemini-3.8-flash"}.get(via)
     only = {int(x) for x in args[args.index("--q") + 1].split(",")} if "--q" in args else None
     assert via == "codex" or OPENAI_KEY, "no OPENAI_API_KEY / CHATGPT_ONE_DAY_API in .env.local"
-    fn, workers = (check_codex, 3) if via == "codex" else (check, 8)
+    fn, workers = {"codex": (check_codex, 3), "gemini": (check_gemini, 1)}.get(via, (check, 8))
     meta = json.load(open(os.path.join(workdir(code), "meta.json")))
     rows = get(f"question_versions?pyq_paper_code=eq.{code}&select=markdown_content,type,options_array,"
                "nat_lower_bound,nat_upper_bound,grading_policy,explanation_markdown")
@@ -133,12 +172,17 @@ def main():
         m = re.search(r"-Q(\d+)\]", r["markdown_content"])
         if m:
             byq[int(m.group(1))] = r
-    qs = sorted(q for q in byq if only is None or q in only)
+    path = os.path.join(workdir(code), "crosscheck.json")
+    prev = json.load(open(path)) if os.path.exists(path) else {}
+    if "--flagged" in args:  # second opinion: only rows the last run flagged or failed on
+        only = {int(q) for q, v in prev.items() if "error" in v or not v.get("agrees_with_key", True)
+                or not v.get("explanation_ok", True) or v.get("issues")}
+    qs = sorted(q for q in byq if (only is None or q in only)
+                and not (byq[q].get("grading_policy") == "MARKS_TO_ALL" and "--flagged" not in args))
     with ThreadPoolExecutor(workers) as ex:
         res = dict(zip(qs, ex.map(lambda q: fn(byq[q], meta["subj"], meta["year"], model), qs)))
-    path = os.path.join(workdir(code), "crosscheck.json")
-    old = json.load(open(path)) if os.path.exists(path) and only else {}
-    old.update({str(q): v for q, v in res.items()})
+    old = prev if only else {}
+    old.update({str(q): dict(v, via=via) for q, v in res.items()})
     json.dump(old, open(path, "w"), indent=1, ensure_ascii=False)
     flagged = 0
     for q in qs:

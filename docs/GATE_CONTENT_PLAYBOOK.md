@@ -65,6 +65,7 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 5. `node scripts/gate-content/check_render.mjs <CODE>` → must print `render problems: 0`.
 6. `python3 scripts/gate-content/apply.py <CODE> [--upload]` → S3 renames, PATCH DRAFT rows, verify vs key + S3.
 6b. **Second opinion (ChatGPT via Codex, subscription — no API credit):** `cd scripts/gate-content && python3 crosscheck.py <CODE> --via codex` (~3 min/paper, 3 parallel; the ChatGPT plan has a usage cap — ~50 questions hit it, the script then skips the rest; rerun later with `--q`). Solves each row independently (figures attached), compares with the stored key, reviews the explanation; prints only flagged rows → verify each yourself, fix real ones (EE 2021: 2 valid explanation flags). `--via api` uses the OpenAI key in `.env.local` (needs paid credit). Needs `codex login` (ChatGPT).
+   **Token policy:** one checker per paper (`--via codex`). Gemini (`--via gemini`, API key, free tier = **20 requests/day**) only as a second opinion: `--flagged` re-sends just the rows the last run flagged/failed. MTA rows are skipped automatically.
 7. Update the status table above + tell the user. **Publish only when the user asks**:
    `PATCH question_versions?pyq_paper_code=eq.<CODE>&status=eq.DRAFT` with `{"status":"PUBLISHED","published_at":<now>}`.
 
