@@ -11,7 +11,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
 | **EE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** (455 rows) | ChatGPT cross-check pending: EE 2020 Q52–65, EE 2022–2026 (fix via targeted PATCH — apply.py only touches DRAFT rows). |
-| CE | 2020–2026, sets 1–2 (14) | **In progress** (DRAFT). Ready (verbatim, key-checked, explanations cleaned): 2021-1/2 … 2026-1/2 (12 papers). Left: 2020-1/2 (image-only PDFs, stems of figure questions paraphrased). | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. |
+| **CE** | 2020–2026, sets 1–2 (14) | **DONE** (DRAFT, 910 rows) — awaiting publish | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. ChatGPT cross-check not yet run. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
 
@@ -57,6 +57,8 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 ```
 1c. **Paraphrase check** (triage's stem check only catches *missing* PDF words): `python3 paraphrase.py <CODE> [10]` → rows where >20% of the PDF's words are absent from the DB are rewritten, not verbatim. CE 2020–2022 had "shown in the source figure" summaries instead of stems.
 1d. **Internal notes leak:** grep explanations for `BLOCK_PUBLISH|DRAFT|Lemyte|SME|PYQ fidelity|Source: supplied|supplied key|source figure|flagged for` — earlier drafting left editor notes in student-facing text. `python3 cleanexpl.py <CODE>` strips the provenance lines/phrases (CE 2020–2022 had one on every row).
+1f. **Image names** must use the row's topic code: `python3 renameimgs.py <CODE> [--dry]` (CE 2020 used `CORE`).
+1g. **Render check on live rows:** export DB rows to `rows_new.json` then `check_render.mjs`; also scan for odd `$$` counts (broken display math).
 1e. **Fix paraphrase without a full rewrite** (answers/explanations fine): write `.gate-work/<CODE>/stems.py` (`STEMS = {q: r'''verbatim…{FIG}…'''}`, `{IMG:file}` links an unlinked S3 image) → `python3 restem.py <CODE> [--dry]`; options via `opts.py` → `reopts.py`. Helpers: `showpdf.py <CODE> q,q` (PDF stem + row figure count), `showopts.py`. CE rows keep options only in `options_array` (not in markdown).
 2. **Key** → `python3 parsekey.py <CODE> <key.pdf>` (handles all text keys seen: 6/7-token rows, wrapped keys, "7 MCQ" merged cells, restart numbering, `A, C` MSQ, `MTA*`), or write `.gate-work/<CODE>/key.json` as `{"1": {"type":"MCQ","key":"B","marks":1}, …, "27": {"type":"NAT","key":"2047 to 2047","marks":1}}`
    (MSQ key `A;C`, MTA key `MTA`, alt `A;D OR A;C;D`). Key PDFs vary: text-extractable (parse), scanned (read visually),
@@ -100,7 +102,8 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 
 - Shared GA topics (subject_id NULL) never show on `/gate/practice/topics` (page filters by subject).
 - Vercel prod is missing Razorpay, SMTP, CRON_SECRET, APP_BASE_URL, NEXT_PUBLIC_SITE_URL env vars.
-- NAT two-range keys: EC2026 Q64 (±34.5–36.5), EC2023 Q63 (250 or 500), EE2025 Q59, EE2022 Q56/Q63 — only primary range graded.
+- NAT two-range keys (only first graded): CE2021-1 Q65 (196/218), CE2023-1 Q35 (15/26–27), CE2024-1 Q55 (0.09–0.11/0.55–0.65), CE2026-1 Q62 (−5/5); EC2026 Q64 (±34.5–36.5), EC2023 Q63 (250 or 500), EE2025 Q59, EE2022 Q56/Q63 — only primary range graded.
+- Published CS rows with unbalanced `$$` (render bug): GATE2019_CS, GATE2021_CS1, GATE2026_CS1.
 - GATE2019_CS has an editor note in a published explanation ("your current NAT schema…").
 - ~60 superseded S3 images unreferenced (IAM user lacks DeleteObject).
 - Test suite: `demo.test.ts` fails (missing `server-only`), pre-existing TS errors in nat/scoring tests.
