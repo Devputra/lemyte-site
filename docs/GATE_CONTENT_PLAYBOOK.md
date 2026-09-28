@@ -11,7 +11,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
 | **EE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** (455 rows) | ChatGPT cross-check pending: EE 2020 Q52–65, EE 2022–2026 (fix via targeted PATCH — apply.py only touches DRAFT rows). |
-| CE | 2020–2026, sets 1–2 (14) | **In progress** (DRAFT). Ready: 2023-1/2, 2024-1, 2025-1, 2026-1/2. Paraphrased → rewrite: 2020-1/2, 2021-1/2, 2022-1/2, 2024-2, 2025-2 | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. |
+| CE | 2020–2026, sets 1–2 (14) | **In progress** (DRAFT). Ready (verbatim, key-checked): 2022-1/2, 2023-1/2, 2024-1/2, 2025-1/2, 2026-1/2. Left: 2021-1/2 (paraphrased + 47 figures unlinked; image names use paper numbering → DB q = n+10), 2020-1/2 (image-only PDFs) | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
 
@@ -57,6 +57,7 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 ```
 1c. **Paraphrase check** (triage's stem check only catches *missing* PDF words): `python3 paraphrase.py <CODE> [10]` → rows where >20% of the PDF's words are absent from the DB are rewritten, not verbatim. CE 2020–2022 had "shown in the source figure" summaries instead of stems.
 1d. **Internal notes leak:** grep explanations for `BLOCK_PUBLISH|DRAFT|Lemyte|SME|PYQ fidelity` — earlier drafting left editor notes in student-facing text.
+1e. **Fix paraphrase without a full rewrite** (answers/explanations fine): write `.gate-work/<CODE>/stems.py` (`STEMS = {q: r'''verbatim…{FIG}…'''}`, `{IMG:file}` links an unlinked S3 image) → `python3 restem.py <CODE> [--dry]`; options via `opts.py` → `reopts.py`. Helpers: `showpdf.py <CODE> q,q` (PDF stem + row figure count), `showopts.py`. CE rows keep options only in `options_array` (not in markdown).
 2. **Key** → `python3 parsekey.py <CODE> <key.pdf>` (handles all text keys seen: 6/7-token rows, wrapped keys, "7 MCQ" merged cells, restart numbering, `A, C` MSQ, `MTA*`), or write `.gate-work/<CODE>/key.json` as `{"1": {"type":"MCQ","key":"B","marks":1}, …, "27": {"type":"NAT","key":"2047 to 2047","marks":1}}`
    (MSQ key `A;C`, MTA key `MTA`, alt `A;D OR A;C;D`). Key PDFs vary: text-extractable (parse), scanned (read visually),
    or numbered GA 1–10 then section 1–55 (**DB Q = 10 + n**). Compare with DB rows to list wrong answers.
