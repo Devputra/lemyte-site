@@ -67,7 +67,10 @@ export function gradeQuestion(
         return { earned: 0, maxMarks, correct: false };
       }
 
-      const isCorrect = selectedIds[0] === correctIds[0];
+      // Some keys accept either of two options ("B OR D"): the extra one is optional-correct
+      const isCorrect =
+        selectedIds[0] === correctIds[0] ||
+        (question.optionalCorrectOptionIds ?? []).includes(selectedIds[0]);
       if (isCorrect) {
         return { earned: maxMarks, maxMarks, correct: true };
       }

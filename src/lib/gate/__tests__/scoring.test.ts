@@ -32,6 +32,14 @@ describe("gradeQuestion", () => {
       expect(result.correct).toBe(true);
     });
 
+    it("should accept the alternate option of a two-answer MCQ key", () => {
+      const q: QuestionMeta = { ...mcq1Mark, optionalCorrectOptionIds: ["opt-d"] };
+      const at = new Date().toISOString();
+      expect(gradeQuestion(q, { type: "MCQ", selectedOptionIds: ["opt-d"], savedAt: at }).correct).toBe(true);
+      expect(gradeQuestion(q, { type: "MCQ", selectedOptionIds: ["opt-a"], savedAt: at }).correct).toBe(true);
+      expect(gradeQuestion(q, { type: "MCQ", selectedOptionIds: ["opt-b"], savedAt: at }).correct).toBe(false);
+    });
+
     it("should award +2 for correct 2-mark MCQ", () => {
       const answer: CommittedAnswer = {
         type: "MCQ",

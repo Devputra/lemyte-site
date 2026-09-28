@@ -81,7 +81,7 @@ async function loadQuestionMeta(questionVersionIds: string[]): Promise<Map<strin
           : Number(row.nat_precision),
       correctOptionIds: type === "NAT" ? undefined : extractCorrectOptionIds(row.options_array),
       optionalCorrectOptionIds:
-        type === "MSQ" ? extractOptionalCorrectOptionIds(row.options_array) : undefined,
+        type === "NAT" ? undefined : extractOptionalCorrectOptionIds(row.options_array),
       marksToAll: row.grading_policy === "MARKS_TO_ALL",
     };
 

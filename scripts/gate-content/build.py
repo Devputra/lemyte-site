@@ -67,7 +67,7 @@ for q in sorted(Q):
         for i, (l, t) in enumerate(zip("abcd", optsrc)):
             md = f"![Option {l.upper()}]({BASE}{figs[('', 'option-' + l)]})" if t == "IMG" else t
             opts.append({"id": l, "markdown": md, "is_correct": dbflags[i] if mta else l.upper() in correct})
-        if alt and k["type"] == "MSQ":  # e.g. "A;D OR A;C;D": extra options accepted either way
+        if alt:  # MSQ "A;D OR A;C;D" / MCQ "B OR D": extra options accepted either way
             extra = set(k["key"].split(" OR ")[1].split(";")) - correct
             for o in opts:
                 if o["id"].upper() in extra:

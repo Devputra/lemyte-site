@@ -10,7 +10,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | CS | 2014–2026 (24) + mock | PUBLISHED | Reference ("ideal") format. Not re-audited. |
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
-| EE | 2020–2026 (7) | 2026–2023 **DONE** (DRAFT); 2020–2022 not started | User: publish all EE together at the end. |
+| EE | 2020–2026 (7) | 2026–2022 **DONE** (DRAFT); 2020–2021 not started | User: publish all EE together at the end. |
 | CE | 2020–2026, sets 1–2 (14) | DRAFT, not started | Image names use `CE_CORE`/`CE_GE` style. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
@@ -30,7 +30,7 @@ answers per paper, and one paper (2020) had content shifted by one question.
 
 - `markdown_content`: `"\n[gate-source-<CODE>-Qnn]: #\n\n<stem>\n\n(A) …  \n(B) …\n"` — tag on its **own line** (inline = visible to students).
 - Figures: `![Figure for Qn](gate-media://<folder>/<file>)`; option images also go in `options_array[i].markdown`.
-- `options_array`: `[{id:"a".."d", markdown, is_correct}]`; MSQ "A;D OR A;C;D" → `optional_correct: true` on extra option.
+- `options_array`: `[{id:"a".."d", markdown, is_correct}]`; MSQ "A;D OR A;C;D" → `optional_correct: true` on extra option. MCQ "B OR D" → same (MCQ scoring accepts optional_correct since EE 2022).
 - NAT: `nat_lower_bound`/`nat_upper_bound`/`nat_precision`; `options_array` must be **null** (DB CHECK). Two-range keys can't be stored (only primary range) until a `nat_alt_ranges` column exists.
 - "Marks to all" (MTA) → `grading_policy = MARKS_TO_ALL` (scoring honours it since f74dea0). For **NAT** MTA rows set nat_lower/upper/precision all **null** (CHECK `qv_nat_fields_complete` rejects MTA with bounds).
 - Image name: `gate_pyq_<year>_<SUBJ>_<TOPICCODE>_q<NN>[a|b]_<stem|option-a..d>.v1.png`; CS/CE sets: `gate_pyq_<year>_set-<n>_<SUBJ>_…`. GA-* topics use token `GA`. Topic code = `topics.code` for that subject (user's names often deviate, e.g. EMT→EMAG, COM→COMM, EM→CALC/PROB — build.py renames by copying; S3 key can't delete).
@@ -84,10 +84,12 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 
 - **EE 2023** (2026-09-28): full rewrite — DB rows were scrambled (Q16=dup of Q25, Q21=dup of Q41, Q50=dup of Q34, Q60=dup of Q47; Q17/Q29/Q48/Q49 from other papers; fabricated options on Q7/Q24/Q26). No user images → cropped 36 myself. **Cropping tip:** this PDF's table columns sit at x≈67/72/107/116/523 (not 72/114/523); override `gatepdf.COLS`/`_is_rule`, then crop the whole table **cell** containing each detected cluster (horizontal rules >300pt wide bound the cell) — cluster bboxes alone clip labels. See `.gate-work/GATE2023_EE/crops.py`. Key PDF format: "Qno \n session QT \n section \n key \n marks" (5 tokens).
 
+- **EE 2022** (2026-09-28): full rewrite (inline tags, wrong answer Q49, weak explanations). No user images → cropped 31 myself with explicit PDF rects (`.gate-work/GATE2022_EE/crops.py`). **Layout:** GA pages (1–10) are tables (cols x≈94/144/517); Q11+ are plain two-per-page text, option labels end at x≈117 (crop option images from x=119). Q11 key "B OR D" (MCQ) → D `optional_correct`. Q37 printed $s^2+0.1s+10$ but key (A) needs $+100$ (typo noted in explanation). Two-range NAT: Q56 stored 198–202 (alt 188–192), Q63 stored 1725–1740 (alt 675–700, KE only) — key.json reordered so the worked answer is primary.
+
 ## Known open issues
 
 - Shared GA topics (subject_id NULL) never show on `/gate/practice/topics` (page filters by subject).
 - Vercel prod is missing Razorpay, SMTP, CRON_SECRET, APP_BASE_URL, NEXT_PUBLIC_SITE_URL env vars.
-- NAT two-range keys: EC2026 Q64 (±34.5–36.5), EC2023 Q63 (250 or 500) — only primary range graded.
+- NAT two-range keys: EC2026 Q64 (±34.5–36.5), EC2023 Q63 (250 or 500), EE2025 Q59, EE2022 Q56/Q63 — only primary range graded.
 - ~60 superseded S3 images unreferenced (IAM user lacks DeleteObject).
 - Test suite: `demo.test.ts` fails (missing `server-only`), pre-existing TS errors in nat/scoring tests.
