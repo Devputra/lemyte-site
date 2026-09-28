@@ -12,7 +12,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
 | **EE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** (455 rows) | ChatGPT cross-check pending: EE 2020 Q52–65, EE 2022–2026 (fix via targeted PATCH — apply.py only touches DRAFT rows). |
 | **CE** | 2020–2026, sets 1–2 (14) | **DONE + PUBLISHED 2026-09-28** (910 rows) | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. ChatGPT cross-check not yet run. |
-| **AE** | 2020–2026 (7) | **DONE** (DRAFT, 455 rows) — awaiting publish | Full rewrite of every paper (rows were skeletons); 185 figures cropped (none existed). Watermarks baked into images → whiten min-channel ≥ 170–200. 2020 had two rows both tagged Q17 (one was Q27 → re-tagged; refresh rows_before.json before build). 2021 key PDF text is scrambled → read visually. |
+| **AE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-29** (455 rows) | Full rewrite of every paper (rows were skeletons); 185 figures cropped (none existed). Watermarks baked into images → whiten min-channel ≥ 170–200. 2020 had two rows both tagged Q17 (one was Q27 → re-tagged; refresh rows_before.json before build). 2021 key PDF text is scrambled → read visually. |
 | ME | none | — | Topics exist, no questions. |
 
 Expect every draft paper to be wrong: EC had paraphrased stems, "STEM PENDING" rows, 6–9 wrong
