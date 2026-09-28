@@ -10,7 +10,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | CS | 2014–2026 (24) + mock | PUBLISHED | Reference ("ideal") format. Not re-audited. |
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
-| EE | 2020–2026 (7) | 2026, 2025 **DONE** (DRAFT); 2020–2024 not started | User: publish all EE together at the end. |
+| EE | 2020–2026 (7) | 2026, 2025, 2024 **DONE** (DRAFT); 2020–2023 not started | User: publish all EE together at the end. |
 | CE | 2020–2026, sets 1–2 (14) | DRAFT, not started | Image names use `CE_CORE`/`CE_GE` style. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
@@ -41,7 +41,9 @@ answers per paper, and one paper (2020) had content shifted by one question.
 Before transcribing, check whether the paper even needs it (EE 2026 didn't):
 1. Answers vs key (fetch + key.json compare).
 2. Stem words vs PDF text (`gatepdf.question_text`) — ratio of PDF words missing from DB stem; ~0 = verbatim. Number-diff false positives come from superscripts (10^5 → "105").
-3. Image refs vs S3 (missing / unused files) — unused files reveal missing option images or figures.
+3. Image refs vs S3 (missing / unused files) — unused files reveal missing option images or figures; refs to non-existent files are usually **fabricated** figures (remove them).
+3b. Overbars: count `\u0305` per question in PDF text vs `\bar`/`\overline` in DB — Boolean stems lose bars.
+3c. Explanations containing "solving gives", "from the figure", "reduce to" without working are usually unverified — rewrite them.
 4. Explanations: flag short/hand-wavy ones ("depends on figure", "Official key", "Wait") and ones stating an answer ≠ key.
 If all clean except a few rows, write a small targeted `fixes.py` in `.gate-work/<CODE>/` (PATCH only changed fields) instead of a full content.py.
 
@@ -77,6 +79,8 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 - **EE 2026** (2026-09-28): stems verbatim, answers = key. Fixed: Q2/Q5 option images, Q41 missing figure, Q37 stem ($A_0 = 105$, not $10^5$ — only 105 gives key −16.67), Q58 missing sentence + MTA, Q28 explanation had physics reversed; 11 explanations rewritten. Backup: `EE/2026/db_backup_GATE2026_EE_2026-09-28.json`.
 
 - **EE 2025** (2026-09-28): full rewrite needed — DB image links were fabricated (names from other papers, fake figure on a matrix question), 9 real figures unlinked, 4 wrong answers (Q4 none, Q14, Q18, Q45), guessed figure explanations. All 65 rewritten verbatim; user's 44 images linked as-is. Q59 key has ± ranges (stored −2.00…−1.94). Buffer questions after Q65 in the PDF are ignored.
+
+- **EE 2024** (2026-09-28): targeted (29 rows). Q8 wrong answer (→C); **Q24/Q26 had lost overbars** in stem/options (stored functions ≠ paper) — check `\u0305` count in PDF text vs `\bar` in DB; fake stem images on Q2/Q18/Q40/Q43 removed, Q2 option images linked, Q41 relinked; ~22 hand-wavy/wrong explanations rewritten (e.g. Q34, Q65 had wrong numbers).
 
 ## Known open issues
 
