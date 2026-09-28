@@ -81,7 +81,9 @@ for q in sorted(Q):
     upd = dict(markdown_content=md, options_array=opts, explanation_markdown="\n" + c["expl"].strip() + "\n",
                topic_id=t["id"], topic_tag=t["name"], type=k["type"], marks=k["marks"],
                section_kind=t["section_kind"], grading_policy="MARKS_TO_ALL" if mta else "NORMAL")
-    if k["type"] == "NAT":  # NAT rows may NOT carry options_array (DB check constraint)
+    if k["type"] == "NAT" and mta:  # CHECK qv_nat_fields_complete: MTA NAT rows carry no bounds
+        upd.update(nat_lower_bound=None, nat_upper_bound=None, nat_precision=None)
+    elif k["type"] == "NAT":  # NAT rows may NOT carry options_array (DB check constraint)
         lo, hi = [float(v) for v in re.findall(r"-?\d+\.?\d*", k["key"])][:2]
         upd.update(nat_lower_bound=lo, nat_upper_bound=hi)
         if r["nat_precision"] is None:

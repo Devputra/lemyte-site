@@ -10,7 +10,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | CS | 2014–2026 (24) + mock | PUBLISHED | Reference ("ideal") format. Not re-audited. |
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
-| EE | 2020–2026 (7) | 2026–2021 **DONE** (DRAFT); 2020 not started | User: publish all EE together at the end. |
+| EE | 2020–2026 (7) | 2020–2026 **ALL DONE** (DRAFT) — ready to publish together | User: publish all EE together at the end. |
 | CE | 2020–2026, sets 1–2 (14) | DRAFT, not started | Image names use `CE_CORE`/`CE_GE` style. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
@@ -64,7 +64,7 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 4. `python3 scripts/gate-content/build.py <CODE> <image-prefix>` → asserts every figure used, answers consistent.
 5. `node scripts/gate-content/check_render.mjs <CODE>` → must print `render problems: 0`.
 6. `python3 scripts/gate-content/apply.py <CODE> [--upload]` → S3 renames, PATCH DRAFT rows, verify vs key + S3.
-6b. **Second opinion (ChatGPT via Codex, subscription — no API credit):** `cd scripts/gate-content && python3 crosscheck.py <CODE> --via codex` (~3 min/paper, 3 parallel). Solves each row independently (figures attached), compares with the stored key, reviews the explanation; prints only flagged rows → verify each yourself, fix real ones (EE 2021: 2 valid explanation flags). `--via api` uses the OpenAI key in `.env.local` (needs paid credit). Needs `codex login` (ChatGPT).
+6b. **Second opinion (ChatGPT via Codex, subscription — no API credit):** `cd scripts/gate-content && python3 crosscheck.py <CODE> --via codex` (~3 min/paper, 3 parallel; the ChatGPT plan has a usage cap — ~50 questions hit it, the script then skips the rest; rerun later with `--q`). Solves each row independently (figures attached), compares with the stored key, reviews the explanation; prints only flagged rows → verify each yourself, fix real ones (EE 2021: 2 valid explanation flags). `--via api` uses the OpenAI key in `.env.local` (needs paid credit). Needs `codex login` (ChatGPT).
 7. Update the status table above + tell the user. **Publish only when the user asks**:
    `PATCH question_versions?pyq_paper_code=eq.<CODE>&status=eq.DRAFT` with `{"status":"PUBLISHED","published_at":<now>}`.
 
@@ -88,6 +88,8 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 - **EE 2022** (2026-09-28): full rewrite (inline tags, wrong answer Q49, weak explanations). No user images → cropped 31 myself with explicit PDF rects (`.gate-work/GATE2022_EE/crops.py`). **Layout:** GA pages (1–10) are tables (cols x≈94/144/517); Q11+ are plain two-per-page text, option labels end at x≈117 (crop option images from x=119). Q11 key "B OR D" (MCQ) → D `optional_correct`. Q37 printed $s^2+0.1s+10$ but key (A) needs $+100$ (typo noted in explanation). Two-range NAT: Q56 stored 198–202 (alt 188–192), Q63 stored 1725–1740 (alt 675–700, KE only) — key.json reordered so the worked answer is primary.
 
 - **EE 2021** (2026-09-28): full rewrite (inline tags, Q11/Q12 wrong answers, PENDING Q46, rows' topics misaligned). No user images → cropped 30 (`.gate-work/GATE2021_EE/crops.py`). Codex cross-check: 65/65 agree; fixed Q10 (option D not addressed) and Q51 (wrongly assumed y = 0) explanations. **Layout (IIT Bombay, A4):** table cols x≈72/125/523; figures are embedded images → crop their bboxes directly, but first delete the full-page watermark image (w,h>400) and header images (y1<80). Key PDF: 7 tokens per row (Q, session, type, section, key, marks, neg), EE section numbered 1–55 (DB Q = 10 + n). Q18 match-table rendered as a markdown table.
+
+- **EE 2020** (2026-09-28): full rewrite — DB stems were placeholders ("Circuit value."). **The paper PDF is all images** (no text layer) → transcribed visually; figures cropped from rendered pages (`.gate-work/GATE2020_EE/crops.py`). Key PDF: 6 tokens per row, GA 1–10 then EE 1–55 (DB Q = 10 + n). MTA: Q22, Q52 (MCQ), Q58, Q63 (NAT, bounds null — build.py/apply.py now handle NAT MTA). Q11 "A OR D". Codex cross-check (Q1–51 before the ChatGPT usage limit): fixed Q11/Q16/Q22/Q49 explanations; **Q52–Q65 still to cross-check**.
 
 ## Known open issues
 

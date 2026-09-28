@@ -44,6 +44,9 @@ for r in after.values():
     k = key[str(qn(r))]
     if r["type"] != k["type"]:
         bad.append((qn(r), "type"))
+    elif k["type"] == "NAT" and k["key"] == "MTA":
+        if r.get("grading_policy") != "MARKS_TO_ALL" or r["nat_lower_bound"] is not None:
+            bad.append((qn(r), "mta"))
     elif k["type"] == "NAT":
         if [r["nat_lower_bound"], r["nat_upper_bound"]] != [float(v) for v in re.findall(r"-?\d+\.?\d*", k["key"])][:2]:
             bad.append((qn(r), "nat"))

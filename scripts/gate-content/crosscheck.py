@@ -72,7 +72,12 @@ def question_text(r):
             f"STORED ANSWER: {stored_key(r)}\n\nSTORED EXPLANATION:\n{r.get('explanation_markdown') or ''}")
 
 
+LIMIT_HIT = []  # set once the ChatGPT plan's usage limit is reached; skip the remaining rows
+
+
 def check_codex(r, subj, year, model):
+    if LIMIT_HIT:
+        return {"error": "skipped: usage limit reached earlier in this run"}
     with tempfile.TemporaryDirectory() as tmp:
         schema, out = os.path.join(tmp, "schema.json"), os.path.join(tmp, "out.json")
         json.dump(SCHEMA, open(schema, "w"))
@@ -86,7 +91,10 @@ def check_codex(r, subj, year, model):
         try:
             p = subprocess.run(cmd + ["-"], input=prompt, capture_output=True, text=True, timeout=900)
             if not os.path.exists(out):
-                return {"error": (p.stderr or p.stdout)[-300:]}
+                err = (p.stderr or p.stdout)[-300:]
+                if "usage limit" in err:
+                    LIMIT_HIT.append(err)
+                return {"error": err}
             return json.loads(open(out).read())
         except Exception as e:
             return {"error": str(e)[:300]}
