@@ -10,7 +10,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | CS | 2014–2026 (24) + mock | PUBLISHED | Reference ("ideal") format. Not re-audited. |
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
-| EE | 2020–2026 (7) | 2026–2022 **DONE** (DRAFT); 2020–2021 not started | User: publish all EE together at the end. |
+| EE | 2020–2026 (7) | 2026–2021 **DONE** (DRAFT); 2020 not started | User: publish all EE together at the end. |
 | CE | 2020–2026, sets 1–2 (14) | DRAFT, not started | Image names use `CE_CORE`/`CE_GE` style. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
@@ -85,6 +85,8 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 - **EE 2023** (2026-09-28): full rewrite — DB rows were scrambled (Q16=dup of Q25, Q21=dup of Q41, Q50=dup of Q34, Q60=dup of Q47; Q17/Q29/Q48/Q49 from other papers; fabricated options on Q7/Q24/Q26). No user images → cropped 36 myself. **Cropping tip:** this PDF's table columns sit at x≈67/72/107/116/523 (not 72/114/523); override `gatepdf.COLS`/`_is_rule`, then crop the whole table **cell** containing each detected cluster (horizontal rules >300pt wide bound the cell) — cluster bboxes alone clip labels. See `.gate-work/GATE2023_EE/crops.py`. Key PDF format: "Qno \n session QT \n section \n key \n marks" (5 tokens).
 
 - **EE 2022** (2026-09-28): full rewrite (inline tags, wrong answer Q49, weak explanations). No user images → cropped 31 myself with explicit PDF rects (`.gate-work/GATE2022_EE/crops.py`). **Layout:** GA pages (1–10) are tables (cols x≈94/144/517); Q11+ are plain two-per-page text, option labels end at x≈117 (crop option images from x=119). Q11 key "B OR D" (MCQ) → D `optional_correct`. Q37 printed $s^2+0.1s+10$ but key (A) needs $+100$ (typo noted in explanation). Two-range NAT: Q56 stored 198–202 (alt 188–192), Q63 stored 1725–1740 (alt 675–700, KE only) — key.json reordered so the worked answer is primary.
+
+- **EE 2021** (2026-09-28): full rewrite (inline tags, Q11/Q12 wrong answers, PENDING Q46, rows' topics misaligned). No user images → cropped 30 (`.gate-work/GATE2021_EE/crops.py`). **Layout (IIT Bombay, A4):** table cols x≈72/125/523; figures are embedded images → crop their bboxes directly, but first delete the full-page watermark image (w,h>400) and header images (y1<80). Key PDF: 7 tokens per row (Q, session, type, section, key, marks, neg), EE section numbered 1–55 (DB Q = 10 + n). Q18 match-table rendered as a markdown table.
 
 ## Known open issues
 
