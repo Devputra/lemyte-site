@@ -10,7 +10,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | CS | 2014–2026 (24) + mock | PUBLISHED | Reference ("ideal") format. Not re-audited. |
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
-| EE | 2020–2026 (7) | DRAFT, not started | No `EE/` folder in S3; ~170 image refs broken. |
+| EE | 2020–2026 (7) | 2026 **DONE** (DRAFT); 2020–2025 not started | 2026 was already verbatim + correct; only targeted fixes (see below). |
 | CE | 2020–2026, sets 1–2 (14) | DRAFT, not started | Image names use `CE_CORE`/`CE_GE` style. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
@@ -32,9 +32,18 @@ answers per paper, and one paper (2020) had content shifted by one question.
 - Figures: `![Figure for Qn](gate-media://<folder>/<file>)`; option images also go in `options_array[i].markdown`.
 - `options_array`: `[{id:"a".."d", markdown, is_correct}]`; MSQ "A;D OR A;C;D" → `optional_correct: true` on extra option.
 - NAT: `nat_lower_bound`/`nat_upper_bound`/`nat_precision`; `options_array` must be **null** (DB CHECK). Two-range keys can't be stored (only primary range) until a `nat_alt_ranges` column exists.
-- "Marks to all" (MTA) → `grading_policy = MARKS_TO_ALL` (scoring honours it since f74dea0).
+- "Marks to all" (MTA) → `grading_policy = MARKS_TO_ALL` (scoring honours it since f74dea0). For **NAT** MTA rows set nat_lower/upper/precision all **null** (CHECK `qv_nat_fields_complete` rejects MTA with bounds).
 - Image name: `gate_pyq_<year>_<SUBJ>_<TOPICCODE>_q<NN>[a|b]_<stem|option-a..d>.v1.png`; CS/CE sets: `gate_pyq_<year>_set-<n>_<SUBJ>_…`. GA-* topics use token `GA`. Topic code = `topics.code` for that subject (user's names often deviate, e.g. EMT→EMAG, COM→COMM, EM→CALC/PROB — build.py renames by copying; S3 key can't delete).
 - Markdown tables render (remark-gfm). KaTeX for math; `Ω` outside `$…$` or `\Omega` inside.
+
+## Triage first (saves most tokens)
+
+Before transcribing, check whether the paper even needs it (EE 2026 didn't):
+1. Answers vs key (fetch + key.json compare).
+2. Stem words vs PDF text (`gatepdf.question_text`) — ratio of PDF words missing from DB stem; ~0 = verbatim. Number-diff false positives come from superscripts (10^5 → "105").
+3. Image refs vs S3 (missing / unused files) — unused files reveal missing option images or figures.
+4. Explanations: flag short/hand-wavy ones ("depends on figure", "Official key", "Wait") and ones stating an answer ≠ key.
+If all clean except a few rows, write a small targeted `fixes.py` in `.gate-work/<CODE>/` (PATCH only changed fields) instead of a full content.py.
 
 ## Per-paper procedure
 
@@ -60,6 +69,10 @@ python3 scripts/gate-content/fetch.py GATE2024_EE EE 2024 EE/pyq/2024_ee
 - View images only as downscaled sheets (API rejects >2000px in multi-image requests).
 - Render pages 2-up (`page_sheets`) and read each once; solve while reading.
 - Keep explanations short (worked result, not essays); stems verbatim.
+
+## Paper log
+
+- **EE 2026** (2026-09-28): stems verbatim, answers = key. Fixed: Q2/Q5 option images, Q41 missing figure, Q37 stem ($A_0 = 105$, not $10^5$ — only 105 gives key −16.67), Q58 missing sentence + MTA, Q28 explanation had physics reversed; 11 explanations rewritten. Backup: `EE/2026/db_backup_GATE2026_EE_2026-09-28.json`.
 
 ## Known open issues
 
