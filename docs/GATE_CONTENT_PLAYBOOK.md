@@ -10,7 +10,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | CS | 2014–2026 (24) + mock | PUBLISHED | Reference ("ideal") format. Not re-audited. |
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
-| EE | 2020–2026 (7) | 2026, 2025, 2024 **DONE** (DRAFT); 2020–2023 not started | User: publish all EE together at the end. |
+| EE | 2020–2026 (7) | 2026–2023 **DONE** (DRAFT); 2020–2022 not started | User: publish all EE together at the end. |
 | CE | 2020–2026, sets 1–2 (14) | DRAFT, not started | Image names use `CE_CORE`/`CE_GE` style. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
@@ -81,6 +81,8 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 - **EE 2025** (2026-09-28): full rewrite needed — DB image links were fabricated (names from other papers, fake figure on a matrix question), 9 real figures unlinked, 4 wrong answers (Q4 none, Q14, Q18, Q45), guessed figure explanations. All 65 rewritten verbatim; user's 44 images linked as-is. Q59 key has ± ranges (stored −2.00…−1.94). Buffer questions after Q65 in the PDF are ignored.
 
 - **EE 2024** (2026-09-28): targeted (29 rows). Q8 wrong answer (→C); **Q24/Q26 had lost overbars** in stem/options (stored functions ≠ paper) — check `\u0305` count in PDF text vs `\bar` in DB; fake stem images on Q2/Q18/Q40/Q43 removed, Q2 option images linked, Q41 relinked; ~22 hand-wavy/wrong explanations rewritten (e.g. Q34, Q65 had wrong numbers).
+
+- **EE 2023** (2026-09-28): full rewrite — DB rows were scrambled (Q16=dup of Q25, Q21=dup of Q41, Q50=dup of Q34, Q60=dup of Q47; Q17/Q29/Q48/Q49 from other papers; fabricated options on Q7/Q24/Q26). No user images → cropped 36 myself. **Cropping tip:** this PDF's table columns sit at x≈67/72/107/116/523 (not 72/114/523); override `gatepdf.COLS`/`_is_rule`, then crop the whole table **cell** containing each detected cluster (horizontal rules >300pt wide bound the cell) — cluster bboxes alone clip labels. See `.gate-work/GATE2023_EE/crops.py`. Key PDF format: "Qno \n session QT \n section \n key \n marks" (5 tokens).
 
 ## Known open issues
 
