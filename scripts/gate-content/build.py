@@ -65,14 +65,15 @@ for q in sorted(Q):
     if optsrc:
         opts = []
         for i, (l, t) in enumerate(zip("abcd", optsrc)):
-            md = f"![Option {l.upper()}]({BASE}{figs[('', 'option-' + l)]})" if t == "IMG" else t
+            img = f"![Option {l.upper()}]({BASE}{figs[('', 'option-' + l)]})" if (t == "IMG" or "{IMG}" in t) else None
+            md = img if t == "IMG" else (t.replace("{IMG}", "\n\n" + img + "\n\n") if img else t)
             opts.append({"id": l, "markdown": md, "is_correct": dbflags[i] if mta else l.upper() in correct})
         if alt:  # MSQ "A;D OR A;C;D" / MCQ "B OR D": extra options accepted either way
             extra = set(k["key"].split(" OR ")[1].split(";")) - correct
             for o in opts:
                 if o["id"].upper() in extra:
                     o["optional_correct"] = True
-        assert sum(t == "IMG" for t in optsrc) == sum(1 for k2 in figs if k2[1].startswith("option")), f"Q{q} option images"
+        assert sum(t == "IMG" or "{IMG}" in t for t in optsrc) == sum(1 for k2 in figs if k2[1].startswith("option")), f"Q{q} option images"
     assert (k["type"] == "NAT") == (not optsrc), f"Q{q} type/options mismatch"
     md = f"\n[gate-source-{code}-Q{q:02d}]: #\n\n{stem}\n"
     if optsrc:

@@ -12,7 +12,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
 | **EE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** (455 rows) | ChatGPT cross-check pending: EE 2020 Q52–65, EE 2022–2026 (fix via targeted PATCH — apply.py only touches DRAFT rows). |
 | **CE** | 2020–2026, sets 1–2 (14) | **DONE + PUBLISHED 2026-09-28** (910 rows) | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. ChatGPT cross-check not yet run. |
-| AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
+| AE | 2020–2026 (7) | **In progress** (DRAFT): 2024–2026 rewritten; 2020–2023 left | Rows were skeletons ("Official key A." explanations, placeholder stems) → full rewrite; no images existed (all cropped). Watermark baked into figure images → whiten pixels with min channel ≥ 170. |
 | ME | none | — | Topics exist, no questions. |
 
 Expect every draft paper to be wrong: EC had paraphrased stems, "STEM PENDING" rows, 6–9 wrong
@@ -65,7 +65,7 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
    or numbered GA 1–10 then section 1–55 (**DB Q = 10 + n**). Compare with DB rows to list wrong answers.
 3. **Read the paper** (render pages to PNG ≤1900px, `gatepdf.page_sheets`), solve every question, write
    `.gate-work/<CODE>/content.py`: `Q[n] = dict(topic="NSS", stem=r"""… {FIG}""", opts=[…4 strings…] | "IMG" | None, expl=r"""…""")`.
-   Mixed options: list with `"IMG"` entries. Optional `FIXQ = {("EMT",48): 49}` when an uploaded image has the wrong q number.
+   Mixed options: list with `"IMG"` entries, or `{IMG}` inside an option's text for a figure within the option (file `…_option-x`). Optional `FIXQ = {("EMT",48): 49}` when an uploaded image has the wrong q number.
 4. `python3 scripts/gate-content/build.py <CODE> <image-prefix>` → asserts every figure used, answers consistent.
 5. `node scripts/gate-content/check_render.mjs <CODE>` → must print `render problems: 0`.
 6. `python3 scripts/gate-content/apply.py <CODE> [--upload]` → S3 renames, PATCH DRAFT rows, verify vs key + S3.
