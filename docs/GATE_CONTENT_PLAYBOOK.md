@@ -11,7 +11,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | DA | 2024–2026 | PUBLISHED | Not re-audited. |
 | **EC** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** | All verbatim, answers vs key, images linked. |
 | **EE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** (455 rows) | ChatGPT cross-check pending: EE 2020 Q52–65, EE 2022–2026 (fix via targeted PATCH — apply.py only touches DRAFT rows). |
-| CE | 2020–2026, sets 1–2 (14) | DRAFT, not started | Image names use `CE_CORE`/`CE_GE` style. |
+| CE | 2020–2026, sets 1–2 (14) | **In progress** (DRAFT). Ready: 2023-1/2, 2024-1, 2025-1, 2026-1/2. Paraphrased → rewrite: 2020-1/2, 2021-1/2, 2022-1/2, 2024-2, 2025-2 | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. |
 | AE | 2020–2026 (7) | DRAFT, not started | No image links at all. |
 | ME | none | — | Topics exist, no questions. |
 
@@ -55,7 +55,9 @@ python3 scripts/gate-content/fetch.py GATE2024_EE EE 2024 EE/pyq/2024_ee
 # 1b. after writing key.json: one-shot triage report (+ .gate-work/<CODE>/audit.txt)
 cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 ```
-2. **Key** → write `.gate-work/<CODE>/key.json` as `{"1": {"type":"MCQ","key":"B","marks":1}, …, "27": {"type":"NAT","key":"2047 to 2047","marks":1}}`
+1c. **Paraphrase check** (triage's stem check only catches *missing* PDF words): `python3 paraphrase.py <CODE> [10]` → rows where >20% of the PDF's words are absent from the DB are rewritten, not verbatim. CE 2020–2022 had "shown in the source figure" summaries instead of stems.
+1d. **Internal notes leak:** grep explanations for `BLOCK_PUBLISH|DRAFT|Lemyte|SME|PYQ fidelity` — earlier drafting left editor notes in student-facing text.
+2. **Key** → `python3 parsekey.py <CODE> <key.pdf>` (handles all text keys seen: 6/7-token rows, wrapped keys, "7 MCQ" merged cells, restart numbering, `A, C` MSQ, `MTA*`), or write `.gate-work/<CODE>/key.json` as `{"1": {"type":"MCQ","key":"B","marks":1}, …, "27": {"type":"NAT","key":"2047 to 2047","marks":1}}`
    (MSQ key `A;C`, MTA key `MTA`, alt `A;D OR A;C;D`). Key PDFs vary: text-extractable (parse), scanned (read visually),
    or numbered GA 1–10 then section 1–55 (**DB Q = 10 + n**). Compare with DB rows to list wrong answers.
 3. **Read the paper** (render pages to PNG ≤1900px, `gatepdf.page_sheets`), solve every question, write
@@ -97,5 +99,6 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
 - Shared GA topics (subject_id NULL) never show on `/gate/practice/topics` (page filters by subject).
 - Vercel prod is missing Razorpay, SMTP, CRON_SECRET, APP_BASE_URL, NEXT_PUBLIC_SITE_URL env vars.
 - NAT two-range keys: EC2026 Q64 (±34.5–36.5), EC2023 Q63 (250 or 500), EE2025 Q59, EE2022 Q56/Q63 — only primary range graded.
+- GATE2019_CS has an editor note in a published explanation ("your current NAT schema…").
 - ~60 superseded S3 images unreferenced (IAM user lacks DeleteObject).
 - Test suite: `demo.test.ts` fails (missing `server-only`), pre-existing TS errors in nat/scoring tests.
