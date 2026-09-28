@@ -13,7 +13,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | **EE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** (455 rows) | ChatGPT cross-check pending: EE 2020 Q52–65, EE 2022–2026 (fix via targeted PATCH — apply.py only touches DRAFT rows). |
 | **CE** | 2020–2026, sets 1–2 (14) | **DONE + PUBLISHED 2026-09-28** (910 rows) | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. ChatGPT cross-check not yet run. |
 | **AE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-29** (455 rows) | Full rewrite of every paper (rows were skeletons); 185 figures cropped (none existed). Watermarks baked into images → whiten min-channel ≥ 170–200. 2020 had two rows both tagged Q17 (one was Q27 → re-tagged; refresh rows_before.json before build). 2021 key PDF text is scrambled → read visually. |
-| ME | none | — | Topics exist, no questions. |
+| **ME** | 2020–2026 (10: 2020–22 sets 1–2) | IN PROGRESS (DRAFT) | New paper pipeline (no rows existed) — see *New paper (AI-drafted)*. Codes `GATE2021_ME1`, `GATE2023_ME`; folders `ME/pyq/2021_me_1`, `ME/pyq/2023_me`; prefix `gate_pyq_2021_set-1_ME_`. |
 
 Expect every draft paper to be wrong: EC had paraphrased stems, "STEM PENDING" rows, 6–9 wrong
 answers per paper, and one paper (2020) had content shifted by one question.
@@ -73,6 +73,27 @@ cd scripts/gate-content && python3 triage.py GATE2024_EE <questions.pdf>
    **Token policy:** one checker per paper (`--via codex`). Gemini (`--via gemini`, API key, free tier = **20 requests/day**) only as a second opinion: `--flagged` re-sends just the rows the last run flagged/failed. MTA rows are skipped automatically.
 7. Update the status table above + tell the user. **Publish only when the user asks**:
    `PATCH question_versions?pyq_paper_code=eq.<CODE>&status=eq.DRAFT` with `{"status":"PUBLISHED","published_at":<now>}`.
+
+## New paper (AI-drafted; no rows in DB) — used for ME
+
+```bash
+cd scripts/gate-content
+python3 parsekey.py <CODE> <key.pdf>                      # key.json
+python3 prep.py <CODE> ME 2021/set1 ME/pyq/2021_me_1 <questions.pdf>   # meta, topics, pages/, pdf_q.json
+python3 draft.py <CODE> codex 1 33 && python3 draft.py <CODE> codex 34 65   # ChatGPT drafts (~4 min/half; run 3 papers in parallel)
+python3 autofig.py <CODE> <questions.pdf> --sheet         # text-layer PDFs: auto crops -> images/tmp_qNN_<part>.png + autofig*.png sheets
+python3 autofig_raster.py <CODE> <questions.pdf> --sheet  # image-only PDFs (2020): bands of stem screenshots + tall option images
+python3 draftcheck.py <CODE>                              # draft vs PDF text, topics, opts/type, {FIG}/IMG vs crops on disk
+bash ../../.gate-work/<CODE>/fixcrop.sh                   # manual recrops (fixcrop.py name:page:x0,y0,x1,y1 in PDF pt = page px/1.4); replay after autofig
+python3 finalize.py <CODE> <prefix> [--prune]             # drafts -> content.py; tmp crops -> topic-coded names (--prune drops unrequested raster crops)
+python3 newrows.py <CODE> <year>                          # INSERT 65 placeholder DRAFT rows + rows_before.json
+python3 build.py <CODE> <prefix>; node check_render.mjs <CODE>; python3 apply.py <CODE> --upload
+```
+- Drafts: `draft.py` sends SPEC + key + per-question PDF text + all page images. Codex (ChatGPT) was reliable and fast; Gemini free tier was
+  slow/overloaded (503 retries) — use it only as a fallback. Answers are never taken from the AI (build.py uses key.json).
+- autofig lessons: table rules/watermarks excluded; clusters must contain a curve/diagonal/colour/image ("rich"), else it is a table
+  (drafts carry tables as markdown). Out-of-order text blocks faked a numbering restart once → restart only when n ≤ 2.
+- Stems with text between two figures: `{FIG:a}` … `{FIG:b}` place `qNN` and `qNNb` individually.
 
 ## Token-saving rules
 

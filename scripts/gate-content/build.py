@@ -50,7 +50,12 @@ for q in sorted(Q):
             copies[f] = nf
     stem = c["stem"]
     stems = sorted(k2 for k2 in figs if k2[1] == "stem")
-    if "{FIG}" in stem:
+    if "{FIG:" in stem:  # figures placed individually: {FIG:a} = first (no suffix), {FIG:b}, ...
+        for s, p in stems:
+            mk = "{FIG:" + (s or "a") + "}"
+            assert mk in stem, f"Q{q} missing {mk}"
+            stem = stem.replace(mk, f"\n\n![Figure{' (' + s + ')' if s else ''} for Q{q}]({BASE}{figs[(s, p)]})\n\n")
+    elif "{FIG}" in stem:
         assert stems, f"Q{q} expects figure"
         stem = stem.replace("{FIG}", "".join(
             f"\n\n![Figure{' (' + s + ')' if s else ''} for Q{q}]({BASE}{figs[(s, p)]})" for s, p in stems))
