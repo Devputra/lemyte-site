@@ -10,9 +10,9 @@ let redisClient: Redis | null = null;
 
 export function getRedis(): Redis {
   if (!redisClient) {
-    const url = process.env.REDIS_URL;
+    const url = process.env.REDIS_URL || process.env.GATE_REDIS_URL;
     if (!url) {
-      throw new Error("REDIS_URL environment variable is required");
+      throw new Error("REDIS_URL (or GATE_REDIS_URL) environment variable is required");
     }
 
     redisClient = new Redis(url, {

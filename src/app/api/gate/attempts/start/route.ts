@@ -491,10 +491,7 @@ export async function POST(req: NextRequest) {
       }
       await cleanupAttempt(attemptId);
       return Response.json(
-        {
-          error: "Failed to initialize attempt session",
-          debug: initErr instanceof Error ? initErr.message : String(initErr),
-        },
+        { error: "We couldn't start your test just now. Please try again in a minute." },
         { status: 500 }
       );
     }
