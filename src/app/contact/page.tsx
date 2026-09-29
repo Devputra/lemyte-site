@@ -35,6 +35,9 @@ export default function ContactPage() {
           <br />
           {fill(LEGAL.address, "Registered office address")}
         </p>
+        <p className="text-sm text-zinc-500">
+          CIN: {LEGAL.cin} · GSTIN: {LEGAL.gstin}
+        </p>
       </Section>
 
       <Section title="Grievance Officer">

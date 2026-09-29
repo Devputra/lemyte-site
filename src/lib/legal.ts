@@ -7,12 +7,15 @@ export const LEGAL = {
   website: "https://lemyte.com",
   email: "team@lemyte.com",
   phone: "+91 63824 89221",
-  // Registered office address exactly as on the Certificate of Incorporation.
-  address: "",
+  // Registered office (Form INC-22, w.e.f. 02/06/2026), CIN and GSTIN from the MCA / GST certificates.
+  address:
+    "C/o KCG Innovation Incubation and Entrepreneurship Centre, KCG College of Technology, Karapakkam, Chennai – 600097, Tamil Nadu, India",
+  cin: "U62090TN2026OPC192930",
+  gstin: "33AAMCD6911G1ZQ",
   // City whose courts have jurisdiction (usually the registered office city).
-  jurisdictionCity: "",
+  jurisdictionCity: "Chennai",
   // Grievance Officer (IT Rules 2011 / DPDP Act 2023): a named person.
-  grievanceOfficer: "",
+  grievanceOfficer: "Devputra (Director)",
   supportHours: "Monday to Saturday, 10:00 AM to 6:00 PM IST",
   effectiveDate: "29 September 2026",
   refundWindowDays: 7,
