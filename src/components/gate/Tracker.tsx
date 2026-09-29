@@ -28,7 +28,7 @@ export const STATUS: Record<TopicRow["status"], { label: string; color: string; 
 };
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 ${className}`}>{children}</div>;
+  return <div className={`rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 ${className}`}>{children}</div>;
 }
 
 /* ---------- stat ring: your value as an arc, peer average (hollow) and best (solid) as markers ---------- */
@@ -78,7 +78,7 @@ export function StatRing({
           const p = marker(best);
           return <circle cx={p.x} cy={p.y} r="3.4" fill="#18181b" />;
         })()}
-        <text x="44" y="49" textAnchor="middle" className={`fill-zinc-950 font-black ${display.length > 5 ? "text-[11px]" : "text-[15px]"}`}>
+        <text x="44" y="49" textAnchor="middle" className={`fill-ink font-semibold ${display.length > 5 ? "text-[11px]" : "text-[15px]"}`}>
           {display}
         </text>
       </svg>
@@ -138,7 +138,7 @@ export function StreakCalendar({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Flame className={`h-5 w-5 ${current > 0 ? "text-orange-500" : "text-zinc-300"}`} />
-          <span className="text-lg font-black text-zinc-950">{current}</span>
+          <span className="text-lg font-semibold text-ink">{current}</span>
           <span className="whitespace-nowrap text-xs font-semibold text-zinc-500">day streak</span>
         </div>
         <div className="flex items-center gap-1 text-xs font-bold text-zinc-700">
@@ -169,7 +169,7 @@ export function StreakCalendar({
               key={key}
               className={`flex h-7 items-center justify-center rounded-lg text-[11px] font-bold ${
                 on ? "text-white" : future ? "text-zinc-300" : "bg-zinc-50 text-zinc-600"
-              } ${isToday ? "ring-2 ring-[#193bc8] ring-offset-1" : ""}`}
+              } ${isToday ? "ring-2 ring-brand ring-offset-1" : ""}`}
               style={on ? { background: BRAND } : undefined}
               title={on ? "Practised" : undefined}
             >
@@ -185,7 +185,7 @@ export function StreakCalendar({
           [total > 0 ? `${Math.round(accuracy)}%` : "—", "Accuracy"],
         ].map(([v, l]) => (
           <div key={l as string}>
-            <div className="text-base font-black text-zinc-950">{v}</div>
+            <div className="text-base font-semibold text-ink">{v}</div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{l}</div>
           </div>
         ))}
@@ -224,7 +224,7 @@ export function MasteryCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full px-2.5 py-1 text-xs font-black" style={{ background: LEVEL_TINTS[level.index], color: LEVEL_TEXT[level.index] }}>
+            <span className="rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: LEVEL_TINTS[level.index], color: LEVEL_TEXT[level.index] }}>
               {level.name}
             </span>
             <span className="flex">
@@ -234,7 +234,7 @@ export function MasteryCard({
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-4xl font-black tracking-tight text-zinc-950">{points}</span>
+            <span className="text-4xl font-semibold tracking-tight text-ink">{points}</span>
             <span className="text-sm font-semibold text-zinc-500">mastery points</span>
           </div>
           <p className="mt-1 text-xs font-semibold text-zinc-500">
@@ -251,7 +251,7 @@ export function MasteryCard({
         {levels.map((l, i) => (
           <div key={l.name} className="relative flex h-44 flex-col items-center justify-end gap-1 pb-3" style={{ background: LEVEL_TINTS[i] }}>
             {i === level.index && (
-              <span className="absolute top-3 rounded-full px-2 py-0.5 text-[11px] font-black text-white" style={{ background: BRAND }}>
+              <span className="absolute top-3 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white" style={{ background: BRAND }}>
                 You
               </span>
             )}
@@ -264,7 +264,7 @@ export function MasteryCard({
           </div>
         ))}
       </div>
-      <div className="mt-2 grid grid-cols-5 text-center text-[11px] font-black">
+      <div className="mt-2 grid grid-cols-5 text-center text-[11px] font-semibold">
         {levels.map((l, i) => (
           <span key={l.name} style={{ color: LEVEL_TEXT[i] }}>
             {i + 1}★ {l.name}
@@ -341,13 +341,13 @@ export function TopicWheel({ topics, onPick, labels = true }: { topics: TopicRow
             <title>{`${t.name}: ${STATUS[t.status].label}${t.accuracy !== null ? `, ${t.accuracy}% accuracy` : ""}, ${t.answered}/${t.pyqCount} PYQs answered`}</title>
             <path d={arc(a0, a1)} fill="none" stroke={STATUS[t.status].color} strokeWidth="24" className="transition-opacity hover:opacity-75" />
             {labels && <polyline points={`${ox},${oy} ${lx + (right ? -6 : 6)},${ly} ${lx},${ly}`} fill="none" stroke="#d4d4d8" strokeWidth="1" />}
-            {labels && <text x={lx + (right ? 4 : -4)} y={ly + 4} textAnchor={right ? "start" : "end"} className="fill-zinc-700 text-[12px] font-semibold hover:fill-[#193bc8]">
+            {labels && <text x={lx + (right ? 4 : -4)} y={ly + 4} textAnchor={right ? "start" : "end"} className="fill-zinc-700 text-[12px] font-semibold hover:fill-brand">
               {short}
             </text>}
           </g>
         );
       })}
-      <text x={cx} y={cy + 4} textAnchor="middle" className="fill-zinc-950 text-[34px] font-black">
+      <text x={cx} y={cy + 4} textAnchor="middle" className="fill-ink text-[34px] font-semibold">
         {studied}/{topics.length}
       </text>
       <text x={cx} y={cy + 26} textAnchor="middle" className="fill-zinc-500 text-[12px] font-semibold">

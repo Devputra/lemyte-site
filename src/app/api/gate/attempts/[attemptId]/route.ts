@@ -128,15 +128,16 @@ export async function GET(
       const now = new Date();
       const remaining = new Date(session.endsAt).getTime() - now.getTime();
 
-      const questions = await loadQuestionContent(
-        session.questionOrder,
-        session.testVersionId
-      );
+      const [questions, tv] = await Promise.all([
+        loadQuestionContent(session.questionOrder, session.testVersionId),
+        supabaseAdmin.schema("gate").from("test_versions").select("title").eq("id", session.testVersionId).maybeSingle(),
+      ]);
 
       return Response.json({
         status: session.status,
         attemptId: session.attemptId,
         testVersionId: session.testVersionId,
+        testTitle: (tv.data?.title as string | undefined) ?? null,
         mode: session.mode,
         endsAt: session.endsAt,
         startedAt: session.startedAt,

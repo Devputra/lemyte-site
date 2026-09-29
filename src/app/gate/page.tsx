@@ -1,217 +1,265 @@
-// src/app/gate/page.tsx
-import "katex/dist/katex.min.css";
+// src/app/gate/page.tsx — GATE assessment overview (public).
+import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  BarChart3,
-  BookOpenCheck,
-  BrainCircuit,
-  Calculator,
-  CheckCircle2,
-  Clock3,
-  FileText,
-  Target,
-  Trophy,
-} from "lucide-react";
+import { ArrowRight, Calculator, Check, Clock3, Flag, LayoutGrid } from "lucide-react";
 
-const pillars = [
-  {
-    icon: Clock3,
-    title: "Exam-like attempts",
-    copy: "Timed practice with GATE-style question flow, palette behaviour, MCQ/MSQ/NAT handling, and submission discipline.",
-  },
-  {
-    icon: BookOpenCheck,
-    title: "PYQ-first practice",
-    copy: "Start with previous-year question patterns before chasing random difficulty. Build recognition, then build speed.",
-  },
-  {
-    icon: Target,
-    title: "Calibrated difficulty",
-    copy: "Standard practice first. Harder mocks should expose weakness, not distort reality or destroy confidence.",
-  },
-  {
-    icon: BarChart3,
-    title: "Ruthless reports",
-    copy: "Score, accuracy, wrong attempts, negative marks lost, section leakage, and question-level review after submission.",
-  },
+import { ButtonLink, Card, Container, Eyebrow, SectionHeader, type } from "@/components/site/ui";
+import { fmtInt, GATE_SUBJECTS, GATE_TOTALS } from "@/lib/gate/catalog";
+
+export const metadata: Metadata = {
+  title: "GATE assessment — Lemyte",
+  description: `Take ${GATE_TOTALS.papers} official GATE papers as timed tests, marked with the official answer key. Then practise the topics where you lost marks.`,
+};
+
+const SCREEN = [
+  { icon: Clock3, title: "Countdown timer", text: "Three hours for a full paper. The test submits itself when time runs out." },
+  { icon: LayoutGrid, title: "Question palette", text: "See at a glance what you've answered, skipped and marked, and jump to any question." },
+  { icon: Flag, title: "Mark for review", text: "Flag a question and come back to it before you submit, just like the real exam." },
+  { icon: Calculator, title: "On-screen calculator", text: "Use the calculator on the screen, as you will on exam day." },
 ];
 
-const modes = [
-  ["Free Demo", "Feel the simulator before committing. Timer, palette, calculator, question rendering, and report flow."],
-  ["Practice Tests", "Use structured mocks to build test temperament without leaderboard pressure."],
-  ["Topic-wise PYQ", "Attack weak areas directly. Pick a topic, choose count, start a focused practice attempt."],
-  ["Ranked Mocks", "One counted attempt. Treat it like an exam hall, then compare your performance."],
+const MODES = [
+  { name: "Free demo", href: "/gate/demo", text: "A short General Aptitude test to try the exam screen and the report. No payment or card needed." },
+  { name: "Full past papers", href: "/gate/practice", text: `All ${GATE_TOTALS.papers} official papers as complete 3-hour tests. Take any paper as many times as you like.` },
+  { name: "Topic practice", href: "/gate/practice/topics", text: "Choose one topic and get 5 to 30 past questions from it, timed at about two minutes per question." },
+  { name: "Ranked tests", href: "/gate/ranked", text: "Scheduled tests with one counted attempt. Your score is ranked against everyone who took the same test." },
 ];
 
-const reportRows = [
-  ["Score", "42.67 / 100", "Your raw exam output."],
-  ["Accuracy", "61%", "Correct answers among attempted questions."],
-  ["Negative marks lost", "3.33", "Marks leaked through risky MCQ attempts."],
-  ["Weakest sections", "CN · DB · TOC", "Where your next revision should start."],
+const MARKING = [
+  ["1-mark MCQ, wrong answer", "−⅓ mark"],
+  ["2-mark MCQ, wrong answer", "−⅔ mark"],
+  ["MSQ or numerical, wrong answer", "No negative marks"],
+  ["MSQ with a partly correct choice", "No marks (no partial credit)"],
+  ["Question awarded to all by the institute", "Full marks for everyone"],
 ];
 
-export default function GateLandingPage() {
+const REPORT = [
+  "Your score out of 100, with marks gained and marks lost to negative marking",
+  "Accuracy, and how many questions you attempted, skipped and got wrong",
+  "A summary for General Aptitude and for your subject",
+  "Every question with your answer, the correct answer and a worked solution",
+  "Rank and percentile for ranked tests",
+];
+
+const CHECKS = [
+  "Question text copied word for word from the official paper",
+  "Answer set from the official answer key, including marks-to-all and range answers",
+  "Figures and diagrams taken from the original paper",
+  "A worked solution for every question, checked against the key",
+];
+
+export default function GateOverviewPage() {
   return (
-    <div className="bg-white">
-      <section className="relative overflow-hidden border-b border-zinc-200 bg-[radial-gradient(circle_at_top_right,rgba(25,59,200,0.11),transparent_34%),linear-gradient(to_bottom,#ffffff,#f7f7f8)]">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-24">
-          <div>
-            <div className="inline-flex rounded-full border border-[#193bc8]/20 bg-[#193bc8]/5 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-[#193bc8]">
-              GATE CS Practice Engine
-            </div>
-            <h1 className="mt-6 max-w-4xl text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl">
-              GATE CS practice without illusion.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-600 sm:text-lg">
-              IIT-level competition is real. Your preparation should not be blind. Lemyte gives you calibrated mocks, PYQ practice, exam-like attempts, and reports that show exactly where your marks are leaking.
+    <div className="bg-white text-ink">
+      {/* Hero */}
+      <section className="border-b border-zinc-100">
+        <Container className="py-16 sm:py-24">
+          <div className="max-w-3xl">
+            <Eyebrow>GATE assessment</Eyebrow>
+            <h1 className={`${type.display} mt-4`}>Prepare for GATE with the real papers.</h1>
+            <p className={`${type.lead} mt-6 max-w-2xl`}>
+              Take every recent official GATE paper as a timed test, marked with the official answer key. Your report
+              shows where you lost marks, and topic practice helps you win them back.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/gate/demo"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#193bc8] px-6 py-3 text-sm font-black text-white shadow-lg shadow-[#193bc8]/20 transition hover:bg-[#102b9f]"
-              >
-                Start Free Diagnostic Demo <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/gate/pricing"
-                className="inline-flex items-center justify-center rounded-xl border border-zinc-300 px-6 py-3 text-sm font-black text-zinc-900 transition hover:border-zinc-950 hover:bg-zinc-950 hover:text-white"
-              >
-                View Plans
-              </Link>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <ButtonLink href="/gate/demo" size="lg">
+                Take the free demo <ArrowRight className="h-4 w-4" />
+              </ButtonLink>
+              <ButtonLink href="/gate/pricing" variant="secondary" size="lg">
+                See plans
+              </ButtonLink>
             </div>
-            <p className="mt-4 text-xs font-medium text-zinc-500">
-              No credit card for demo. Best experienced on desktop/laptop.
-            </p>
           </div>
-
-          <div className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-2xl shadow-zinc-200/80">
-            <div className="rounded-2xl border border-zinc-900 bg-zinc-950 p-5 text-white">
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-[#8ca0ff]">Sample Report</p>
-                  <h2 className="mt-1 text-xl font-black">Marks Leakage Map</h2>
-                </div>
-                <div className="rounded-full bg-[#193bc8] px-3 py-1 text-xs font-black">DEMO</div>
+          <dl className="mt-14 grid grid-cols-2 gap-6 border-t border-zinc-100 pt-8 sm:grid-cols-4">
+            {[
+              [fmtInt(GATE_TOTALS.questions), "past-paper questions"],
+              [String(GATE_TOTALS.papers), "official papers"],
+              [String(GATE_TOTALS.subjects), "GATE subjects"],
+              ["3 hours", "per full paper, like the exam"],
+            ].map(([v, l]) => (
+              <div key={l}>
+                <dt className="text-3xl font-semibold tabular-nums tracking-tight">{v}</dt>
+                <dd className="mt-1 text-sm text-zinc-500">{l}</dd>
               </div>
+            ))}
+          </dl>
+        </Container>
+      </section>
 
-              <div className="mt-5 grid gap-3">
-                {reportRows.map(([label, value, help]) => (
-                  <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">{label}</p>
-                        <p className="mt-1 text-lg font-black text-white">{value}</p>
-                      </div>
-                      <CheckCircle2 className="h-5 w-5 text-[#8ca0ff]" />
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-zinc-400">{help}</p>
-                  </div>
+      {/* Subjects */}
+      <section className="py-20 sm:py-24">
+        <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+          <SectionHeader
+            eyebrow="Subjects"
+            title="Seven GATE papers, with more on the way"
+            lead="Each subject includes the General Aptitude section of its papers. Computer Science goes back to 2014; the others cover every paper since 2020."
+          />
+          <div className="overflow-hidden rounded-2xl border border-zinc-200">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-zinc-50 text-zinc-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Subject</th>
+                  <th className="px-4 py-3 text-right font-medium">Papers</th>
+                  <th className="px-4 py-3 text-right font-medium">Questions</th>
+                  <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">Years</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {GATE_SUBJECTS.map((s) => (
+                  <tr key={s.code}>
+                    <td className="px-4 py-3">
+                      <span className="font-medium text-ink">{s.name}</span>
+                      <span className="ml-2 text-xs text-zinc-400">{s.code}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-zinc-600">{s.papers}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-zinc-600">{fmtInt(s.questions)}</td>
+                    <td className="hidden px-4 py-3 text-right tabular-nums text-zinc-500 sm:table-cell">{s.years}</td>
+                  </tr>
                 ))}
-              </div>
-
-              <div className="mt-5 rounded-2xl bg-[#193bc8] p-4 text-sm font-bold leading-6 text-white">
-                Next move: revise DB normalization + CN fragmentation, then retake a 30-minute topic practice set.
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Container>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16">
-        <div className="max-w-3xl">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-[#193bc8]">The reality</p>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-zinc-950">
-            GATE is not won by passive learning. It is won by measured correction.
-          </h2>
-          <p className="mt-4 text-base leading-7 text-zinc-600">
-            Random practice gives random confidence. Lemyte is designed around a tighter loop: attempt under time, review every leak, identify the next topic, and repeat with intent.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {pillars.map((item) => (
-            <div key={item.title} className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-              <item.icon className="h-7 w-7 text-[#193bc8]" />
-              <h3 className="mt-5 text-lg font-black text-zinc-950">{item.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-zinc-600">{item.copy}</p>
-            </div>
-          ))}
-        </div>
+      {/* Test types */}
+      <section className="border-y border-zinc-100 bg-zinc-50/70 py-20 sm:py-24">
+        <Container>
+          <SectionHeader eyebrow="Ways to practise" title="Four kinds of test, each for a different stage" />
+          <div className="mt-12 grid gap-5 sm:grid-cols-2">
+            {MODES.map((m) => (
+              <Link key={m.name} href={m.href} className="group rounded-2xl border border-zinc-200 bg-white p-6 transition-colors hover:border-brand/40">
+                <div className="flex items-center justify-between">
+                  <h3 className={type.h3}>{m.name}</h3>
+                  <ArrowRight className="h-4 w-4 text-zinc-300 transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />
+                </div>
+                <p className={`${type.body} mt-2`}>{m.text}</p>
+              </Link>
+            ))}
+          </div>
+        </Container>
       </section>
 
-      <section className="border-y border-zinc-200 bg-zinc-50 px-4 py-16">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#193bc8]">Training modes</p>
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-zinc-950">
-                Use the right pressure at the right stage.
-              </h2>
-              <p className="mt-4 text-base leading-7 text-zinc-600">
-                Students get nervous when platforms confuse difficulty with usefulness. Lemyte keeps the purpose clear: demo to feel the interface, practice to build skill, ranked mocks to test readiness.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {modes.map(([title, copy]) => (
-                <div key={title} className="rounded-2xl border border-zinc-200 bg-white p-5">
-                  <h3 className="font-black text-zinc-950">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600">{copy}</p>
+      {/* Exam screen */}
+      <section className="py-20 sm:py-24">
+        <Container>
+          <SectionHeader
+            eyebrow="The exam screen"
+            title="Practise on a screen that works like GATE"
+            lead="Getting used to the interface is part of preparing. The test screen is modelled on the real exam, with the same kinds of controls."
+          />
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {SCREEN.map((f) => (
+              <Card key={f.title}>
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50">
+                  <f.icon className="h-5 w-5 text-brand" strokeWidth={1.75} />
+                </span>
+                <h3 className={`${type.h3} mt-5`}>{f.title}</h3>
+                <p className={`${type.body} mt-2`}>{f.text}</p>
+              </Card>
+            ))}
+          </div>
+          <p className="mt-6 text-sm text-zinc-500">MCQ, MSQ and numerical-answer questions are all supported. Best on a laptop or desktop.</p>
+        </Container>
+      </section>
+
+      {/* Marking + report */}
+      <section className="border-t border-zinc-100 py-20 sm:py-24">
+        <Container className="grid gap-14 lg:grid-cols-2">
+          <div>
+            <SectionHeader
+              eyebrow="Marking"
+              title="Marked the way GATE marks"
+              lead="Scores use the official answer key and GATE's own rules, so the number you see is the number you would have got."
+            />
+            <dl className="mt-8 divide-y divide-zinc-200 border-y border-zinc-200 text-sm">
+              {MARKING.map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-6 py-3">
+                  <dt className="text-zinc-600">{k}</dt>
+                  <dd className="font-medium text-ink">{v}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
           </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-16">
-        <div className="rounded-3xl border border-zinc-200 bg-zinc-950 p-8 text-white md:p-10">
-          <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#8ca0ff]">Built for signal</p>
-              <h2 className="mt-3 text-3xl font-black tracking-tight">
-                No fake motivation. No blind confidence. No vague dashboard.
-              </h2>
-              <p className="mt-4 text-base leading-7 text-zinc-300">
-                The product promise is simple: take one test, understand why marks were lost, and know what to do next.
-              </p>
-            </div>
-            <div className="grid gap-3">
-              {[
-                "Question review with explanation support",
-                "Section summary and accuracy tracking",
-                "Negative-marking leakage visibility",
-                "Topic-wise PYQ practice path",
-                "Ranked attempts for serious benchmarking",
-              ].map((point) => (
-                <div key={point} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm font-bold">
-                  <CheckCircle2 className="h-5 w-5 text-[#8ca0ff]" />
-                  {point}
-                </div>
+          <div>
+            <SectionHeader eyebrow="Your report" title="What you see after every test" />
+            <ul className="mt-8 space-y-4">
+              {REPORT.map((r) => (
+                <li key={r} className="flex gap-3">
+                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-brand" strokeWidth={2} />
+                  <span className={type.body}>{r}</span>
+                </li>
               ))}
-            </div>
+            </ul>
+            <p className="mt-6 text-sm text-zinc-500">
+              Your{" "}
+              <Link href="/gate/dashboard" className="font-medium text-brand hover:text-brand-700">
+                tracker
+              </Link>{" "}
+              adds it all up: coverage, accuracy, streak and your weakest topics for each paper.
+            </p>
           </div>
-        </div>
+        </Container>
       </section>
 
-      <section className="px-4 pb-20 text-center">
-        <div className="mx-auto max-w-3xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-xl shadow-zinc-200/70">
-          <BrainCircuit className="mx-auto h-10 w-10 text-[#193bc8]" />
-          <h2 className="mt-4 text-3xl font-black tracking-tight text-zinc-950">
-            Start with one diagnostic attempt.
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-zinc-600">
-            Do not guess your preparation level. Attempt, submit, review, and let the report expose the next move.
-          </p>
-          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/gate/demo" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#193bc8] px-6 py-3 text-sm font-black text-white hover:bg-[#102b9f]">
-              Start Free Demo <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link href="/gate/practice" className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-300 px-6 py-3 text-sm font-black text-zinc-950 hover:border-zinc-950">
-              Explore Practice <FileText className="h-4 w-4" />
-            </Link>
+      {/* Quality */}
+      <section className="bg-ink py-20 text-white sm:py-24">
+        <Container className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="text-sm font-medium text-brand-100">How questions are checked</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">Every question checked against the official paper</h2>
+            <p className="mt-4 text-lg leading-relaxed text-zinc-300">
+              A practice test is only useful if the questions and answers are right. Before a paper goes live, each
+              question goes through the same checks.
+            </p>
           </div>
-        </div>
+          <ul className="divide-y divide-zinc-800 border-y border-zinc-800">
+            {CHECKS.map((c) => (
+              <li key={c} className="flex gap-3 py-4 text-zinc-200">
+                <Check className="mt-0.5 h-5 w-5 shrink-0 text-brand-100" strokeWidth={2} />
+                {c}
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </section>
+
+      {/* Plans */}
+      <section className="py-20 sm:py-24">
+        <Container className="text-center">
+          <SectionHeader
+            center
+            eyebrow="Plans"
+            title="One payment, no subscription"
+            lead="Every plan includes all subjects, full past papers, topic practice and ranked tests. Plans don't renew automatically."
+          />
+          <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
+            {[
+              ["1 month", "₹299"],
+              ["3 months", "₹799"],
+              ["6 months", "₹1,099"],
+            ].map(([d, p]) => (
+              <Card key={d} className="text-left">
+                <p className="text-sm text-zinc-500">{d}</p>
+                <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">{p}</p>
+              </Card>
+            ))}
+          </div>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <ButtonLink href="/gate/pricing" size="lg">
+              Choose a plan
+            </ButtonLink>
+            <ButtonLink href="/gate/demo" variant="secondary" size="lg">
+              Try the free demo first
+            </ButtonLink>
+          </div>
+          <p className="mt-4 text-sm text-zinc-500">
+            Full refund within 7 days if you have started no more than 2 tests.{" "}
+            <Link href="/refund-policy" className="underline underline-offset-2 hover:text-ink">
+              Refund policy
+            </Link>
+          </p>
+        </Container>
       </section>
     </div>
   );

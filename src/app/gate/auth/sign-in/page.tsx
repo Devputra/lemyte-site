@@ -59,72 +59,53 @@ export default function GateStudentSignInPage() {
       router.replace(next);
       router.refresh();
     } catch (err: unknown) {
-      setMsg(err instanceof Error ? err.message : "Unable to sign in. Please try again.");
+      setMsg(err instanceof Error ? err.message : "We couldn't sign you in. Please check your email and password.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-white text-black">
-      <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-4 py-10">
+    <main className="bg-white text-ink">
+      <div className="mx-auto flex max-w-6xl items-center justify-center px-5 py-14 sm:px-6 sm:py-20">
         <div className="grid w-full gap-8 lg:grid-cols-[1fr_440px] lg:items-center">
           <section className="hidden lg:block">
             <Link
               href="/gate"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#193bc8]"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-brand"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to GATE
             </Link>
 
             <div className="mt-10">
-              <p className="text-sm font-bold uppercase tracking-[0.28em] text-[#193bc8]">
-                Lemyte GATE
-              </p>
+              <p className="text-sm font-medium text-brand">Lemyte · GATE</p>
 
-              <h1 className="mt-4 max-w-2xl text-5xl font-black leading-tight tracking-[-0.04em]">
-                Sign in to continue your GATE preparation.
+              <h1 className="mt-4 max-w-2xl text-5xl font-semibold leading-tight tracking-[-0.03em] text-ink">
+                Welcome back.
               </h1>
 
               <p className="mt-5 max-w-xl text-lg leading-8 text-neutral-700">
-                Access your mocks, PYQ practice, reports, dashboard, and paid
-                practice plan from one student account.
+                Pick up where you left off. Your tests, reports and progress
+                tracker are saved to your account.
               </p>
 
-              <div className="mt-8 grid max-w-xl gap-3 text-sm text-neutral-700">
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <span className="font-bold text-black">No employer flow.</span>{" "}
-                  This account is for GATE aspirants only.
-                </div>
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <span className="font-bold text-black">Your reports stay linked.</span>{" "}
-                  Every submitted attempt is tied to your student dashboard.
-                </div>
-              </div>
+
             </div>
           </section>
 
-          <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
             <Link
               href="/gate"
-              className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#193bc8] lg:hidden"
+              className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-brand lg:hidden"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to GATE
             </Link>
 
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#193bc8]">
-                Student Sign In
-              </p>
-              <h2 className="mt-2 text-2xl font-black tracking-[-0.03em]">
-                Continue GATE practice
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-neutral-600">
-                Sign in to access your dashboard, practice tests, ranked mocks,
-                and reports.
-              </p>
+              <h2 className="text-2xl font-semibold tracking-[-0.02em] text-ink">Sign in</h2>
+              <p className="mt-2 text-sm leading-6 text-neutral-600">Use the email and password you signed up with.</p>
             </div>
 
             <form className="mt-6 space-y-4" onSubmit={signIn}>
@@ -136,7 +117,7 @@ export default function GateStudentSignInPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="student@example.com"
-                  className="mt-2 w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[#193bc8] focus:ring-2 focus:ring-[#193bc8]/20"
+                  className="mt-2 w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                 />
               </div>
 
@@ -148,7 +129,7 @@ export default function GateStudentSignInPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="mt-2 w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-[#193bc8] focus:ring-2 focus:ring-[#193bc8]/20"
+                  className="mt-2 w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
                 />
               </div>
 
@@ -161,32 +142,27 @@ export default function GateStudentSignInPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="flex w-full items-center justify-center rounded-xl bg-[#193bc8] px-5 py-3 text-sm font-black text-white transition hover:bg-[#102a9a] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busy ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
+                    Signing in…
                   </>
                 ) : (
-                  "Sign In"
+                  "Sign in"
                 )}
               </button>
             </form>
 
             <div className="mt-5 text-center text-sm text-neutral-600">
-              New to Lemyte GATE?{" "}
+              New to Lemyte?{" "}
               <Link
                 href={`/gate/auth/sign-up?next=${encodeURIComponent(next)}`}
-                className="font-bold text-[#193bc8] underline underline-offset-4"
+                className="font-bold text-brand underline underline-offset-4"
               >
-                Create student account
+                Create an account
               </Link>
-            </div>
-
-            <div className="mt-6 rounded-2xl bg-neutral-50 p-4 text-xs leading-5 text-neutral-600">
-              This is for GATE aspirants. Employer and employee assessment flows
-              are separate from the GATE product.
             </div>
           </section>
         </div>

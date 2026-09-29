@@ -153,7 +153,7 @@ export default function GateDashboardPage() {
   if (loading && !data) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="rounded-3xl border border-zinc-200 bg-white p-10 text-center text-sm font-semibold text-zinc-500">Loading your tracker…</div>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-10 text-center text-sm font-semibold text-zinc-500">Loading your tracker…</div>
       </div>
     );
   }
@@ -175,7 +175,7 @@ export default function GateDashboardPage() {
           <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
             <CheckCircle2 className="mt-0.5 h-5 w-5" />
             <div>
-              <p className="font-black">Plan active.</p>
+              <p className="font-semibold">Plan active.</p>
               <p>You can start practice and ranked mocks now.</p>
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function GateDashboardPage() {
           <Card>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">
+                <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
                   {greeting()}, <span className="capitalize">{data.user.name}</span>
                 </h1>
                 <p className="mt-1 text-sm font-semibold text-zinc-500">
@@ -200,7 +200,7 @@ export default function GateDashboardPage() {
                 <select
                   value={data.subject.code}
                   onChange={(e) => changeSubject(e.target.value)}
-                  className="w-auto max-w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-bold text-zinc-800 outline-none focus:border-[#193bc8]"
+                  className="w-auto max-w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm font-bold text-zinc-800 outline-none focus:border-brand"
                   aria-label="GATE paper"
                 >
                   {data.subjects.map((s) => (
@@ -238,7 +238,7 @@ export default function GateDashboardPage() {
 
         {/* plan / resume strip */}
         {dash && (dash.inProgressAttemptId || !dash.accessPass) && (
-          <div className="flex flex-col gap-3 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-semibold text-amber-900">
               {dash.inProgressAttemptId
                 ? "You have a test in progress. Finish it before starting another."
@@ -246,20 +246,20 @@ export default function GateDashboardPage() {
             </p>
             <div className="flex gap-2">
               {dash.inProgressAttemptId ? (
-                <Link href={`/gate/attempt/${dash.inProgressAttemptId}`} className="inline-flex items-center gap-2 rounded-xl bg-[#193bc8] px-4 py-2 text-sm font-black text-white">
+                <Link href={`/gate/attempt/${dash.inProgressAttemptId}`} className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white">
                   Resume <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : (
                 <>
-                  <Link href="/gate/demo" className="rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-black text-amber-950">Try demo</Link>
-                  <Link href="/gate/pricing" className="rounded-xl bg-[#193bc8] px-4 py-2 text-sm font-black text-white">View plans</Link>
+                  <Link href="/gate/demo" className="rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-950">Try demo</Link>
+                  <Link href="/gate/pricing" className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white">View plans</Link>
                 </>
               )}
             </div>
           </div>
         )}
 
-        <h2 className="pt-2 text-xs font-black uppercase tracking-[0.18em] text-zinc-500">Mastery overview</h2>
+        <h2 className="pt-2 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">Mastery overview</h2>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <MasteryCard
             levels={[...LEVELS]}
@@ -274,7 +274,7 @@ export default function GateDashboardPage() {
           <Card>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="font-black text-zinc-950">Topic health</h3>
+                <h3 className="font-semibold text-ink">Topic health</h3>
                 <p className="text-xs font-semibold text-zinc-500">Tap a topic to practise 10 questions from it.</p>
               </div>
             </div>
@@ -301,9 +301,9 @@ export default function GateDashboardPage() {
         {/* focus list */}
         <Card>
           <div className="flex items-center gap-3">
-            <Target className="h-6 w-6 text-[#193bc8]" />
+            <Target className="h-6 w-6 text-brand" />
             <div>
-              <h3 className="font-black text-zinc-950">Practise next</h3>
+              <h3 className="font-semibold text-ink">Practise next</h3>
               <p className="text-sm text-zinc-600">Your weakest topics first, then untouched topics with the most past-paper questions.</p>
             </div>
           </div>
@@ -313,8 +313,8 @@ export default function GateDashboardPage() {
               <div key={t.topicId} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-black text-zinc-950">{t.name}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${STATUS[t.status].pill}`}>{STATUS[t.status].label}</span>
+                    <span className="font-semibold text-ink">{t.name}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS[t.status].pill}`}>{STATUS[t.status].label}</span>
                   </div>
                   <p className="mt-0.5 text-xs font-semibold text-zinc-500">
                     {t.accuracy !== null ? `${t.accuracy}% accuracy · ` : ""}
@@ -324,7 +324,7 @@ export default function GateDashboardPage() {
                 <button
                   onClick={() => practise(t)}
                   disabled={busyTopic !== null}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#193bc8] px-4 py-2 text-sm font-black text-white hover:bg-[#102b9f] disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
                 >
                   {busyTopic === t.topicId ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Practise 10
@@ -337,7 +337,7 @@ export default function GateDashboardPage() {
         {/* recent attempts */}
         <Card className="!p-0">
           <div className="border-b border-zinc-200 px-6 py-4">
-            <h3 className="font-black text-zinc-950">Recent attempts</h3>
+            <h3 className="font-semibold text-ink">Recent attempts</h3>
             {dash?.accessPass && (
               <p className="mt-1 text-xs font-semibold text-zinc-500">
                 {dash.accessPass.plan?.name ?? "Plan"} active until {fmtDate(dash.accessPass.endsAt)}
@@ -351,7 +351,7 @@ export default function GateDashboardPage() {
               {dash.recentAttempts.map((a) => (
                 <div key={a.id} className="flex flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0">
-                    <span className="truncate text-sm font-black text-zinc-950">{a.testTitle}</span>
+                    <span className="truncate text-sm font-semibold text-ink">{a.testTitle}</span>
                     <p className="mt-1 text-xs font-semibold text-zinc-500">
                       {a.mode} · {a.status === "IN_PROGRESS" ? `started ${fmtDate(a.startedAt)}` : `submitted ${fmtDate(a.submittedAt)}`}
                     </p>
@@ -359,7 +359,7 @@ export default function GateDashboardPage() {
                   <div className="flex items-center gap-4">
                     {a.result && (
                       <div className="text-right text-sm">
-                        <div className="font-black text-zinc-950">
+                        <div className="font-semibold text-ink">
                           {a.result.score}/{a.result.maxScore}
                         </div>
                         <div className="text-xs font-semibold text-zinc-500">{Math.round(a.result.percent)}%</div>
@@ -367,7 +367,7 @@ export default function GateDashboardPage() {
                     )}
                     <Link
                       href={a.status === "IN_PROGRESS" ? `/gate/attempt/${a.id}` : `/gate/report/${a.id}`}
-                      className="rounded-xl border border-zinc-300 px-4 py-2 text-xs font-black text-zinc-800 hover:border-zinc-950"
+                      className="rounded-xl border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-800 hover:border-zinc-950"
                     >
                       {a.status === "IN_PROGRESS" ? "Resume" : "View report"}
                     </Link>

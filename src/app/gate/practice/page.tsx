@@ -1,10 +1,12 @@
-// src/app/gate/practice/page.tsx
+// src/app/gate/practice/page.tsx — catalog of full past papers (practice tests), grouped by subject.
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, BookOpenCheck, Clock3, Filter, RefreshCw, Search } from "lucide-react";
+import { ArrowRight, Clock3, Search } from "lucide-react";
+
+import { buttonClass, Container, Eyebrow, type } from "@/components/site/ui";
 import { safeJson } from "@/lib/fetch-helpers";
 
 interface CatalogTest {
@@ -18,16 +20,10 @@ interface CatalogTest {
   maxAttemptsPerUser?: number | null;
 }
 
-function fmtMinutes(secs: number | null): string {
+function fmtDuration(secs: number | null): string {
   if (!secs) return "—";
-  return `${Math.round(secs / 60)} min`;
-}
-
-function inferDifficultyLabel(text: string): string {
-  const v = text.toLowerCase();
-  if (v.includes("stress") || v.includes("hard") || v.includes("rank booster")) return "Rank Booster";
-  if (v.includes("pyq")) return "PYQ";
-  return "GATE Standard";
+  const m = Math.round(secs / 60);
+  return m % 60 === 0 ? `${m / 60} hours` : `${m} min`;
 }
 
 export default function GatePracticePage() {
@@ -48,24 +44,29 @@ export default function GatePracticePage() {
         if (j.error) throw new Error(j.error);
         setTests(j.tests ?? []);
       })
-      .catch((e) => !cancelled && setError(e?.message ?? "Failed to load"))
+      .catch((e) => !cancelled && setError(e?.message ?? "Couldn't load the papers. Please refresh."))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const subjects = useMemo(() => {
-    return Array.from(new Set(tests.map((t) => t.subject?.name).filter(Boolean))) as string[];
-  }, [tests]);
+  const subjects = useMemo(
+    () => Array.from(new Set(tests.map((t) => t.subject?.name).filter(Boolean))).sort() as string[],
+    [tests],
+  );
 
-  const filteredTests = useMemo(() => {
+  const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return tests.filter((t) => {
-      const matchesQuery = !q || `${t.title} ${t.description ?? ""} ${t.subject?.name ?? ""}`.toLowerCase().includes(q);
-      const matchesSubject = subject === "ALL" || t.subject?.name === subject;
-      return matchesQuery && matchesSubject;
-    });
+    const list = tests
+      .filter((t) => (subject === "ALL" || t.subject?.name === subject) && (!q || `${t.title} ${t.subject?.name ?? ""}`.toLowerCase().includes(q)))
+      .sort((a, b) => b.title.localeCompare(a.title));
+    const map = new Map<string, CatalogTest[]>();
+    for (const t of list) {
+      const k = t.subject?.name ?? "Other";
+      map.set(k, [...(map.get(k) ?? []), t]);
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [query, subject, tests]);
 
   async function startPractice(testId: string) {
@@ -78,144 +79,103 @@ export default function GatePracticePage() {
         body: JSON.stringify({ mode: "PRACTICE", testVersionId: testId }),
       });
       const data = await safeJson(res);
-
-      if (res.status === 401) {
-        router.push("/gate/auth/sign-in?next=/gate/practice");
-        return;
-      }
-      if (res.status === 403) {
-        router.push("/gate/pricing");
-        return;
-      }
-      if (res.status === 409 && data.attemptId) {
-        router.push(`/gate/attempt/${data.attemptId}`);
-        return;
-      }
-      if (!res.ok) {
-        throw new Error(data.error ?? `Failed to start (${res.status})`);
-      }
-
+      if (res.status === 401) return router.push("/gate/auth/sign-in?next=/gate/practice");
+      if (res.status === 403) return router.push("/gate/pricing");
+      if (res.status === 409 && data.attemptId) return router.push(`/gate/attempt/${data.attemptId}`);
+      if (!res.ok) throw new Error(data.error ?? `Couldn't start the test (${res.status}).`);
       router.push(`/gate/attempt/${data.attemptId}`);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to start practice test");
+      setError(e instanceof Error ? e.message : "Couldn't start the test. Please try again.");
       setBusyId(null);
     }
   }
 
   return (
     <div className="bg-white">
-      <section className="border-b border-zinc-200 bg-zinc-50 px-4 py-14">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <div className="inline-flex rounded-full border border-[#193bc8]/20 bg-[#193bc8]/5 px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-[#193bc8]">
-              Practice Mode
-            </div>
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl">
-              Build strength before full mock pressure.
-            </h1>
-            <p className="mt-4 text-base leading-7 text-zinc-600">
-              Practice mode is for correction, not ego. Attempt, submit, review, and use the report to decide the next topic.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <RefreshCw className="h-6 w-6 text-[#193bc8]" />
-              <h2 className="mt-3 font-black">Reattempt-friendly</h2>
-              <p className="mt-1 text-sm text-zinc-600">Practice is where you rebuild weak areas.</p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <BookOpenCheck className="h-6 w-6 text-[#193bc8]" />
-              <h2 className="mt-3 font-black">PYQ-oriented</h2>
-              <p className="mt-1 text-sm text-zinc-600">Pattern familiarity before artificial difficulty.</p>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <Filter className="h-6 w-6 text-[#193bc8]" />
-              <h2 className="mt-3 font-black">Clear purpose</h2>
-              <p className="mt-1 text-sm text-zinc-600">Each test should tell you what to fix next.</p>
-            </div>
-          </div>
-        </div>
+      <section className="border-b border-zinc-100">
+        <Container className="py-12 sm:py-16">
+          <Eyebrow>Past papers</Eyebrow>
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Take a full GATE paper</h1>
+          <p className={`${type.lead} mt-4 max-w-2xl`}>
+            Each test is the complete official paper: 65 questions, 100 marks and 3 hours, marked with the official answer
+            key. You can retake any paper as often as you like.
+          </p>
+          <p className="mt-4 text-sm text-zinc-500">
+            Short on time?{" "}
+            <Link href="/gate/practice/topics" className="font-medium text-brand hover:text-brand-700">
+              Practise a single topic instead →
+            </Link>
+          </p>
+        </Container>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12">
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-zinc-950">Practice tests</h2>
-            <p className="mt-1 text-sm text-zinc-600">Choose a structured practice set or go topic-wise for sharper revision.</p>
-          </div>
-          <Link href="/gate/practice/topics" className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-black text-white hover:bg-[#193bc8]">
-            Practice by topic <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        <div className="mb-6 grid gap-3 md:grid-cols-[1fr_240px]">
+      <Container className="py-10">
+        <div className="mb-8 grid gap-3 md:grid-cols-[1fr_280px]">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search mocks, subjects, descriptions..."
-              className="h-11 w-full rounded-xl border border-zinc-300 bg-white pl-10 pr-3 text-sm outline-none focus:border-[#193bc8] focus:ring-4 focus:ring-[#193bc8]/10"
+              placeholder="Search by year or subject, e.g. 2024"
+              className="h-11 w-full rounded-[10px] border border-zinc-300 bg-white pl-10 pr-3 text-sm outline-none focus:border-brand focus:ring-4 focus:ring-brand/10"
             />
           </label>
           <select
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="h-11 rounded-xl border border-zinc-300 bg-white px-3 text-sm font-semibold outline-none focus:border-[#193bc8] focus:ring-4 focus:ring-[#193bc8]/10"
+            className="h-11 rounded-[10px] border border-zinc-300 bg-white px-3 text-sm font-medium outline-none focus:border-brand focus:ring-4 focus:ring-brand/10"
+            aria-label="Subject"
           >
             <option value="ALL">All subjects</option>
             {subjects.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
         </div>
 
-        {error ? (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>
-        ) : null}
+        {error && <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
         {loading ? (
-          <div className="rounded-3xl border border-zinc-200 bg-white p-10 text-center text-sm font-semibold text-zinc-500">Loading practice tests…</div>
+          <p className="py-16 text-center text-sm text-zinc-500">Loading papers…</p>
         ) : tests.length === 0 ? (
-          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-10 text-center text-sm font-semibold text-amber-800">
-            No practice mocks are published yet. Add a test_version with kind=PRACTICE and is_active=true to populate this catalog.
-          </div>
-        ) : filteredTests.length === 0 ? (
-          <div className="rounded-3xl border border-zinc-200 bg-white p-10 text-center text-sm font-semibold text-zinc-500">No practice tests match your filters.</div>
+          <p className="py-16 text-center text-sm text-zinc-500">No papers are available yet. Please check back soon.</p>
+        ) : groups.length === 0 ? (
+          <p className="py-16 text-center text-sm text-zinc-500">No papers match your search.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredTests.map((t) => {
-              const difficulty = inferDifficultyLabel(`${t.title} ${t.description ?? ""}`);
-              return (
-                <div key={t.id} className="flex h-full flex-col rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-black leading-snug text-zinc-950">{t.title}</h3>
-                    <span className="shrink-0 rounded-full bg-[#193bc8]/10 px-2.5 py-1 text-xs font-black text-[#193bc8]">{difficulty}</span>
-                  </div>
-
-                  {t.description ? <p className="mt-3 text-sm leading-6 text-zinc-600">{t.description}</p> : null}
-
-                  <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold text-zinc-600">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1"><Clock3 className="h-3.5 w-3.5" /> {fmtMinutes(t.durationSeconds)}</span>
-                    {t.subject ? <span className="rounded-full bg-zinc-100 px-2.5 py-1">{t.subject.name}</span> : null}
-                    {t.maxAttemptsPerUser ? <span className="rounded-full bg-zinc-100 px-2.5 py-1">Max {t.maxAttemptsPerUser} attempts</span> : null}
-                  </div>
-
-                  <button
-                    onClick={() => startPractice(t.id)}
-                    disabled={busyId === t.id}
-                    className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#193bc8] px-4 py-3 text-sm font-black text-white transition hover:bg-[#102b9f] disabled:opacity-60"
-                  >
-                    {busyId === t.id ? "Starting…" : "Start practice"}
-                    {busyId !== t.id ? <ArrowRight className="h-4 w-4" /> : null}
-                  </button>
+          <div className="space-y-10">
+            {groups.map(([name, list]) => (
+              <section key={name}>
+                <div className="flex items-baseline justify-between border-b border-zinc-200 pb-3">
+                  <h2 className="text-lg font-semibold text-ink">{name}</h2>
+                  <span className="text-sm text-zinc-500">{list.length} papers</span>
                 </div>
-              );
-            })}
+                <ul className="divide-y divide-zinc-100">
+                  {list.map((t) => (
+                    <li key={t.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="font-medium text-ink">{t.title.replace(` · ${name}`, "")}</p>
+                        <p className="mt-0.5 flex items-center gap-1.5 text-sm text-zinc-500">
+                          <Clock3 className="h-3.5 w-3.5" /> {fmtDuration(t.durationSeconds)} · 65 questions · 100 marks
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => startPractice(t.id)}
+                        disabled={busyId !== null}
+                        className={buttonClass({ variant: "secondary", size: "sm" }, "shrink-0")}
+                      >
+                        {busyId === t.id ? "Starting…" : "Start paper"}
+                        {busyId !== t.id && <ArrowRight className="h-4 w-4" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
           </div>
         )}
-      </section>
+      </Container>
     </div>
   );
 }

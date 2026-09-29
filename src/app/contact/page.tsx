@@ -13,17 +13,17 @@ export default function ContactPage() {
     >
       <Section title="Support">
         <dl className="grid grid-cols-[8rem_1fr] gap-y-2">
-          <dt className="font-semibold text-zinc-950">Email</dt>
+          <dt className="font-semibold text-ink">Email</dt>
           <dd>
             <Mail />
           </dd>
-          <dt className="font-semibold text-zinc-950">Phone</dt>
+          <dt className="font-semibold text-ink">Phone</dt>
           <dd>
             <a href={`tel:${LEGAL.phone.replace(/\s/g, "")}`} className="underline underline-offset-2">
               {LEGAL.phone}
             </a>
           </dd>
-          <dt className="font-semibold text-zinc-950">Hours</dt>
+          <dt className="font-semibold text-ink">Hours</dt>
           <dd>{LEGAL.supportHours}</dd>
         </dl>
         <p>We reply to emails within 1 business day.</p>
@@ -31,7 +31,7 @@ export default function ContactPage() {
 
       <Section title="Company">
         <p>
-          <b className="text-zinc-950">{LEGAL.company}</b>
+          <b className="text-ink">{LEGAL.company}</b>
           <br />
           {fill(LEGAL.address, "Registered office address")}
         </p>

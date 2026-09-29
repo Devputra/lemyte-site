@@ -222,26 +222,26 @@ function buildInsight(params: {
   } = params;
 
   if (passed) {
-    return `You cleared this attempt with ${formatPercent(
+    return `You passed, with ${formatPercent(
       accuracyPercent
-    )} accuracy on attempted questions. The next jump now is improving consistency on higher-weight questions.`;
+    )} accuracy on the questions you answered. To push your score higher, work on the 2-mark questions you got wrong.`;
   }
 
   if (wrongCount > 0 && negativeMarksLost > 0) {
-    return `You attempted ${attemptedCount} of ${totalQuestions} questions, but accuracy was only ${formatPercent(
+    return `You answered ${attemptedCount} of ${totalQuestions} questions with ${formatPercent(
       accuracyPercent
-    )}. Negative marking cost you ${formatCompactNumber(
+    )} accuracy, and negative marking cost you ${formatCompactNumber(
       negativeMarksLost
-    )} marks, which means your main issue was risky attempts rather than low participation.`;
+    )} marks. Answering fewer questions you're unsure about would have raised your score.`;
   }
 
   if (unansweredCount > 0) {
     return `You left ${unansweredCount} question${
       unansweredCount === 1 ? "" : "s"
-    } unanswered. That is acceptable only if it protects accuracy. Your next step is to improve confidence on easier questions before forcing more attempts.`;
+    } unanswered. Skipping is fine when you're unsure, but check the solutions to see which ones you could have answered.`;
   }
 
-  return `Your score needs improvement. Focus first on raising accuracy and reducing wasteful negative marks before increasing total attempts.`;
+  return `Start with the questions you got wrong: read each solution, then practise the topics they came from.`;
 }
 
 function scrollToQuestionReview() {
@@ -295,7 +295,7 @@ export default function GateReportPage() {
         }
       } catch (e: unknown) {
         if (alive) {
-          setError(e instanceof Error ? e.message : "Failed to load report");
+          setError(e instanceof Error ? e.message : "Couldn't load this report. Please refresh.");
         }
       } finally {
         if (alive) {
@@ -460,7 +460,7 @@ export default function GateReportPage() {
       <div className="mx-auto max-w-3xl px-4 py-12 md:px-6">
         <Card className="border-gray-200">
           <CardHeader>
-            <CardTitle>Report is still being prepared</CardTitle>
+            <CardTitle>Your report is being prepared</CardTitle>
             <CardDescription>
               Grading may still be finishing. Refresh this page in a moment.
             </CardDescription>
@@ -468,7 +468,7 @@ export default function GateReportPage() {
           <CardContent className="flex flex-wrap gap-3">
             <Button onClick={() => window.location.reload()}>Refresh</Button>
             <Button variant="outline" asChild>
-              <Link href="/gate">Back to GATE Mocks</Link>
+              <Link href="/gate/dashboard">Back to dashboard</Link>
             </Button>
           </CardContent>
         </Card>
@@ -481,13 +481,13 @@ export default function GateReportPage() {
       <div className="mx-auto max-w-3xl px-4 py-12 md:px-6">
         <Card className="border-red-200">
           <CardHeader>
-            <CardTitle>Failed to load report</CardTitle>
+            <CardTitle>Couldn&apos;t load this report</CardTitle>
             <CardDescription>{error ?? "Something went wrong."}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
             <Button onClick={() => window.location.reload()}>Try Again</Button>
             <Button variant="outline" asChild>
-              <Link href="/gate">Back to GATE Mocks</Link>
+              <Link href="/gate/dashboard">Back to dashboard</Link>
             </Button>
           </CardContent>
         </Card>
@@ -531,7 +531,7 @@ export default function GateReportPage() {
 
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" asChild>
-              <Link href="/gate">Back to GATE Mocks</Link>
+              <Link href="/gate/dashboard">Back to dashboard</Link>
             </Button>
             <Button
               onClick={() => {
@@ -544,7 +544,7 @@ export default function GateReportPage() {
               Review Answers
             </Button>
             <Button asChild>
-              <Link href="/gate/demo">Take Another Mock</Link>
+              <Link href="/gate/practice">Take another test</Link>
             </Button>
           </div>
         </section>
@@ -624,9 +624,9 @@ export default function GateReportPage() {
         <section className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
           <Card className="border-[#00A86B]/20">
             <CardHeader>
-              <CardTitle>Performance Insight</CardTitle>
+              <CardTitle>Summary</CardTitle>
               <CardDescription>
-                What this attempt says about your current test strategy.
+                What stands out in this attempt.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1241,8 +1241,7 @@ export default function GateReportPage() {
                           <div className="explanation-scroll h-[320px] overflow-y-auto rounded-xl border border-dashed bg-gray-50 p-5 text-sm leading-7 text-gray-600 lg:h-full lg:min-h-[320px]">
                             <p className="font-medium text-gray-800">Explanation not available yet.</p>
                             <p className="mt-2">
-                              This question does not have <code>explanation_markdown</code> populated
-                              in <code>gate.question_versions</code> yet.
+                              A worked solution for this question will be added soon.
                             </p>
                           </div>
                         )}
@@ -1258,11 +1257,11 @@ export default function GateReportPage() {
         {/* Bottom CTA */}
         <section className="flex flex-wrap gap-3">
           <Button variant="outline" asChild>
-            <Link href="/gate">Back to GATE Mocks</Link>
+            <Link href="/gate/dashboard">Back to dashboard</Link>
           </Button>
           <Button onClick={scrollToQuestionReview}>Review Answers</Button>
           <Button asChild>
-            <Link href="/gate/demo">Take Another Mock</Link>
+            <Link href="/gate/practice">Take another test</Link>
           </Button>
         </section>
       </div>

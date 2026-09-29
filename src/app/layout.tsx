@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -13,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lemyte - Knowledge is supreme",
+  title: "Lemyte — Practice tests for competitive exams",
   description:
-    "Lemyte is a STEM assessment platform. Calibrated GATE mock tests, PYQ practice, exam-like attempts, and report-first analytics for serious aspirants.",
+    "Exam-style online tests for GATE, built from official past papers and marked the way GATE marks them. See which topics cost you marks and practise those first.",
 };
 
 export default function RootLayout({
@@ -26,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}
       >
         {children}
       </body>

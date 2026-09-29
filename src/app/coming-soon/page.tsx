@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default function ComingSoon() {
   const [email, setEmail] = useState("");
@@ -21,61 +21,49 @@ export default function ComingSoon() {
       });
       const data = await res.json();
       if (data.ok) {
-        setMsg("🎉 You're on the list! Check your inbox.");
+        setMsg("Thanks. We'll email you when it's ready.");
         setEmail("");
       } else {
         setMsg(data.error || "Something went wrong.");
       }
     } catch {
-      setMsg("Network error, please try again.");
+      setMsg("Couldn't send that. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-purple-50 to-white px-4 text-center">
-      <div className="max-w-lg">
-        {/* Logo */}
-        <div className="flex justify-center items-center gap-2 mb-6">
-          <Sparkles className="h-6 w-6 text-purple-600" />
-          <span className="font-bold text-xl">Lemyte</span>
-        </div>
-
-        {/* Headline */}
-        <h1 className="text-4xl font-extrabold mb-4">
-          🚧 We’re Building Something Awesome
-        </h1>
-        <p className="text-lg text-muted-foreground mb-6">
-          Lemyte is almost ready!  
-          We’re crafting expert-led workshops and hands-on learning experiences.  
-          Be the first to know when we launch.
+    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-5">
+      <div className="w-full max-w-lg">
+        <p className="text-sm font-medium text-brand">Lemyte</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">This page isn&apos;t ready yet</h1>
+        <p className="mt-4 text-lg leading-relaxed text-zinc-600">
+          We&apos;re working on it. Leave your email and we&apos;ll let you know when it&apos;s live. In the meantime, GATE
+          assessment is open.
         </p>
 
-        {/* Email Signup */}
-        <form onSubmit={handleSubscribe} className="flex gap-2 mb-4">
+        <form onSubmit={handleSubscribe} className="mt-8 flex gap-2">
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
+            placeholder="you@example.com"
             required
-            className="flex-1 rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="h-11 flex-1 rounded-[10px] border border-zinc-300 px-3 text-sm outline-none focus:border-brand focus:ring-4 focus:ring-brand/10"
           />
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-brand px-5 text-[15px] font-medium text-white hover:bg-brand-700 disabled:opacity-50"
           >
-            {loading ? "Sending..." : <>Notify Me <ArrowRight className="h-4 w-4" /></>}
+            {loading ? "Sending…" : <>Notify me <ArrowRight className="h-4 w-4" /></>}
           </button>
         </form>
+        {msg && <p className="mt-3 text-sm text-zinc-500">{msg}</p>}
 
-        {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
-
-        {/* Footer */}
-        <p className="mt-8 text-xs text-gray-500">
-          © {new Date().getFullYear()} Lemyte. All rights reserved.
+        <p className="mt-8 text-sm">
+          <a href="/gate" className="font-medium text-brand hover:text-brand-700">Go to GATE assessment →</a>
         </p>
       </div>
     </main>

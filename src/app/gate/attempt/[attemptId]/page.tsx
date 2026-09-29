@@ -35,6 +35,7 @@ interface QuestionData {
 
 interface SessionState {
   attemptId: string;
+  testTitle?: string | null;
   status: "IN_PROGRESS" | "SUBMITTED" | "EXPIRED" | "ABANDONED";
   endsAt: string;
   startedAt?: string;
@@ -594,7 +595,6 @@ export default function GateAttemptPage() {
         });
         const data = await res.json();
         console.log("ATTEMPT API DATA", data);
-        console.log("CURRENT QUESTION FROM API", data?.questions?.[data?.currentQuestionId]);
 
         if (!res.ok) {
           throw new Error(data.error ?? `Load failed (${res.status})`);
@@ -610,7 +610,7 @@ export default function GateAttemptPage() {
         }
 
         if (data.status === "ABANDONED") {
-          throw new Error("Session unavailable. Please start a new attempt.");
+          throw new Error("This test session has ended. Please start the test again.");
         }
 
         if (!alive) return;
@@ -626,7 +626,7 @@ export default function GateAttemptPage() {
         setRemainingMs(Math.max(0, data.remainingMs ?? endsAtRef.current - Date.now()));
       } catch (e: unknown) {
         if (alive) {
-          setError(e instanceof Error ? e.message : "Failed to load attempt");
+          setError(e instanceof Error ? e.message : "Couldn't load this test. Please refresh.");
         }
       } finally {
         if (alive) setLoading(false);
@@ -827,7 +827,6 @@ export default function GateAttemptPage() {
 
     const data = await res.json();
     console.log("ATTEMPT API DATA", data);
-    console.log("CURRENT QUESTION FROM API", data?.questions?.[data?.currentQuestionId]);
 
     if (!res.ok) {
       throw new Error(data.error ?? `Answer save failed (${res.status})`);
@@ -848,7 +847,7 @@ export default function GateAttemptPage() {
         setCurrentQvId(questionOrder[currentIdx + 1]);
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to save answer");
+      setError(e instanceof Error ? e.message : "Your answer wasn't saved. Check your connection and try again.");
     }
   }
 
@@ -864,7 +863,6 @@ export default function GateAttemptPage() {
 
       const data = await res.json();
       console.log("ATTEMPT API DATA", data);
-      console.log("CURRENT QUESTION FROM API", data?.questions?.[data?.currentQuestionId]);
 
       if (!res.ok) {
         throw new Error(data.error ?? `Mark failed (${res.status})`);
@@ -874,7 +872,7 @@ export default function GateAttemptPage() {
         setPalette((p) => ({ ...p, [currentQvId]: data.paletteState }));
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to mark question");
+      setError(e instanceof Error ? e.message : "Couldn't mark this question. Please try again.");
     }
   }
 
@@ -890,7 +888,6 @@ export default function GateAttemptPage() {
 
       const data = await res.json();
       console.log("ATTEMPT API DATA", data);
-      console.log("CURRENT QUESTION FROM API", data?.questions?.[data?.currentQuestionId]);
 
       if (!res.ok) {
         throw new Error(data.error ?? `Clear failed (${res.status})`);
@@ -910,7 +907,7 @@ export default function GateAttemptPage() {
         });
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to clear response");
+      setError(e instanceof Error ? e.message : "Couldn't clear the answer. Please try again.");
     }
   }
 
@@ -984,7 +981,7 @@ export default function GateAttemptPage() {
 
       <div className="flex h-12 shrink-0 items-center justify-between border-b bg-gray-50 px-4">
         <div className="flex items-center gap-4 text-sm">
-          <span className="font-semibold">GATE CS/IT Mock</span>
+          <span className="font-semibold">{session?.testTitle ?? "GATE test"}</span>
           <span className="text-gray-500">
             Q {currentIdx + 1} of {questionOrder.length}
           </span>
