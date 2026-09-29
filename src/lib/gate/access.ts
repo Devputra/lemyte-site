@@ -66,12 +66,12 @@ export async function grantAccessForPaidOrder(args: {
   }
 
   if (existing.data) {
-    // Make sure payment order is also marked PAID if this was a webhook/verify race.
+    // Make sure payment order is also marked CAPTURED if this was a webhook/verify race.
     await supabaseAdmin
       .schema("gate")
       .from("payment_orders")
       .update({
-        status: "PAID",
+        status: "CAPTURED",
         provider_payment_id: args.paymentId ?? undefined,
         updated_at: new Date().toISOString(),
       })
@@ -142,7 +142,7 @@ export async function grantAccessForPaidOrder(args: {
     .schema("gate")
     .from("payment_orders")
     .update({
-      status: "PAID",
+      status: "CAPTURED",
       provider_payment_id: args.paymentId ?? undefined,
       updated_at: now.toISOString(),
     })
