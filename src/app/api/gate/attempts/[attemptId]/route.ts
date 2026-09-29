@@ -5,7 +5,7 @@
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { stripInlineOptions } from "@/lib/gate/question-text";
+import { hasRealOptions, stripInlineOptions } from "@/lib/gate/question-text";
 import { getAttemptSession, emitAttemptEvent } from "@/lib/gate/redis";
 import { isAuthorizedActor } from "@/lib/gate/auth";
 import { handleRouteError } from "@/lib/gate/errors";
@@ -79,8 +79,8 @@ async function loadQuestionContent(
       questionVersionId: String(v.id),
       type: String(v.type),
       marks: Number(v.marks),
-      markdown: stripInlineOptions(String(v.markdown_content), options.length > 0),
-      text: stripInlineOptions(String(v.markdown_content), options.length > 0),
+      markdown: stripInlineOptions(String(v.markdown_content), hasRealOptions(options)),
+      text: stripInlineOptions(String(v.markdown_content), hasRealOptions(options)),
       options,
       section: sectionMap[String(v.id)] ?? "CORE",
     };
