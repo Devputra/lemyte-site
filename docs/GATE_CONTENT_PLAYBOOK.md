@@ -99,6 +99,13 @@ python3 build.py <CODE> <prefix>; node check_render.mjs <CODE>; python3 apply.py
   GitHub Models needs a fine-grained token (classic `ghp_` gets a stub "OK"). Mistral/OpenRouter free models were rate-limited.
 - Image-only papers (2020): `autofig_raster.py` candidates → `finalize.py --prune`; then fix mislabelled ones by hand
   (an option image often lands as `stem`/`qNNb`, text bands above figures come as `qNN` + figure as `qNNb`).
+- **Whitening kills light shading** (min-channel ≥ 200 → white also erased grey fills: annulus, fluid, composite bars).
+  `croputil.template()` = median of the same rect over other pages (the watermark); `finish(tmpl=…)` whitens only
+  pixels matching it. autofig/fixcrop use it now; `recrop.py <CODE> <pdf> <prefix> [--apply]` re-renders old crops
+  (36 ME figures fixed 2026-09-29). Not needed for scanned 2020 papers. AE/CE crops (whitened 170–200) likely have the same loss.
+- **Cross-check:** `xcheck.py <CODE> [lo hi] [--via groq]` — batched *blind* solve (no stored answer shown), compared with
+  the key locally; `--report` lists flags. Codex: ~16 q/call (~20 s); groq gpt-oss-120b: text-only questions, 4/call.
+  Codex weekly cap hit 2026-09-29 → resets 2026-10-04 08:39.
 - Stems with text between two figures: `{FIG:a}` … `{FIG:b}` place `qNN` and `qNNb` individually.
 
 ## Token-saving rules

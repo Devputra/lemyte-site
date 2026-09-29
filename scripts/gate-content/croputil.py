@@ -32,9 +32,30 @@ def _strip_edges(ink):
     return ink
 
 
-def finish(a, thr=200, pad=15):
-    """a: HxWx3 uint8 array -> PIL image, whitened and trimmed to its content."""
+def template(doc, rect, zoom, skip=None, n=11):
+    """Median render of `rect` over up to n other pages: the page-constant watermark/background there."""
+    import fitz
+    pages = [i for i in range(len(doc)) if i != skip]
+    step = max(1, len(pages) // n)
+    ims = []
+    for i in pages[::step][:n]:
+        pix = doc[i].get_pixmap(clip=rect, matrix=fitz.Matrix(zoom, zoom), alpha=False)
+        ims.append(np.frombuffer(pix.samples, np.uint8).reshape(pix.height, pix.width, 3))
+    h = min(x.shape[0] for x in ims)
+    w = min(x.shape[1] for x in ims)
+    return np.median(np.stack([x[:h, :w] for x in ims]), axis=0).astype(np.int16)
+
+
+def finish(a, thr=200, pad=15, tmpl=None):
+    """a: HxWx3 uint8 array -> PIL image, whitened and trimmed to its content.
+    With tmpl (see template()), only light pixels matching the page-constant watermark are whitened,
+    so genuine light shading/fills in the figure survive."""
     light = a.min(axis=2) >= thr
+    if tmpl is not None:
+        h, w = min(a.shape[0], tmpl.shape[0]), min(a.shape[1], tmpl.shape[1])
+        same = np.zeros(light.shape, bool)
+        same[:h, :w] = np.abs(a[:h, :w].astype(np.int16) - tmpl[:h, :w]).max(axis=2) < 24
+        light = (a.min(axis=2) >= 245) | ((a.min(axis=2) >= 120) & same)
     a = a.copy()
     a[light] = 255
     ink = _strip_edges(~light)

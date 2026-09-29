@@ -15,7 +15,7 @@ import fitz
 import numpy as np
 from PIL import Image, ImageDraw
 
-from croputil import finish
+from croputil import finish, template
 from common import QUESTIONS_ROOT, workdir
 
 code, pdfname = sys.argv[1:3]
@@ -171,7 +171,7 @@ for f in figs:
     p = d[f["page"] - 1]
     pix = p.get_pixmap(clip=fitz.Rect(f["rect"]) + (-3, -3, 3, 3), matrix=fitz.Matrix(5, 5), alpha=False)
     a = np.array(Image.frombytes("RGB", (pix.width, pix.height), pix.samples))
-    im = finish(a, 200)
+    im = finish(a, 200, tmpl=template(d, fitz.Rect(f["rect"]) + (-3, -3, 3, 3), 5, skip=f["page"] - 1))
     fn = f"tmp_q{f['q']:02d}{f['suffix']}_{f['part']}.png"
     im.save(os.path.join(out, fn))
     names.append(fn)

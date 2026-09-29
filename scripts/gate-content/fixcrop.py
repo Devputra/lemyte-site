@@ -13,7 +13,7 @@ import fitz
 import numpy as np
 from PIL import Image
 
-from croputil import finish
+from croputil import finish, template
 from common import QUESTIONS_ROOT, workdir
 
 code, pdfname, *specs = sys.argv[1:]
@@ -31,6 +31,6 @@ for s in specs:
     r = fitz.Rect(*[float(v) for v in box.split(",")])
     pix = d[int(pg) - 1].get_pixmap(clip=r, matrix=fitz.Matrix(5, 5), alpha=False)
     a = np.array(Image.frombytes("RGB", (pix.width, pix.height), pix.samples))
-    im = finish(a, thr)
+    im = finish(a, thr, tmpl=template(d, r, 5, skip=int(pg) - 1))
     im.save(os.path.join(out, f"tmp_{name}.png"))
     print("saved", name, im.size)
