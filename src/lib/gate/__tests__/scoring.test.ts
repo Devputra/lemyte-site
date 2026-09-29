@@ -291,11 +291,31 @@ describe("gradeAttempt", () => {
     const result = gradeAttempt(questions, answers, 25);
 
     // Expected: 1 + (-2/3) + 2 + 1 = 3.333...
-    expect(result.score).toBeCloseTo(1 - 2 / 3 + 2 + 1, 10);
+    expect(result.score).toBe(3.33); // totals are reported to 2 decimals, as in GATE
     expect(result.maxScore).toBe(6);
     expect(result.perQuestion).toHaveLength(4);
     expect(result.perQuestion[0].correct).toBe(true);
     expect(result.perQuestion[1].correct).toBe(false);
     expect(result.perQuestion[1].earned).toBeCloseTo(-2 / 3, 10);
+  });
+
+  it("rounds away floating-point noise in totals (1 - 3 x 1/3 = 0)", () => {
+    const questions: QuestionMeta[] = [1, 2, 3, 4].map((k) => ({
+      questionVersionId: `q${k}`,
+      questionId: `q${k}b`,
+      type: "MCQ" as const,
+      marks: 1,
+      correctOptionIds: ["a"],
+    }));
+    const answers: Record<string, CommittedAnswer | null> = {
+      q1: { type: "MCQ", selectedOptionIds: ["a"], savedAt: "" }, // +1
+      q2: { type: "MCQ", selectedOptionIds: ["b"], savedAt: "" }, // -1/3
+      q3: { type: "MCQ", selectedOptionIds: ["b"], savedAt: "" }, // -1/3
+      q4: { type: "MCQ", selectedOptionIds: ["b"], savedAt: "" }, // -1/3
+    };
+    const result = gradeAttempt(questions, answers, 25);
+    expect(result.score).toBe(0);
+    expect(Object.is(result.score, -0)).toBe(false);
+    expect(result.percent).toBe(0);
   });
 });

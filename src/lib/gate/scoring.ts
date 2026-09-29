@@ -173,10 +173,12 @@ export function gradeAttempt(
     });
   }
 
-  const score = total.toNumber();
+  // Per-question marks like -1/3 are floats; round the totals to 2 decimals (as GATE reports them)
+  // so sums such as 1 - 3 x 1/3 come out as 0, not 1e-16.
+  const score = total.toDecimalPlaces(2).toNumber() + 0; // "+ 0" turns -0 into 0
   const maxScore = maxTotal.toNumber();
   const percent =
-    maxScore === 0 ? 0 : total.div(maxTotal).times(100).toNumber();
+    maxScore === 0 ? 0 : total.div(maxTotal).times(100).toDecimalPlaces(2).toNumber() + 0;
   const passed = percent >= passPercent;
 
   return {
