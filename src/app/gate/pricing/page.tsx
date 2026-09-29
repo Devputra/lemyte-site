@@ -25,6 +25,11 @@ declare global {
   }
 }
 
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+}
+
 const INCLUDED = [
   "All 7 GATE subjects and all 71 official PYQ papers",
   "Topic practice on any topic, as often as you like",
@@ -43,6 +48,8 @@ const FIT: Record<number, string> = {
 export default function GatePricingPage() {
   const router = useRouter();
   const access = useAccess();
+  const current = access?.hasPlan ? access.plan ?? null : null;
+  const daysLeft = current?.endsAt ? Math.max(0, Math.ceil((new Date(current.endsAt).getTime() - Date.now()) / 86400000)) : null;
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
@@ -158,12 +165,33 @@ export default function GatePricingPage() {
       <div className="bg-white">
         <section className="border-b border-zinc-100">
           <div className="mx-auto max-w-6xl px-5 py-12 text-center sm:px-6 sm:py-16">
-            <p className="text-sm font-medium text-brand">Pricing</p>
-            <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Simple plans, paid once</h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
-              Every plan unlocks everything on Lemyte for its duration. Plans don&apos;t renew, and you can get a full refund
-              within 7 days if you have started no more than 2 tests.
-            </p>
+            {current ? (
+              <>
+                <p className="text-sm font-medium text-brand">Your plan</p>
+                <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">
+                  You&apos;re on the {current.name} plan
+                </h1>
+                <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
+                  Active until <span className="font-medium text-ink">{fmtDate(current.endsAt)}</span>
+                  {daysLeft !== null && <> · {daysLeft} {daysLeft === 1 ? "day" : "days"} left</>}. Need more time? Extend
+                  below: the extra time starts when your current plan ends, so you don&apos;t lose any days.
+                </p>
+                <div className="mt-6 flex justify-center">
+                  <Link href="/gate/dashboard" className="inline-flex h-11 items-center rounded-[10px] border border-zinc-300 px-5 text-[15px] font-medium text-ink hover:bg-zinc-50">
+                    Go to your dashboard
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-brand">Pricing</p>
+                <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Simple plans, paid once</h1>
+                <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
+                  Every plan unlocks everything on Lemyte for its duration. Plans don&apos;t renew, and you can get a full refund
+                  within 7 days if you have started no more than 2 tests.
+                </p>
+              </>
+            )}
           </div>
         </section>
 
@@ -194,22 +222,35 @@ export default function GatePricingPage() {
             ) : (
               sortedPlans.map((plan) => {
                 const perMonth = Math.round(plan.priceInr / plan.durationMonths);
+                const isCurrent = current?.id === plan.id;
                 const best = sortedPlans.length > 1 && perMonth === Math.min(...sortedPlans.map((p) => Math.round(p.priceInr / p.durationMonths)));
                 return (
                   <div key={plan.id} className={`relative flex h-full flex-col rounded-2xl border bg-white p-6 ${best ? "border-brand ring-1 ring-brand" : "border-zinc-200"}`}>
-                    {best && <span className="absolute -top-3 left-6 rounded-full bg-brand px-2.5 py-0.5 text-xs font-medium text-white">Best value</span>}
+                    {isCurrent ? (
+                      <span className="absolute -top-3 left-6 rounded-full bg-ink px-2.5 py-0.5 text-xs font-medium text-white">Current plan</span>
+                    ) : (
+                      best && <span className="absolute -top-3 left-6 rounded-full bg-brand px-2.5 py-0.5 text-xs font-medium text-white">Best value</span>
+                    )}
                     <h2 className="text-lg font-semibold text-ink">{plan.name}</h2>
                     <p className="mt-4 text-4xl font-semibold tracking-tight tabular-nums">₹{plan.priceInr.toLocaleString("en-IN")}</p>
                     <p className="mt-1 text-sm text-zinc-500">
                       {plan.durationMonths === 1 ? "One-time payment" : `₹${perMonth.toLocaleString("en-IN")} a month, paid once`}
                     </p>
-                    <p className="mt-5 flex-1 text-sm leading-6 text-zinc-600">{FIT[plan.durationMonths] ?? `${plan.durationMonths} months of full access.`}</p>
+                    <p className="mt-5 flex-1 text-sm leading-6 text-zinc-600">
+                      {current
+                        ? `Adds ${plan.name.toLowerCase()} after ${fmtDate(current.endsAt)}.`
+                        : FIT[plan.durationMonths] ?? `${plan.durationMonths} months of full access.`}
+                    </p>
                     <button
                       onClick={() => startCheckout(plan)}
                       disabled={busyPlanId !== null}
                       className={`mt-6 inline-flex h-11 items-center justify-center rounded-[10px] text-[15px] font-medium transition-colors disabled:opacity-60 ${best ? "bg-brand text-white hover:bg-brand-700" : "bg-ink text-white hover:bg-zinc-800"}`}
                     >
-                      {busyPlanId === plan.id ? "Opening checkout…" : `Buy ${plan.name.toLowerCase()}`}
+                      {busyPlanId === plan.id
+                        ? "Opening checkout…"
+                        : current
+                          ? `Extend by ${plan.name.toLowerCase()}`
+                          : `Buy ${plan.name.toLowerCase()}`}
                     </button>
                   </div>
                 );

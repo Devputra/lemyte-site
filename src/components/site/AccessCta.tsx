@@ -9,7 +9,12 @@ import { ArrowRight } from "lucide-react";
 
 import { buttonClass, type ButtonStyle } from "./ui";
 
-export type Access = { signedIn: boolean; hasPlan: boolean; name: string | null };
+export type Access = {
+  signedIn: boolean;
+  hasPlan: boolean;
+  name: string | null;
+  plan?: { id: string; name: string; endsAt: string | null } | null;
+};
 
 let cached: Promise<Access> | null = null;
 export function loadAccess(): Promise<Access> {
