@@ -5,7 +5,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, Loader2, Target } from "lucide-react";
 
@@ -80,6 +80,9 @@ export default function GateDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyTopic, setBusyTopic] = useState<string | null>(null);
+  // Topic being set up from the wheel/list: drives the full-screen overlay (and shows its error in place).
+  const busyRef = useRef(false);
+  const [starting, setStarting] = useState<{ name: string; error?: string } | null>(null);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -123,7 +126,10 @@ export default function GateDashboardPage() {
 
   const practise = useCallback(
     async (t: TopicRow) => {
+      if (busyRef.current) return; // one request at a time
+      busyRef.current = true;
       setBusyTopic(t.topicId);
+      setStarting({ name: t.name });
       setError(null);
       try {
         const res = await fetch("/api/gate/practice/topic", {
@@ -134,11 +140,12 @@ export default function GateDashboardPage() {
         const d = await safeJson(res);
         if (res.status === 401) return router.push("/gate/auth/sign-in?next=/gate/dashboard");
         if (res.status === 403) return router.push("/gate/pricing");
-        if (!res.ok) throw new Error(d.error ?? `Failed to set up practice (${res.status})`);
-        router.push(`/gate/instructions?test=${d.testVersionId}&mode=PRACTICE`);
+        if (!res.ok) throw new Error(d.error ?? `Couldn't set up this practice set (${res.status}). Please try again.`);
+        router.push(`/gate/instructions?test=${d.testVersionId}&mode=PRACTICE`); // overlay stays up until the page changes
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to start practice");
+        busyRef.current = false;
         setBusyTopic(null);
+        setStarting({ name: t.name, error: e instanceof Error ? e.message : "Couldn't start practice. Please try again." });
       }
     },
     [router],
@@ -164,6 +171,26 @@ export default function GateDashboardPage() {
 
   return (
     <div className="bg-zinc-50/60">
+      {starting && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-white/80 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Setting up practice">
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white px-6 pb-6 text-center shadow-xl shadow-brand/10">
+            {starting.error ? (
+              <div className="pt-8">
+                <p className="font-semibold text-ink">{starting.name}</p>
+                <p className="mt-2 text-sm leading-6 text-rose-700">{starting.error}</p>
+                <button onClick={() => setStarting(null)} className="mt-6 inline-flex h-10 items-center rounded-[10px] bg-brand px-5 text-sm font-medium text-white hover:bg-brand-700">
+                  OK
+                </button>
+              </div>
+            ) : (
+              <>
+                <LoadingScene label="Picking 10 past-paper questions…" className="pb-2 pt-8" />
+                <p className="-mt-1 font-semibold text-ink">{starting.name}</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       <section className="mx-auto max-w-7xl space-y-6 px-4 py-8">
         {showWelcome && (
           <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
@@ -273,15 +300,15 @@ export default function GateDashboardPage() {
               </div>
             </div>
             <div className="hidden sm:block">
-              <TopicWheel topics={data.topics} onPick={practise} />
+              <TopicWheel topics={data.topics} onPick={practise} busyId={busyTopic} />
             </div>
             <div className="sm:hidden">
               <div className="mx-auto max-w-[240px]">
-                <TopicWheel topics={data.topics} onPick={practise} labels={false} />
+                <TopicWheel topics={data.topics} onPick={practise} labels={false} busyId={busyTopic} />
               </div>
               <div className="mb-3 flex flex-wrap gap-1.5">
                 {data.topics.map((t) => (
-                  <button key={t.topicId} onClick={() => practise(t)} className="flex items-center gap-1.5 rounded-full border border-zinc-200 px-2.5 py-1 text-[11px] font-semibold text-zinc-700">
+                  <button key={t.topicId} onClick={() => practise(t)} disabled={busyTopic !== null} className="flex items-center gap-1.5 rounded-full border border-zinc-200 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 transition-colors active:bg-brand-50 disabled:opacity-40">
                     <span className="h-2 w-2 rounded-full" style={{ background: STATUS[t.status].color }} />
                     {t.name}
                   </button>

@@ -42,7 +42,8 @@ Motion explains or guides; it never decorates for its own sake. One primitive pe
 - `CountUp` server-renders the real number; it only resets to 0 when it starts off-screen.
 - In-view margins are vertical only (`"-60px 0px"`); a horizontal inset hides narrow items at the screen edge.
 - Respect `prefers-reduced-motion`, never hijack scrolling, pause canvases off-screen.
-- Illustrations in `public/images/illustrations/` are temporary (see its README); real photos for people.
+- No stock or third-party illustrations. Visuals are code-drawn scenes (`motion/scenes.tsx`: answer sheet,
+  score journey, recall curves, plan calendar, dot mark); people are shown with real photos only.
 
 ## Writing
 - Plain, specific sentences. Say what the thing does, with real numbers.

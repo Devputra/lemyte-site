@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         {/* Without JavaScript, show everything framer-motion would have faded in. */}
         <noscript>
-          <style>{`[data-motion]{opacity:1!important;transform:none!important}`}</style>
+          <style>{`[data-motion]{opacity:1!important;transform:none!important;stroke-dasharray:none!important;stroke-dashoffset:0!important}`}</style>
         </noscript>
         {children}
       </body>

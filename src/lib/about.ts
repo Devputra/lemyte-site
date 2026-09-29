@@ -1,27 +1,28 @@
-// src/lib/about.ts — people and milestones on /about.
-//
-// FOUNDER DETAILS ARE STILL TO COME. Anything left empty ("" or []) is hidden in production and
-// shown as a dashed "fill me" box in development, so a half-finished About page never goes live.
-// Photos go in public/images/team/ (square, at least 800×800, a real photo — not an illustration).
+// src/lib/about.ts — the founder story on /about.
+// Keep it short and true: every line here should be something the founder would say out loud.
 
-export type Person = {
-  name: string; // e.g. "Devputra N"
-  role: string; // e.g. "Founder & Director"
-  photo: string; // e.g. "/images/team/devputra.jpg"
-  bio: string; // 2–3 sentences in first person: background, why this problem, what you do day to day
+export type Founder = {
+  name: string;
+  role: string;
+  photo: string; // square, public/images/team/
   linkedin?: string;
+  story: string[]; // first person, one paragraph per entry
 };
 
-export type Milestone = { when: string; what: string };
+export const FOUNDER: Founder = {
+  name: "Devputra",
+  role: "Founder & Director",
+  photo: "/images/team/devputra.jpg",
+  story: [
+    "I grew up in Kuruvikarambai, a small village, and studied Electrical and Electronics Engineering at KCG College of Technology in Chennai. After college I spent almost two years preparing for GATE.",
+    "Just before the exam, Amazon called me for an interview. The problem-solving I had built up for GATE is what got me through it, and I spent four years there. Later, going back to GATE mathematics helped me into a quantitative analyst role at Glencore. I never studied at an IIT, but preparing for GATE changed where my life went.",
+    "Through all of it, my companion was a printed book of previous years' questions. Late at night, stuck on a problem, I kept wishing it could answer back: check my attempt, show me why a step works, tell me what to fix next. Lemyte starts from that wish.",
+  ],
+};
 
-export const ABOUT = {
-  // Why Lemyte exists, in the founder's own words (one short paragraph). Shown as a pull quote.
-  originStory: "",
-  people: [] as Person[],
-  // Oldest first. Keep every line verifiable; month + year is enough.
-  milestones: [
-    { when: "2026", what: "DXOCTAGON (OPC) Private Limited is incorporated in Chennai." },
-    { when: "June 2026", what: "Our registered office moves to the KCG Innovation Incubation and Entrepreneurship Centre, Chennai." },
-    { when: "2026", what: "Lemyte's GATE assessment goes live with official past papers across seven subjects." },
-  ] as Milestone[],
+// Thirukkural 400 — the line that sits behind Lemyte.
+export const KURAL = {
+  tamil: ["கேடில் விழுச்செல்வம் கல்வி யொருவற்கு", "மாடல்ல மற்றை யவை."],
+  english: "Learning is the one wealth that can never be destroyed. Nothing else is true wealth.",
+  source: "Thirukkural, 400",
 };

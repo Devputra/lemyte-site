@@ -3,7 +3,6 @@
 // product → use case → FAQ → CTA. Every number is real (src/lib/gate/catalog.ts).
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion, useInView, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
@@ -32,6 +31,7 @@ import {
   SplitWords,
   useSectionProgress,
 } from "@/components/motion";
+import { AnswerSheetScene, JourneyScene, PlanScene, RecallScene } from "@/components/motion/scenes";
 import { fmtInt, GATE_SUBJECTS, GATE_TOTALS } from "@/lib/gate/catalog";
 
 const KINDS = [
@@ -142,11 +142,11 @@ function Hero() {
           </Reveal>
         </div>
 
-        <div className="relative mx-auto mb-20 w-full max-w-md lg:mb-10 lg:max-w-none">
-          <motion.div style={{ y: artY }} className="relative ml-auto aspect-square w-[82%] overflow-hidden rounded-3xl ring-1 ring-zinc-200">
-            <Image src="/images/illustrations/student-studying.webp" alt="" fill priority sizes="(min-width:1024px) 420px, 80vw" className="object-cover object-[70%_40%]" />
+        <div className="relative mx-auto w-full max-w-md sm:pb-[200px] lg:max-w-none">
+          <motion.div style={{ y: artY }} className="relative ml-auto w-[90%]">
+            <AnswerSheetScene />
           </motion.div>
-          <motion.div style={{ y: cardY }} className="absolute -bottom-20 left-0 w-[76%] sm:w-[62%] lg:-bottom-10 lg:w-[56%]">
+          <motion.div style={{ y: cardY }} className="relative z-10 -mt-10 w-[88%] sm:absolute sm:bottom-0 sm:left-0 sm:mt-0 sm:w-[58%] lg:w-[52%]">
             <ReportPreview />
           </motion.div>
         </div>
@@ -274,10 +274,8 @@ function WhatSection() {
             ))}
           </div>
         </div>
-        <Reveal delay={0.2} className="hidden lg:block">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl ring-1 ring-zinc-200">
-            <Image src="/images/illustrations/desk-notes.webp" alt="" fill sizes="400px" className="object-cover" />
-          </div>
+        <Reveal delay={0.2}>
+          <JourneyScene />
         </Reveal>
       </Container>
     </section>
@@ -289,13 +287,10 @@ function WhySection() {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-8%", "8%"]);
+  const y = useTransform(scrollYProgress, [0, 1], reduce ? ["0px", "0px"] : ["40px", "-40px"]);
   return (
     <section ref={ref} id="why" className="relative overflow-hidden bg-ink py-20 text-white sm:py-28">
-      <motion.div style={{ y }} className="absolute inset-y-[-10%] right-0 hidden w-[42%] lg:block">
-        <Image src="/images/illustrations/desk-books.webp" alt="" fill sizes="45vw" className="object-cover opacity-40 [mask-image:linear-gradient(90deg,transparent,#000_40%)]" />
-      </motion.div>
-      <Container className="relative">
+      <Container className="relative grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="max-w-2xl">
           <Reveal>
             <p className="text-sm font-medium text-brand-100">Why it matters</p>
@@ -316,6 +311,9 @@ function WhySection() {
             ))}
           </div>
         </div>
+        <motion.div style={{ y }}>
+          <RecallScene />
+        </motion.div>
       </Container>
     </section>
   );
@@ -597,8 +595,8 @@ function UseCase() {
   return (
     <section className="py-20 sm:py-28">
       <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-        <Reveal className="relative hidden aspect-[4/5] overflow-hidden rounded-3xl ring-1 ring-zinc-200 lg:block">
-          <Image src="/images/illustrations/desk-tea.webp" alt="" fill sizes="400px" className="object-cover" />
+        <Reveal className="order-last lg:order-none">
+          <PlanScene />
         </Reveal>
         <div>
           <Reveal>

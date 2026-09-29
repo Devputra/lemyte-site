@@ -1,15 +1,15 @@
-// src/app/about/page.tsx — About Lemyte, told as a story: why we exist → the problem → who we are →
-// how we work → where we are → what's next. Founder details come from src/lib/about.ts.
+// src/app/about/page.tsx — About Lemyte, told as a story: the mission → the founder's story → the problem
+// → how we work → the line behind it → what's next. Founder copy lives in src/lib/about.ts.
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Linkedin } from "lucide-react";
 
 import { Constellation, Reveal } from "@/components/motion";
+import { DotMarkScene } from "@/components/motion/scenes";
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
 import { Container, Eyebrow, type } from "@/components/site/ui";
-import { ABOUT } from "@/lib/about";
-import { GATE_TOTALS, fmtInt } from "@/lib/gate/catalog";
+import { FOUNDER, KURAL } from "@/lib/about";
 import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
@@ -17,8 +17,6 @@ export const metadata: Metadata = {
   description:
     "Lemyte is a Chennai education company that builds exam-style assessments. GATE is our first product.",
 };
-
-const SHOW_SLOTS = process.env.NODE_ENV !== "production";
 
 const PROBLEMS = [
   {
@@ -54,29 +52,14 @@ const PRINCIPLES = [
   ],
 ] as const;
 
-function Slot({ label, className }: { label: string; className?: string }) {
-  if (!SHOW_SLOTS) return null;
-  return (
-    <div
-      className={`rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50 p-6 text-sm text-amber-800 ${className ?? ""}`}
-    >
-      <strong>To fill:</strong> {label}{" "}
-      <span className="text-amber-600">
-        (src/lib/about.ts — hidden in production until filled)
-      </span>
-    </div>
-  );
-}
-
 export default function AboutPage() {
-  const { originStory, people, milestones } = ABOUT;
   return (
     <div className="bg-white text-ink">
       <SiteHeader />
       <main>
-        {/* 1 — Why we exist */}
+        {/* 1 — Mission */}
         <section className="relative overflow-hidden border-b border-zinc-100">
-          <Constellation className="opacity-60" density={0.00006} />
+          <Constellation className="opacity-50" density={0.00006} />
           <Container className="relative grid gap-12 py-20 sm:py-28 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
             <div>
               <Reveal>
@@ -84,7 +67,7 @@ export default function AboutPage() {
               </Reveal>
               <Reveal delay={0.05}>
                 <h1 className={`${type.display} mt-4 max-w-2xl`}>
-                  We build tests that tell you the truth about your preparation.
+                  Practice that answers back.
                 </h1>
               </Reveal>
               <Reveal delay={0.1}>
@@ -97,22 +80,69 @@ export default function AboutPage() {
             </div>
             <Reveal
               delay={0.15}
-              className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl ring-1 ring-zinc-200"
+              className="mx-auto w-full max-w-xs lg:max-w-sm"
             >
-              <Image
-                src="/images/illustrations/desk-notes.webp"
-                alt=""
-                fill
-                priority
-                sizes="(min-width:1024px) 380px, 90vw"
-                className="object-cover"
-              />
+              <DotMarkScene />
             </Reveal>
           </Container>
         </section>
 
-        {/* 2 — The problem */}
+        {/* 2 — The founder's story */}
         <section className="py-20 sm:py-28">
+          <Container className="grid gap-12 lg:grid-cols-[0.75fr_1.25fr] lg:gap-16">
+            <Reveal className="lg:sticky lg:top-24 lg:self-start">
+              <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-3xl bg-zinc-100 ring-1 ring-zinc-200 lg:max-w-none">
+                <Image
+                  src={FOUNDER.photo}
+                  alt={FOUNDER.name}
+                  fill
+                  sizes="(min-width:1024px) 400px, 320px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="mx-auto mt-5 max-w-xs lg:max-w-none">
+                <p className="text-lg font-semibold">{FOUNDER.name}</p>
+                <p className="text-sm text-brand">{FOUNDER.role}</p>
+                {FOUNDER.linkedin && (
+                  <a
+                    href={FOUNDER.linkedin}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 hover:text-brand"
+                  >
+                    <Linkedin className="h-4 w-4" /> LinkedIn
+                  </a>
+                )}
+              </div>
+            </Reveal>
+            <div>
+              <Reveal>
+                <Eyebrow>Why Lemyte exists</Eyebrow>
+                <h2 className={`${type.h2} mt-3 max-w-xl`}>
+                  What if the book could talk back?
+                </h2>
+              </Reveal>
+              <div className="mt-8 space-y-6">
+                {FOUNDER.story.map((para, i) => (
+                  <Reveal key={i} delay={i * 0.05}>
+                    <p className="text-lg leading-relaxed text-zinc-600">
+                      {para}
+                    </p>
+                  </Reveal>
+                ))}
+              </div>
+              <Reveal delay={0.1}>
+                <blockquote className="mt-10 border-l-2 border-brand pl-6 text-xl font-medium leading-relaxed text-ink sm:text-2xl">
+                  Every student, from a village or a city, deserves practice
+                  that answers back.
+                </blockquote>
+              </Reveal>
+            </div>
+          </Container>
+        </section>
+
+        {/* 3 — The problem */}
+        <section className="border-y border-zinc-100 bg-zinc-50 py-20 sm:py-28">
           <Container>
             <Reveal>
               <Eyebrow>The problem</Eyebrow>
@@ -142,73 +172,6 @@ export default function AboutPage() {
           </Container>
         </section>
 
-        {/* 3 — Who we are (founder story + people); hidden in production until something is filled in */}
-        {(originStory || people.length > 0 || SHOW_SLOTS) && (
-          <section className="border-y border-zinc-100 bg-zinc-50 py-20 sm:py-28">
-            <Container>
-              <Reveal>
-                <Eyebrow>Who we are</Eyebrow>
-                <h2 className={`${type.h2} mt-3`}>The people behind Lemyte</h2>
-              </Reveal>
-              {originStory ? (
-                <Reveal delay={0.05}>
-                  <blockquote className="mt-10 max-w-3xl border-l-2 border-brand pl-6 text-xl leading-relaxed text-zinc-700 sm:text-2xl">
-                    {originStory}
-                  </blockquote>
-                </Reveal>
-              ) : (
-                <Slot
-                  className="mt-10 max-w-3xl"
-                  label="the origin story — why you started Lemyte, in one short first-person paragraph."
-                />
-              )}
-              {people.length > 0 ? (
-                <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {people.map((p, i) => (
-                    <Reveal
-                      key={p.name}
-                      delay={i * 0.08}
-                      className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-                    >
-                      <div className="relative aspect-square bg-zinc-100">
-                        <Image
-                          src={p.photo}
-                          alt={p.name}
-                          fill
-                          sizes="(min-width:1024px) 360px, 90vw"
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-6">
-                        <p className="font-semibold">{p.name}</p>
-                        <p className="text-sm text-brand">{p.role}</p>
-                        <p className="mt-3 text-[15px] leading-relaxed text-zinc-600">
-                          {p.bio}
-                        </p>
-                        {p.linkedin && (
-                          <a
-                            href={p.linkedin}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 hover:text-brand"
-                          >
-                            <Linkedin className="h-4 w-4" /> LinkedIn
-                          </a>
-                        )}
-                      </div>
-                    </Reveal>
-                  ))}
-                </div>
-              ) : (
-                <Slot
-                  className="mt-6 max-w-3xl"
-                  label="founder card(s) — name, role, a real photo, a 2–3 sentence bio, optional LinkedIn."
-                />
-              )}
-            </Container>
-          </section>
-        )}
-
         {/* 4 — How we work */}
         <section className="bg-ink py-20 text-white sm:py-28">
           <Container>
@@ -233,35 +196,25 @@ export default function AboutPage() {
           </Container>
         </section>
 
-        {/* 5 — So far */}
+        {/* 5 — The line behind it */}
         <section className="py-20 sm:py-28">
-          <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+          <Container className="text-center">
             <Reveal>
-              <Eyebrow>So far</Eyebrow>
-              <h2 className={`${type.h2} mt-3`}>Where we are today</h2>
-              <p className={`${type.body} mt-4 max-w-sm`}>
-                {fmtInt(GATE_TOTALS.questions)} questions from{" "}
-                {GATE_TOTALS.papers} official GATE papers across{" "}
-                {GATE_TOTALS.subjects} subjects, each checked against the
-                original paper.
+              <p
+                lang="ta"
+                className="text-2xl font-semibold leading-relaxed text-ink sm:text-3xl"
+              >
+                {KURAL.tamil.map((l) => (
+                  <span key={l} className="block">
+                    {l}
+                  </span>
+                ))}
               </p>
+              <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-600">
+                {KURAL.english}
+              </p>
+              <p className="mt-3 text-sm text-zinc-400">{KURAL.source}</p>
             </Reveal>
-            <ol className="relative border-l border-zinc-200 pl-8">
-              {milestones.map((m, i) => (
-                <Reveal
-                  as="li"
-                  key={m.what}
-                  delay={i * 0.08}
-                  className="relative pb-10 last:pb-0"
-                >
-                  <span className="absolute -left-[37px] top-1 h-3 w-3 rounded-full border-2 border-brand bg-white" />
-                  <p className="text-sm font-semibold text-brand">{m.when}</p>
-                  <p className="mt-1 text-[17px] leading-relaxed text-zinc-700">
-                    {m.what}
-                  </p>
-                </Reveal>
-              ))}
-            </ol>
           </Container>
         </section>
 

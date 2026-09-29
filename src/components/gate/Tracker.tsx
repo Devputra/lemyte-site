@@ -291,7 +291,17 @@ export function MasteryCard({
 
 /* ---------- topic health wheel ---------- */
 
-export function TopicWheel({ topics, onPick, labels = true }: { topics: TopicRow[]; onPick: (t: TopicRow) => void; labels?: boolean }) {
+export function TopicWheel({
+  topics,
+  onPick,
+  labels = true,
+  busyId = null,
+}: {
+  topics: TopicRow[];
+  onPick: (t: TopicRow) => void;
+  labels?: boolean;
+  busyId?: string | null; // topic being set up: pulses; the rest dim and ignore clicks
+}) {
   const n = Math.max(1, topics.length);
   const studied = topics.filter((t) => t.status !== "new").length;
   const r = labels ? 96 : 88;
@@ -337,11 +347,25 @@ export function TopicWheel({ topics, onPick, labels = true }: { topics: TopicRow
         const ly = cy + y;
         const short = t.name.length > 24 ? `${t.name.slice(0, 23)}…` : t.name;
         return (
-          <g key={t.topicId} className="cursor-pointer" onClick={() => onPick(t)}>
+          <g
+            key={t.topicId}
+            role="button"
+            tabIndex={busyId ? -1 : 0}
+            aria-label={`Practise 10 questions on ${t.name}`}
+            aria-busy={busyId === t.topicId}
+            className={`group outline-none transition-opacity duration-300 ${busyId ? (busyId === t.topicId ? "animate-pulse" : "opacity-25") : "cursor-pointer"}`}
+            onClick={() => !busyId && onPick(t)}
+            onKeyDown={(e) => {
+              if (!busyId && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                onPick(t);
+              }
+            }}
+          >
             <title>{`${t.name}: ${STATUS[t.status].label}${t.accuracy !== null ? `, ${t.accuracy}% accuracy` : ""}, ${t.answered}/${t.pyqCount} PYQs answered`}</title>
-            <path d={arc(a0, a1)} fill="none" stroke={STATUS[t.status].color} strokeWidth="24" className="transition-opacity hover:opacity-75" />
+            <path d={arc(a0, a1)} fill="none" stroke={STATUS[t.status].color} strokeWidth={busyId === t.topicId ? 32 : 24} className="transition-[stroke-width] duration-200 group-hover:[stroke-width:30px] group-focus-visible:[stroke-width:30px]" />
             {labels && <polyline points={`${ox},${oy} ${lx + (right ? -6 : 6)},${ly} ${lx},${ly}`} fill="none" stroke="#d4d4d8" strokeWidth="1" />}
-            {labels && <text x={lx + (right ? 4 : -4)} y={ly + 4} textAnchor={right ? "start" : "end"} className="fill-zinc-700 text-[12px] font-semibold hover:fill-brand">
+            {labels && <text x={lx + (right ? 4 : -4)} y={ly + 4} textAnchor={right ? "start" : "end"} className={`text-[12px] font-semibold group-hover:fill-brand group-focus-visible:fill-brand ${busyId === t.topicId ? "fill-brand" : "fill-zinc-700"}`}>
               {short}
             </text>}
           </g>
