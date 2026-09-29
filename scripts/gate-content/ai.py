@@ -4,7 +4,7 @@
     from ai import chat, PROVIDERS; chat("mistral", prompt, [png paths])
 
 Free-tier notes (check the sites; limits change):
-  github     GitHub Models, GPT-4.1 — ~50 req/day, ~8k input / 4k output tokens per request -> small chunks (2-4 questions)
+  (GitHub Models was retired 2026-07-30 — not usable.)
   mistral    Mistral Medium (vision) — ~1 req/s, generous monthly cap
   openrouter ':free' models — ~50 req/day (1000 with $10 credit); model availability varies
   groq       Qwen3.8-27B — fast, max 5 images per request
@@ -20,7 +20,6 @@ import urllib.request
 from common import ENV
 
 PROVIDERS = {  # name: (url, key var, default model, max images, image style)
-    "github": ("https://models.github.ai/inference/chat/completions", "GITHUB_MODELS_TOKEN", "openai/gpt-4.1", 10, "openai"),
     "mistral": ("https://api.mistral.ai/v1/chat/completions", "MISTRAL_API_KEY", "mistral-medium-latest", 8, "string"),
     "openrouter": ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY",
                    "qwen/qwen3.8-27b:free", 8, "openai"),
@@ -40,7 +39,7 @@ def chat(provider, prompt, images=(), model=None, max_tokens=8000, tries=4):
     key = ENV.get(keyvar)
     if not key:
         raise SystemExit(f"{provider}: {keyvar} is empty in .env.local")
-    max_tokens = min(max_tokens, {"github": 4000, "groq": 8000}.get(provider, max_tokens))  # free-tier output caps
+    max_tokens = min(max_tokens, {"groq": 8000}.get(provider, max_tokens))  # free-tier output caps
     images = list(images)
     if len(images) > maxim:
         raise SystemExit(f"{provider}: {len(images)} images > limit {maxim}; use a smaller question range")
