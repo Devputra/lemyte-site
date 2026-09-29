@@ -628,7 +628,7 @@ export default function LemyteLanding() {
             {[
               { heading: "Product", links: [{ label: "GATE Mocks", href: "/gate" }, { label: "Free Demo", href: "/gate/demo" }, { label: "Workshops", href: "/#catalog" }, { label: "Pricing", href: "/#pricing" }, { label: "For Teams", href: "/#about" }] },
               { heading: "Company", links: [{ label: "About", href: "/#about" }, { label: "Blog", href: "/blog" }, { label: "Careers", href: "/careers" }, { label: "Contact", href: "/#contact" }] },
-              { heading: "Legal", links: [{ label: "Terms", href: "/terms" }, { label: "Privacy", href: "/privacy" }] },
+              { heading: "Legal", links: [{ label: "Terms", href: "/terms" }, { label: "Privacy", href: "/privacy" }, { label: "Refunds", href: "/refund-policy" }, { label: "Shipping & Delivery", href: "/shipping-policy" }, { label: "Contact Us", href: "/contact" }] },
             ].map((col) => (
               <div key={col.heading}>
                 <div className="font-semibold text-gray-900">{col.heading}</div>

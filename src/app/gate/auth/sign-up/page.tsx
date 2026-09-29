@@ -183,6 +183,12 @@ export default function GateStudentSignUpPage() {
                   "Create Student Account"
                 )}
               </button>
+
+              <p className="text-center text-xs leading-5 text-neutral-500">
+                By creating an account you agree to our{" "}
+                <Link href="/terms" className="font-semibold underline underline-offset-2">Terms</Link> and{" "}
+                <Link href="/privacy" className="font-semibold underline underline-offset-2">Privacy Policy</Link>.
+              </p>
             </form>
 
             <div className="mt-5 text-center text-sm text-neutral-600">

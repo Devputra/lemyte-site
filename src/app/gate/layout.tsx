@@ -106,6 +106,10 @@ export default function GateLayout({ children }: { children: ReactNode }) {
             <Link href="/gate/ranked" className="hover:text-zinc-950">Ranked</Link>
             <Link href="/gate/pricing" className="hover:text-zinc-950">Plans</Link>
             <Link href="/" className="hover:text-zinc-950">Home</Link>
+            <Link href="/terms" className="hover:text-zinc-950">Terms</Link>
+            <Link href="/privacy" className="hover:text-zinc-950">Privacy</Link>
+            <Link href="/refund-policy" className="hover:text-zinc-950">Refunds</Link>
+            <Link href="/contact" className="hover:text-zinc-950">Contact</Link>
           </div>
         </div>
       </footer>

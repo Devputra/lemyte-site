@@ -279,7 +279,13 @@ export default function GatePricingPage() {
               <div>
                 <h2 className="font-black text-zinc-950">Payment and access note</h2>
                 <p className="mt-2 text-sm leading-6 text-zinc-600">
-                  Payments are processed through Razorpay. After successful verification, access is granted to your account for the plan validity. Keep the language clean: this is access purchase, not a manipulative subscription funnel.
+                  Payments are processed securely by Razorpay. After successful verification, access is granted to your account for the plan validity. Plans are one-time purchases and never renew automatically. Not happy? Get a full refund within 7 days if you have started no more than 2 tests.
+                </p>
+                <p className="mt-3 text-xs leading-5 text-zinc-500">
+                  By buying a plan you agree to our{" "}
+                  <Link href="/terms" className="font-semibold underline underline-offset-2">Terms &amp; Conditions</Link>{" "}
+                  and{" "}
+                  <Link href="/refund-policy" className="font-semibold underline underline-offset-2">Refund &amp; Cancellation Policy</Link>.
                 </p>
               </div>
             </div>
