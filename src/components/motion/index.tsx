@@ -87,6 +87,9 @@ export function CountUp({ to, duration = 1.4, format = (n: number) => n.toLocale
     setArmed(true);
   }, [reduce, armed]);
   useEffect(() => {
+    if (!armed) setValue(to); // data arrived after mount (or on-screen): show it as is
+  }, [to, armed]);
+  useEffect(() => {
     if (!inView || reduce || !armed) return;
     let raf = 0;
     const t0 = performance.now();

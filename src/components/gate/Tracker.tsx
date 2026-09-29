@@ -1,6 +1,7 @@
 // src/components/gate/Tracker.tsx — visual building blocks of the student tracker (/gate/dashboard).
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Flame, Star } from "lucide-react";
 
@@ -48,6 +49,7 @@ export function StatRing({
   avg?: number;
   best?: number;
 }) {
+  const reduce = useReducedMotion();
   const R = 34;
   const C = 2 * Math.PI * R;
   const frac = (v: number) => (max > 0 ? Math.min(1, Math.max(0, v / max)) : 0);
@@ -59,7 +61,7 @@ export function StatRing({
     <div className="flex flex-col items-center gap-2">
       <svg viewBox="0 0 88 88" className="h-24 w-24" role="img" aria-label={`${label}: ${display}`}>
         <circle cx="44" cy="44" r={R} fill="none" stroke="#f4f4f5" strokeWidth="7" />
-        <circle
+        <motion.circle
           cx="44"
           cy="44"
           r={R}
@@ -67,7 +69,10 @@ export function StatRing({
           stroke={BRAND}
           strokeWidth="7"
           strokeLinecap="round"
-          strokeDasharray={`${frac(value) * C} ${C}`}
+          initial={reduce ? false : { strokeDasharray: `0 ${C}` }}
+          whileInView={{ strokeDasharray: `${frac(value) * C} ${C}` }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
           transform="rotate(-90 44 44)"
         />
         {avg !== undefined && avg > 0 && (() => {

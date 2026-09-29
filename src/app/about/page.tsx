@@ -15,7 +15,7 @@ import { LEGAL } from "@/lib/legal";
 export const metadata: Metadata = {
   title: "About — Lemyte",
   description:
-    "Lemyte is a Chennai education company that builds exam-style assessments. GATE is our first product.",
+    "Lemyte is an Indian education company that builds exam-style assessments. GATE is our first product.",
 };
 
 const PROBLEMS = [
@@ -72,7 +72,7 @@ export default function AboutPage() {
               </Reveal>
               <Reveal delay={0.1}>
                 <p className={`${type.lead} mt-6 max-w-xl`}>
-                  Lemyte is an education company in Chennai. We make exam-style
+                  Lemyte is an education company in India. We make exam-style
                   assessments that show students where they stand and what to
                   work on next. GATE is our first exam.
                 </p>
@@ -133,7 +133,7 @@ export default function AboutPage() {
               </div>
               <Reveal delay={0.1}>
                 <blockquote className="mt-10 border-l-2 border-brand pl-6 text-xl font-medium leading-relaxed text-ink sm:text-2xl">
-                  Every student, from a village or a city, deserves practice
+                  Every student deserves practice
                   that answers back.
                 </blockquote>
               </Reveal>

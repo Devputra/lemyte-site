@@ -9,7 +9,7 @@ import { Check, ShieldCheck } from "lucide-react";
 
 import { useAccess } from "@/components/site/AccessCta";
 import { safeJson } from "@/lib/fetch-helpers";
-import { LoadingScene } from "@/components/motion";
+import { Constellation, LoadingScene, Reveal } from "@/components/motion";
 
 interface Plan {
   id: string;
@@ -22,13 +22,20 @@ interface Plan {
 declare global {
   interface Window {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Razorpay?: new (opts: Record<string, unknown>) => { open: () => void; on: (event: string, cb: (resp: Record<string, unknown>) => void) => void };
+    Razorpay?: new (opts: Record<string, unknown>) => {
+      open: () => void;
+      on: (event: string, cb: (resp: Record<string, unknown>) => void) => void;
+    };
   }
 }
 
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 const INCLUDED = [
@@ -49,8 +56,13 @@ const FIT: Record<number, string> = {
 export default function GatePricingPage() {
   const router = useRouter();
   const access = useAccess();
-  const current = access?.hasPlan ? access.plan ?? null : null;
-  const daysLeft = current?.endsAt ? Math.max(0, Math.ceil((new Date(current.endsAt).getTime() - Date.now()) / 86400000)) : null;
+  const current = access?.hasPlan ? (access.plan ?? null) : null;
+  const daysLeft = current?.endsAt
+    ? Math.max(
+        0,
+        Math.ceil((new Date(current.endsAt).getTime() - Date.now()) / 86400000),
+      )
+    : null;
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
@@ -79,7 +91,7 @@ export default function GatePricingPage() {
 
   const sortedPlans = useMemo(
     () => [...plans].sort((a, b) => a.durationMonths - b.durationMonths),
-    [plans]
+    [plans],
   );
 
   async function startCheckout(plan: Plan) {
@@ -103,10 +115,14 @@ export default function GatePricingPage() {
       }
 
       if (!window.Razorpay) {
-        throw new Error("The payment window is still loading. Please try again in a moment.");
+        throw new Error(
+          "The payment window is still loading. Please try again in a moment.",
+        );
       }
       if (!data.keyId) {
-        throw new Error("Payments aren't available right now. Please try again later.");
+        throw new Error(
+          "Payments aren't available right now. Please try again later.",
+        );
       }
 
       const rzp = new window.Razorpay({
@@ -161,11 +177,18 @@ export default function GatePricingPage() {
 
   return (
     <>
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="afterInteractive"
+      />
 
       <div className="bg-white">
-        <section className="border-b border-zinc-100">
-          <div className="mx-auto max-w-6xl px-5 py-12 text-center sm:px-6 sm:py-16">
+        <section className="relative overflow-hidden border-b border-zinc-100">
+          <Constellation
+            className="opacity-60 [mask-image:radial-gradient(ellipse_at_50%_40%,#000_25%,transparent_70%)]"
+            density={0.00007}
+          />
+          <Reveal className="relative mx-auto max-w-6xl px-5 py-12 text-center sm:px-6 sm:py-16">
             {current ? (
               <>
                 <p className="text-sm font-medium text-brand">Your plan</p>
@@ -173,12 +196,24 @@ export default function GatePricingPage() {
                   You&apos;re on the {current.name} plan
                 </h1>
                 <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
-                  Active until <span className="font-medium text-ink">{fmtDate(current.endsAt)}</span>
-                  {daysLeft !== null && <> · {daysLeft} {daysLeft === 1 ? "day" : "days"} left</>}. Need more time? Extend
-                  below: the extra time starts when your current plan ends, so you don&apos;t lose any days.
+                  Active until{" "}
+                  <span className="font-medium text-ink">
+                    {fmtDate(current.endsAt)}
+                  </span>
+                  {daysLeft !== null && (
+                    <>
+                      {" "}
+                      · {daysLeft} {daysLeft === 1 ? "day" : "days"} left
+                    </>
+                  )}
+                  . Need more time? Extend below: the extra time starts when
+                  your current plan ends, so you don&apos;t lose any days.
                 </p>
                 <div className="mt-6 flex justify-center">
-                  <Link href="/gate/dashboard" className="inline-flex h-11 items-center rounded-[10px] border border-zinc-300 px-5 text-[15px] font-medium text-ink hover:bg-zinc-50">
+                  <Link
+                    href="/gate/dashboard"
+                    className="inline-flex h-11 items-center rounded-[10px] border border-zinc-300 px-5 text-[15px] font-medium text-ink hover:bg-zinc-50"
+                  >
                     Go to your dashboard
                   </Link>
                 </div>
@@ -186,61 +221,107 @@ export default function GatePricingPage() {
             ) : (
               <>
                 <p className="text-sm font-medium text-brand">Pricing</p>
-                <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Simple plans, paid once</h1>
+                <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">
+                  Simple plans, paid once
+                </h1>
                 <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
-                  Every plan unlocks everything on Lemyte for its duration. Plans don&apos;t renew, and you can get a full refund
-                  within 7 days if you have started no more than 2 tests.
+                  Every plan unlocks everything on Lemyte for its duration.
+                  Plans don&apos;t renew, and you can get a full refund within 7
+                  days if you have started no more than 2 tests.
                 </p>
               </>
             )}
-          </div>
+          </Reveal>
         </section>
 
         <section className="mx-auto max-w-6xl px-5 py-12 sm:px-6">
           {error ? (
-            <div className="mx-auto mb-6 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+            <div className="mx-auto mb-6 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
           ) : null}
 
-          <div className={`grid grid-cols-1 gap-5 md:grid-cols-2 ${access?.hasPlan ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
+          <div
+            className={`grid grid-cols-1 gap-5 md:grid-cols-2 ${access?.hasPlan ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}
+          >
             {!access?.hasPlan && (
-            <div className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6">
+              <Reveal className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-brand/5">
                 <h2 className="text-lg font-semibold text-ink">Free demo</h2>
-                <p className="mt-4 text-4xl font-semibold tracking-tight tabular-nums">₹0</p>
-                <p className="mt-1 text-sm text-zinc-500">No account or card needed</p>
-                <p className="mt-5 flex-1 text-sm leading-6 text-zinc-600">
-                  A 10-question General Aptitude test to try the exam screen and see a real report.
+                <p className="mt-4 text-4xl font-semibold tracking-tight tabular-nums">
+                  ₹0
                 </p>
-                <Link href="/gate/demo" className="mt-6 inline-flex h-11 items-center justify-center rounded-[10px] border border-zinc-300 text-[15px] font-medium text-ink hover:bg-zinc-50">
+                <p className="mt-1 text-sm text-zinc-500">
+                  No account or card needed
+                </p>
+                <p className="mt-5 flex-1 text-sm leading-6 text-zinc-600">
+                  A 10-question General Aptitude test to try the exam screen and
+                  see a real report.
+                </p>
+                <Link
+                  href="/gate/demo"
+                  className="mt-6 inline-flex h-11 items-center justify-center rounded-[10px] border border-zinc-300 text-[15px] font-medium text-ink hover:bg-zinc-50"
+                >
                   Take the demo
                 </Link>
-              </div>
+              </Reveal>
             )}
 
             {loadingPlans ? (
-              <LoadingScene label="Loading plans…" className="rounded-2xl border border-zinc-200 lg:col-span-3" />
+              <LoadingScene
+                label="Loading plans…"
+                className="rounded-2xl border border-zinc-200 lg:col-span-3"
+              />
             ) : sortedPlans.length === 0 ? (
-              <div className="rounded-2xl border border-zinc-200 p-10 text-center text-sm text-zinc-500 lg:col-span-3">Plans aren&apos;t available right now. Please try again later.</div>
+              <div className="rounded-2xl border border-zinc-200 p-10 text-center text-sm text-zinc-500 lg:col-span-3">
+                Plans aren&apos;t available right now. Please try again later.
+              </div>
             ) : (
-              sortedPlans.map((plan) => {
-                const perMonth = Math.round(plan.priceInr / plan.durationMonths);
+              sortedPlans.map((plan, i) => {
+                const perMonth = Math.round(
+                  plan.priceInr / plan.durationMonths,
+                );
                 const isCurrent = current?.id === plan.id;
-                const best = sortedPlans.length > 1 && perMonth === Math.min(...sortedPlans.map((p) => Math.round(p.priceInr / p.durationMonths)));
+                const best =
+                  sortedPlans.length > 1 &&
+                  perMonth ===
+                    Math.min(
+                      ...sortedPlans.map((p) =>
+                        Math.round(p.priceInr / p.durationMonths),
+                      ),
+                    );
                 return (
-                  <div key={plan.id} className={`relative flex h-full flex-col rounded-2xl border bg-white p-6 ${best ? "border-brand ring-1 ring-brand" : "border-zinc-200"}`}>
+                  <Reveal
+                    key={plan.id}
+                    delay={0.08 * (i + 1)}
+                    className={`relative flex h-full flex-col rounded-2xl border bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand/10 ${best ? "border-brand ring-1 ring-brand" : "border-zinc-200"}`}
+                  >
                     {isCurrent ? (
-                      <span className="absolute -top-3 left-6 rounded-full bg-ink px-2.5 py-0.5 text-xs font-medium text-white">Current plan</span>
+                      <span className="absolute -top-3 left-6 rounded-full bg-ink px-2.5 py-0.5 text-xs font-medium text-white">
+                        Current plan
+                      </span>
                     ) : (
-                      best && <span className="absolute -top-3 left-6 rounded-full bg-brand px-2.5 py-0.5 text-xs font-medium text-white">Best value</span>
+                      best && (
+                        <span className="absolute -top-3 left-6 rounded-full bg-brand px-2.5 py-0.5 text-xs font-medium text-white">
+                          Best value
+                        </span>
+                      )
                     )}
-                    <h2 className="text-lg font-semibold text-ink">{plan.name}</h2>
-                    <p className="mt-4 text-4xl font-semibold tracking-tight tabular-nums">₹{plan.priceInr.toLocaleString("en-IN")}</p>
+                    <h2 className="text-lg font-semibold text-ink">
+                      {plan.name}
+                    </h2>
+                    <p className="mt-4 text-4xl font-semibold tracking-tight tabular-nums">
+                      ₹{plan.priceInr.toLocaleString("en-IN")}
+                    </p>
                     <p className="mt-1 text-sm text-zinc-500">
-                      {plan.durationMonths === 1 ? "One-time payment" : `₹${perMonth.toLocaleString("en-IN")} a month, paid once`}
+                      {plan.durationMonths === 1
+                        ? "One-time payment"
+                        : `₹${perMonth.toLocaleString("en-IN")} a month, paid once`}
                     </p>
                     <p className="mt-5 flex-1 text-sm leading-6 text-zinc-600">
                       {current
                         ? `Adds ${plan.name.toLowerCase()} after ${fmtDate(current.endsAt)}.`
-                        : FIT[plan.durationMonths] ?? `${plan.durationMonths} months of full access.`}
+                        : (FIT[plan.durationMonths] ??
+                          `${plan.durationMonths} months of full access.`)}
                     </p>
                     <button
                       onClick={() => startCheckout(plan)}
@@ -253,7 +334,7 @@ export default function GatePricingPage() {
                           ? `Extend by ${plan.name.toLowerCase()}`
                           : `Buy ${plan.name.toLowerCase()}`}
                     </button>
-                  </div>
+                  </Reveal>
                 );
               })
             )}
@@ -265,26 +346,46 @@ export default function GatePricingPage() {
               <ul className="mt-4 space-y-3">
                 {INCLUDED.map((f) => (
                   <li key={f} className="flex gap-3 text-[15px] text-zinc-600">
-                    <Check className="mt-0.5 h-5 w-5 shrink-0 text-brand" strokeWidth={2} /> {f}
+                    <Check
+                      className="mt-0.5 h-5 w-5 shrink-0 text-brand"
+                      strokeWidth={2}
+                    />{" "}
+                    {f}
                   </li>
                 ))}
               </ul>
             </div>
             <div className="lg:border-l lg:border-zinc-200 lg:pl-8">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-brand" strokeWidth={1.75} />
+                <ShieldCheck
+                  className="h-5 w-5 text-brand"
+                  strokeWidth={1.75}
+                />
                 <h2 className="font-semibold text-ink">Payments and refunds</h2>
               </div>
               <p className="mt-4 text-[15px] leading-relaxed text-zinc-600">
-                Payments are handled by Razorpay (UPI, cards, net banking and wallets). Your plan starts as soon as the
-                payment is confirmed, usually within a minute. If a plan isn&apos;t right for you, ask for a refund within 7
-                days, as long as you have started no more than 2 tests.
+                Payments are handled by Razorpay (UPI, cards, net banking and
+                wallets). Your plan starts as soon as the payment is confirmed,
+                usually within a minute. If a plan isn&apos;t right for you, ask
+                for a refund within 7 days, as long as you have started no more
+                than 2 tests.
               </p>
               <p className="mt-4 text-sm leading-6 text-zinc-500">
                 By buying a plan you agree to our{" "}
-                <Link href="/terms" className="font-medium text-brand hover:text-brand-700">Terms &amp; Conditions</Link>{" "}
+                <Link
+                  href="/terms"
+                  className="font-medium text-brand hover:text-brand-700"
+                >
+                  Terms &amp; Conditions
+                </Link>{" "}
                 and{" "}
-                <Link href="/refund-policy" className="font-medium text-brand hover:text-brand-700">Refund Policy</Link>.
+                <Link
+                  href="/refund-policy"
+                  className="font-medium text-brand hover:text-brand-700"
+                >
+                  Refund Policy
+                </Link>
+                .
               </p>
             </div>
           </div>

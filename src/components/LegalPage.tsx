@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { Constellation, SplitWords } from "@/components/motion";
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
 import { LEGAL } from "@/lib/legal";
 
@@ -16,10 +17,18 @@ export function LegalPage({ title, intro, children }: { title: string; intro?: R
   return (
     <div className="min-h-screen bg-white text-zinc-700">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-5 py-14 sm:px-6 sm:py-20">
-        <h1 className="text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">{title}</h1>
-        <p className="mt-2 text-sm text-zinc-500">Effective date: {LEGAL.effectiveDate}</p>
-        {intro && <div className="mt-6 text-base leading-7">{intro}</div>}
+      {/* Header band only: policies should read like documents, so the body stays static. */}
+      <section className="relative overflow-hidden border-b border-zinc-100 bg-zinc-50/60">
+        <Constellation className="opacity-50 [mask-image:radial-gradient(ellipse_at_30%_50%,#000_20%,transparent_70%)]" density={0.00006} />
+        <div className="relative mx-auto max-w-3xl px-5 py-12 sm:px-6 sm:py-16">
+          <h1 className="text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">
+            <SplitWords text={title} />
+          </h1>
+          <p className="mt-2 text-sm text-zinc-500">Effective date: {LEGAL.effectiveDate}</p>
+        </div>
+      </section>
+      <main className="mx-auto max-w-3xl px-5 py-12 sm:px-6 sm:py-14">
+        {intro && <div className="text-base leading-7">{intro}</div>}
         <div className="mt-10 space-y-9 text-[15px] leading-7">{children}</div>
         <nav className="mt-14 flex flex-wrap gap-x-5 gap-y-2 border-t border-zinc-200 pt-6 text-sm">
           {LEGAL_LINKS.map((l) => (

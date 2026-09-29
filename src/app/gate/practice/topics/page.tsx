@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Layers3, Search } from "lucide-react";
 import { safeJson } from "@/lib/fetch-helpers";
-import { LoadingScene } from "@/components/motion";
+import { CountUp, LoadingScene } from "@/components/motion";
+import { TopicRingScene } from "@/components/motion/scenes";
+import { PageHero } from "@/components/site/PageHero";
 
 interface Subject {
   id: string;
@@ -31,7 +33,9 @@ export default function TopicPracticePage() {
   const [error, setError] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(
+    null,
+  );
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [count, setCount] = useState(10);
   const [busy, setBusy] = useState(false);
@@ -51,25 +55,38 @@ export default function TopicPracticePage() {
           setSelectedSubjectId(nextSubjects[0].id);
         }
       })
-      .catch((e) => !cancelled && setError(e?.message ?? "Couldn't load topics. Please refresh."))
+      .catch(
+        (e) =>
+          !cancelled &&
+          setError(e?.message ?? "Couldn't load topics. Please refresh."),
+      )
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId) ?? null;
+  const selectedSubject =
+    subjects.find((s) => s.id === selectedSubjectId) ?? null;
   const selectedTopic = topics.find((t) => t.id === selectedTopicId) ?? null;
 
   const subjectTopics = useMemo(() => {
     const q = query.trim().toLowerCase();
     const base = selectedSubjectId
-      ? topics.filter((t) => t.subjectId === selectedSubjectId || t.subjectId === null) // General Aptitude topics are shared by every paper
+      ? topics.filter(
+          (t) => t.subjectId === selectedSubjectId || t.subjectId === null,
+        ) // General Aptitude topics are shared by every paper
       : topics;
-    return base.filter((t) => !q || `${t.name} ${t.code} ${t.sectionKind}`.toLowerCase().includes(q));
+    return base.filter(
+      (t) =>
+        !q || `${t.name} ${t.code} ${t.sectionKind}`.toLowerCase().includes(q),
+    );
   }, [topics, selectedSubjectId, query]);
 
-  const totalPyqs = useMemo(() => topics.reduce((sum, t) => sum + Number(t.pyqCount ?? 0), 0), [topics]);
+  const totalPyqs = useMemo(
+    () => topics.reduce((sum, t) => sum + Number(t.pyqCount ?? 0), 0),
+    [topics],
+  );
 
   async function startTopicPractice() {
     if (!selectedTopicId) return;
@@ -92,61 +109,76 @@ export default function TopicPracticePage() {
         return;
       }
       if (!res.ok) {
-        throw new Error(data.error ?? `Failed to set up practice (${res.status})`);
+        throw new Error(
+          data.error ?? `Failed to set up practice (${res.status})`,
+        );
       }
 
-      router.push(`/gate/instructions?test=${data.testVersionId}&mode=PRACTICE`);
+      router.push(
+        `/gate/instructions?test=${data.testVersionId}&mode=PRACTICE`,
+      );
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Couldn't start practice. Please try again.");
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Couldn't start practice. Please try again.",
+      );
       setBusy(false);
     }
   }
 
   return (
     <div className="bg-white">
-      <section className="border-b border-zinc-200 bg-zinc-50 px-4 py-12">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-zinc-500">
-                <Link href="/gate/practice" className="hover:text-ink">PYQ</Link>
-                <span>/</span>
-                <span className="text-ink">Topic practice</span>
-              </div>
-              <h1 className="max-w-3xl text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">
-                Practise one topic at a time
-              </h1>
-              <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
-                Pick a subject and a topic, choose how many questions you want, and get a short timed test made of past
-                GATE questions from that topic.
+      <PageHero
+        eyebrow={
+          <span className="flex items-center gap-2">
+            <Link
+              href="/gate/practice"
+              className="text-zinc-500 hover:text-ink"
+            >
+              PYQ
+            </Link>
+            <span className="text-zinc-300">/</span>
+            <span>Topic practice</span>
+          </span>
+        }
+        title="Practise one topic at a time"
+        lead="Pick a subject and a topic, choose how many questions you want, and get a short timed test made of past GATE questions from that topic."
+        art={<TopicRingScene />}
+      >
+        <div className="mt-8 grid max-w-md grid-cols-3 gap-3">
+          {(
+            [
+              [subjects.length, "Subjects"],
+              [topics.length, "Topics"],
+              [totalPyqs, "Past questions"],
+            ] as const
+          ).map(([v, l]) => (
+            <div
+              key={l}
+              className="rounded-2xl border border-zinc-200 bg-white/80 p-4 backdrop-blur"
+            >
+              <p className="text-2xl font-semibold text-ink">
+                <CountUp to={v} />
               </p>
+              <p className="text-xs font-medium text-zinc-500">{l}</p>
             </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:w-[460px]">
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <p className="text-2xl font-semibold text-ink">{subjects.length}</p>
-                <p className="text-xs font-medium text-zinc-500">Subjects</p>
-              </div>
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <p className="text-2xl font-semibold text-ink">{topics.length}</p>
-                <p className="text-xs font-medium text-zinc-500">Topics</p>
-              </div>
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <p className="text-2xl font-semibold text-ink">{totalPyqs.toLocaleString("en-IN")}</p>
-                <p className="text-xs font-medium text-zinc-500">Past questions</p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
-      </section>
+      </PageHero>
 
       <section className="mx-auto max-w-7xl px-4 py-12">
         {error ? (
-          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
         ) : null}
 
         {loading ? (
-          <LoadingScene label="Loading topics…" className="rounded-2xl border border-zinc-200 bg-white" />
+          <LoadingScene
+            label="Loading topics…"
+            className="rounded-2xl border border-zinc-200 bg-white"
+          />
         ) : subjects.length === 0 ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-10 text-sm font-semibold text-amber-800">
             Topics aren&apos;t available right now. Please check back soon.
@@ -154,7 +186,9 @@ export default function TopicPracticePage() {
         ) : (
           <div className="grid gap-8 lg:grid-cols-[280px_1fr_340px]">
             <aside className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <h2 className="px-2 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">Subject</h2>
+              <h2 className="px-2 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
+                Subject
+              </h2>
               <div className="mt-3 grid gap-1">
                 {subjects.map((s) => (
                   <button
@@ -170,7 +204,9 @@ export default function TopicPracticePage() {
                     }`}
                   >
                     <span className="block">{s.name}</span>
-                    <span className="mt-1 block text-xs opacity-70">{s.code}</span>
+                    <span className="mt-1 block text-xs opacity-70">
+                      {s.code}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -179,8 +215,12 @@ export default function TopicPracticePage() {
             <main>
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-2xl font-semibold text-ink">{selectedSubject?.name ?? "Topics"}</h2>
-                  <p className="mt-1 text-sm text-zinc-600">Start with a topic that cost you marks in your last test.</p>
+                  <h2 className="text-2xl font-semibold text-ink">
+                    {selectedSubject?.name ?? "Topics"}
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-600">
+                    Start with a topic that cost you marks in your last test.
+                  </p>
                 </div>
                 <label className="relative block sm:w-72">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
@@ -194,7 +234,9 @@ export default function TopicPracticePage() {
               </div>
 
               {subjectTopics.length === 0 ? (
-                <div className="rounded-2xl border border-zinc-200 bg-white p-10 text-center text-sm font-semibold text-zinc-500">No topics match your search.</div>
+                <div className="rounded-2xl border border-zinc-200 bg-white p-10 text-center text-sm font-semibold text-zinc-500">
+                  No topics match your search.
+                </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {subjectTopics.map((t) => {
@@ -209,16 +251,24 @@ export default function TopicPracticePage() {
                           disabled
                             ? "cursor-not-allowed border-zinc-200 bg-zinc-50 text-zinc-400"
                             : selected
-                            ? "border-brand bg-brand/5"
-                            : "border-zinc-200 bg-white hover:border-brand/40 hover:shadow-lg"
+                              ? "border-brand bg-brand/5"
+                              : "border-zinc-200 bg-white hover:border-brand/40 hover:shadow-lg"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <h3 className="font-semibold text-ink">{t.name}</h3>
-                            <p className="mt-1 text-xs text-zinc-500">{t.sectionKind === "GA" ? "General Aptitude" : t.sectionKind === "FOUNDATION" ? "Engineering Mathematics" : "Core subject"}</p>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {t.sectionKind === "GA"
+                                ? "General Aptitude"
+                                : t.sectionKind === "FOUNDATION"
+                                  ? "Engineering Mathematics"
+                                  : "Core subject"}
+                            </p>
                           </div>
-                          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${disabled ? "bg-zinc-100 text-zinc-400" : "bg-brand/10 text-brand"}`}>
+                          <span
+                            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${disabled ? "bg-zinc-100 text-zinc-400" : "bg-brand/10 text-brand"}`}
+                          >
                             {t.pyqCount} question{t.pyqCount === 1 ? "" : "s"}
                           </span>
                         </div>
@@ -231,17 +281,27 @@ export default function TopicPracticePage() {
 
             <aside className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm lg:sticky lg:top-24 lg:self-start">
               <Layers3 className="h-7 w-7 text-brand" />
-              <h2 className="mt-4 text-xl font-semibold text-ink">Your practice set</h2>
+              <h2 className="mt-4 text-xl font-semibold text-ink">
+                Your practice set
+              </h2>
               {selectedTopic ? (
                 <p className="mt-2 text-sm leading-6 text-zinc-600">
-                  <span className="font-semibold text-ink">{selectedTopic.name}</span>. A small set you can review properly afterwards works better than a long one.
+                  <span className="font-semibold text-ink">
+                    {selectedTopic.name}
+                  </span>
+                  . A small set you can review properly afterwards works better
+                  than a long one.
                 </p>
               ) : (
-                <p className="mt-2 text-sm leading-6 text-zinc-600">Choose a topic to begin.</p>
+                <p className="mt-2 text-sm leading-6 text-zinc-600">
+                  Choose a topic to begin.
+                </p>
               )}
 
               <div className="mt-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">Question count</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
+                  Question count
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {COUNT_OPTIONS.map((n) => (
                     <button
@@ -257,7 +317,9 @@ export default function TopicPracticePage() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-3 text-xs leading-5 text-zinc-500">You get about 2 minutes per question, up to 60 minutes.</p>
+                <p className="mt-3 text-xs leading-5 text-zinc-500">
+                  You get about 2 minutes per question, up to 60 minutes.
+                </p>
               </div>
 
               <button
@@ -268,8 +330,6 @@ export default function TopicPracticePage() {
                 {busy ? "Preparing your test…" : "Start practice"}
                 {!busy ? <ArrowRight className="h-4 w-4" /> : null}
               </button>
-
-
             </aside>
           </div>
         )}

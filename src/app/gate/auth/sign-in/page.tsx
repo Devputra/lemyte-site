@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { Constellation, Reveal } from "@/components/motion";
+import { TopicRingScene } from "@/components/motion/scenes";
 
 function safeNext(value: string | null): string {
   if (!value) return "/gate/dashboard";
@@ -66,8 +68,9 @@ export default function GateStudentSignInPage() {
   }
 
   return (
-    <main className="bg-white text-ink">
-      <div className="mx-auto flex max-w-6xl items-center justify-center px-5 py-14 sm:px-6 sm:py-20">
+    <main className="relative overflow-hidden bg-white text-ink">
+      <Constellation className="opacity-50 [mask-image:radial-gradient(ellipse_at_25%_45%,#000_25%,transparent_70%)]" density={0.00007} />
+      <div className="relative mx-auto flex max-w-6xl items-center justify-center px-5 py-14 sm:px-6 sm:py-20">
         <div className="grid w-full gap-8 lg:grid-cols-[1fr_440px] lg:items-center">
           <section className="hidden lg:block">
             <Link
@@ -89,12 +92,15 @@ export default function GateStudentSignInPage() {
                 Pick up where you left off. Your tests, reports and progress
                 tracker are saved to your account.
               </p>
+              <Reveal delay={0.2} className="mt-10">
+                <TopicRingScene className="!mx-0 max-w-[280px]" />
+              </Reveal>
 
 
             </div>
           </section>
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+          <section className="rounded-2xl border border-neutral-200 bg-white/95 p-6 shadow-xl shadow-brand/5 backdrop-blur sm:p-8">
             <Link
               href="/gate"
               className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-brand lg:hidden"

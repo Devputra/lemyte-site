@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 
 import { safeJson } from "@/lib/fetch-helpers";
-import { LoadingScene } from "@/components/motion";
+import { LoadingScene, Reveal } from "@/components/motion";
 
 type FilterKey = "ALL" | "CORRECT" | "WRONG" | "UNANSWERED";
 type ResultStatus = "CORRECT" | "WRONG" | "UNANSWERED";
@@ -503,7 +503,7 @@ export default function GateReportPage() {
         <section className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-[#00A86B]/10 px-3 py-1 text-xs font-semibold text-[#00A86B]">
+              <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand">
                 {modeLabel(report.attempt.mode)}
               </span>
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
@@ -518,10 +518,10 @@ export default function GateReportPage() {
 
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                Mock Test Report
+                Your report
               </h1>
               <p className="mt-2 text-sm text-gray-600">
-                {report.test?.title ?? "GATE CS/IT Mock"} · Submitted on{" "}
+                {report.test?.title ?? "GATE test"} · Submitted on{" "}
                 {formatDateTime(report.attempt.submittedAt)}
               </p>
               <p className="mt-1 text-sm text-gray-500">
@@ -551,7 +551,7 @@ export default function GateReportPage() {
         </section>
 
         {/* Summary cards */}
-        <section className="grid grid-cols-2 gap-4 xl:grid-cols-6">
+        <Reveal as="section" className="grid grid-cols-2 gap-4 xl:grid-cols-6">
           <Card>
             <CardContent className="flex h-full flex-col justify-center gap-1 py-6">
               <div className="text-sm text-gray-500">Score</div>
@@ -619,11 +619,11 @@ export default function GateReportPage() {
               <div className="text-sm text-gray-500">lost to wrong attempts</div>
             </CardContent>
           </Card>
-        </section>
+        </Reveal>
 
         {/* Insight + section performance */}
-        <section className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
-          <Card className="border-[#00A86B]/20">
+        <Reveal as="section" className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+          <Card className="border-brand/20">
             <CardHeader>
               <CardTitle>Summary</CardTitle>
               <CardDescription>
@@ -708,7 +708,7 @@ export default function GateReportPage() {
               )}
             </CardContent>
           </Card>
-        </section>
+        </Reveal>
 
         {/* Distribution */}
         <section>
@@ -800,7 +800,7 @@ export default function GateReportPage() {
                       onClick={() => setFilter(item.key)}
                       className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
                         active
-                          ? "border-[#00A86B] bg-[#00A86B] text-white"
+                          ? "border-brand bg-brand text-white"
                           : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
                       }`}
                     >

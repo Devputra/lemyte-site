@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 
+import { Constellation } from "@/components/motion";
+import { DotMarkScene } from "@/components/motion/scenes";
+
 export default function ComingSoon() {
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -34,8 +37,10 @@ export default function ComingSoon() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-5">
-      <div className="w-full max-w-lg">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white px-5">
+      <Constellation className="opacity-60" density={0.00006} />
+      <div className="relative w-full max-w-lg">
+        <DotMarkScene className="mb-10 w-28 !rounded-2xl !p-4" />
         <p className="text-sm font-medium text-brand">Lemyte</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">This page isn&apos;t ready yet</h1>
         <p className="mt-4 text-lg leading-relaxed text-zinc-600">

@@ -23,7 +23,7 @@ import {
 } from "@/components/gate/Tracker";
 import { safeJson } from "@/lib/fetch-helpers";
 import { LEVELS } from "@/lib/gate/tracker";
-import { LoadingScene } from "@/components/motion";
+import { LoadingScene, Reveal } from "@/components/motion";
 
 type PeerStat = { coverage: number; accuracy: number; solved: number; tests: number; timeSec: number; points: number };
 
@@ -204,6 +204,7 @@ export default function GateDashboardPage() {
         {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
 
         {/* header + rings | streak */}
+        <Reveal delay={0}>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <Card>
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -256,6 +257,7 @@ export default function GateDashboardPage() {
             accuracy={stats.accuracy}
           />
         </div>
+        </Reveal>
 
         {/* plan / resume strip */}
         {dash && (dash.inProgressAttemptId || !dash.accessPass) && (
@@ -281,6 +283,7 @@ export default function GateDashboardPage() {
         )}
 
         <h2 className="pt-2 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">Mastery overview</h2>
+        <Reveal delay={0}>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <MasteryCard
             levels={[...LEVELS]}
@@ -318,8 +321,10 @@ export default function GateDashboardPage() {
             <StatusLegend />
           </Card>
         </div>
+        </Reveal>
 
         {/* focus list */}
+        <Reveal delay={0.05}>
         <Card>
           <div className="flex items-center gap-3">
             <Target className="h-6 w-6 text-brand" />
@@ -354,8 +359,10 @@ export default function GateDashboardPage() {
             ))}
           </div>
         </Card>
+        </Reveal>
 
         {/* recent attempts */}
+        <Reveal delay={0.1}>
         <Card className="!p-0">
           <div className="border-b border-zinc-200 px-6 py-4">
             <h3 className="font-semibold text-ink">Recent attempts</h3>
@@ -398,6 +405,7 @@ export default function GateDashboardPage() {
             </div>
           )}
         </Card>
+        </Reveal>
       </section>
     </div>
   );

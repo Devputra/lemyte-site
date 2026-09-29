@@ -657,7 +657,7 @@ function AboutTeaser() {
         <Reveal delay={0.1}>
           <div className={`${type.lead} space-y-4`}>
             <p>
-              Lemyte is an education company based in Chennai. We make assessments that help students prepare with evidence
+              Lemyte is an education company based in India. We make assessments that help students prepare with evidence
               instead of guesswork.
             </p>
             <p>
