@@ -36,8 +36,8 @@ export default function RootLayout({
         </noscript>
         {children}
         {/* Vercel Web Analytics + Speed Insights (script-tag setup; no npm packages needed).
-            Both must be switched on in the Vercel project dashboard, and only run in production. */}
-        {process.env.VERCEL_ENV === "production" && (
+            Switch both on in the Vercel dashboard first, then set VERCEL_ANALYTICS=on (else the scripts 404). */}
+        {process.env.VERCEL_ANALYTICS === "on" && (
           <>
             <Script src="/_vercel/insights/script.js" strategy="afterInteractive" />
             <Script src="/_vercel/speed-insights/script.js" strategy="afterInteractive" />
