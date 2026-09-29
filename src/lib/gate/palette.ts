@@ -42,17 +42,6 @@ export function onVisitQuestion(
 }
 
 /**
- * Transition: user selects/types a draft.
- * No answered-state transition yet; only Save & Next commits answer state.
- */
-export function onSelectDraft(
-  palette: Record<string, PaletteState>,
-  questionId: string
-): void {
-  onVisitQuestion(palette, questionId);
-}
-
-/**
  * Transition: Mark / Unmark toggle.
  */
 export function onMarkToggle(

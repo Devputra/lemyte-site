@@ -53,7 +53,6 @@ export function normalizeOptions(
 ): Array<{
   id: string;
   markdown: string;
-  text: string;
   isCorrect: boolean;
   isSelected: boolean;
 }> {
@@ -69,7 +68,6 @@ export function normalizeOptions(
       return {
         id,
         markdown: String((o as Record<string, unknown>).markdown ?? ""),
-        text: String((o as Record<string, unknown>).markdown ?? ""),
         isCorrect: isCorrectOption(o),
         isSelected: selected.has(id),
       };

@@ -2,8 +2,9 @@
 
 import { sendEmail } from "./email/mailer";
 import type { CertificateRecord } from "./certificates";
+import { SITE_URL } from "@/lib/site";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.lemyte.com";
+const baseUrl = SITE_URL;
 
 export async function sendCertificateEmail(
   cert: CertificateRecord,

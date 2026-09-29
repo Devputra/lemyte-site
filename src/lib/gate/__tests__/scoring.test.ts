@@ -7,7 +7,6 @@ describe("gradeQuestion", () => {
   describe("MCQ scoring", () => {
     const mcq1Mark: QuestionMeta = {
       questionVersionId: "q1",
-      questionId: "q1-base",
       type: "MCQ",
       marks: 1,
       correctOptionIds: ["opt-a"],
@@ -15,7 +14,6 @@ describe("gradeQuestion", () => {
 
     const mcq2Mark: QuestionMeta = {
       questionVersionId: "q2",
-      questionId: "q2-base",
       type: "MCQ",
       marks: 2,
       correctOptionIds: ["opt-x"],
@@ -95,7 +93,6 @@ describe("gradeQuestion", () => {
   describe("MSQ scoring", () => {
     const msq: QuestionMeta = {
       questionVersionId: "q3",
-      questionId: "q3-base",
       type: "MSQ",
       marks: 2,
       correctOptionIds: ["opt-a", "opt-b", "opt-c"],
@@ -209,7 +206,6 @@ describe("gradeQuestion", () => {
   describe("NAT scoring", () => {
     const nat: QuestionMeta = {
       questionVersionId: "q4",
-      questionId: "q4-base",
       type: "NAT",
       marks: 2,
       natLowerBound: 2.5,
@@ -275,10 +271,10 @@ describe("gradeQuestion", () => {
 describe("gradeAttempt", () => {
   it("should sum scores correctly with fractional negatives", () => {
     const questions: QuestionMeta[] = [
-      { questionVersionId: "q1", questionId: "q1b", type: "MCQ", marks: 1, correctOptionIds: ["a"] },
-      { questionVersionId: "q2", questionId: "q2b", type: "MCQ", marks: 2, correctOptionIds: ["b"] },
-      { questionVersionId: "q3", questionId: "q3b", type: "MSQ", marks: 2, correctOptionIds: ["c", "d"] },
-      { questionVersionId: "q4", questionId: "q4b", type: "NAT", marks: 1, natLowerBound: 5, natUpperBound: 5, natPrecision: 0 },
+      { questionVersionId: "q1", type: "MCQ", marks: 1, correctOptionIds: ["a"] },
+      { questionVersionId: "q2", type: "MCQ", marks: 2, correctOptionIds: ["b"] },
+      { questionVersionId: "q3", type: "MSQ", marks: 2, correctOptionIds: ["c", "d"] },
+      { questionVersionId: "q4", type: "NAT", marks: 1, natLowerBound: 5, natUpperBound: 5, natPrecision: 0 },
     ];
 
     const answers: Record<string, CommittedAnswer | null> = {

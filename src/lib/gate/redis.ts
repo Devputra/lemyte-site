@@ -8,7 +8,7 @@ import type { AttemptSession, AttemptEvent } from "./contracts";
 // Singleton Redis client
 let redisClient: Redis | null = null;
 
-export function getRedis(): Redis {
+function getRedis(): Redis {
   if (!redisClient) {
     const url = process.env.REDIS_URL || process.env.GATE_REDIS_URL;
     if (!url) {
@@ -31,12 +31,12 @@ export function getRedis(): Redis {
 // ============================================================================
 
 /** Canonical attempt session key */
-export function attemptKey(attemptId: string): string {
+function attemptKey(attemptId: string): string {
   return `lm:attempt:${attemptId}`;
 }
 
 /** Event stream key */
-export const ATTEMPT_EVENTS_STREAM = "lm:attempt_events";
+const ATTEMPT_EVENTS_STREAM = "lm:attempt_events";
 
 // ============================================================================
 // SESSION OPERATIONS
@@ -174,39 +174,4 @@ export async function emitAttemptEvent(event: AttemptEvent): Promise<void> {
     "occurredAt", event.occurredAt,
     "payload", JSON.stringify(event.payload)
   );
-}
-
-/**
- * Read events from the stream (for worker consumption).
- */
-export async function readEvents(
-  lastId: string,
-  count: number = 200,
-  blockMs: number = 5000
-): Promise<Array<{ id: string; fields: Record<string, string> }>> {
-  const redis = getRedis();
-
-  const result = await redis.xread(
-    "COUNT", count,
-    "BLOCK", blockMs,
-    "STREAMS", ATTEMPT_EVENTS_STREAM, lastId
-  );
-
-  if (!result) return [];
-
-  const events: Array<{ id: string; fields: Record<string, string> }> = [];
-
-  for (const [, entries] of result) {
-    for (const [id, fieldArray] of entries) {
-      const fields: Record<string, string> = {};
-
-      for (let i = 0; i < fieldArray.length; i += 2) {
-        fields[fieldArray[i]] = fieldArray[i + 1];
-      }
-
-      events.push({ id, fields });
-    }
-  }
-
-  return events;
 }

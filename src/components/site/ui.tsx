@@ -2,7 +2,7 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
-export function cx(...c: (string | false | null | undefined)[]) {
+function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(" ");
 }
 

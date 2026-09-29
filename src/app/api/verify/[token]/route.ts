@@ -1,6 +1,7 @@
 // src/app/api/admin/certificates/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { issueCertificate } from "@/lib/certificates";
+import { SITE_URL } from "@/lib/site";
 
 const RAW_ADMIN_SECRET = process.env.ADMIN_ISSUE_SECRET ?? "";
 
@@ -64,12 +65,7 @@ export async function POST(req: NextRequest) {
       completedOn,
     });
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ??
-      process.env.NEXT_PUBLIC_SITE_URL ??
-      "http://localhost:3000";
-
-    const verifyUrl = `${baseUrl.replace(/\/$/, "")}/verify/${cert.token}`;
+    const verifyUrl = `${SITE_URL}/verify/${cert.token}`;
 
     return NextResponse.json(
       {

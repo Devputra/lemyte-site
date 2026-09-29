@@ -44,7 +44,7 @@ const PRINCIPLES = [
   ],
   [
     "Plain pricing",
-    "One-time payments and no auto-renewal. If a plan isn't right for you, you get a full refund within 7 days, as long as you've started no more than 2 tests.",
+    `One-time payments and no auto-renewal. If a plan isn't right for you, you get a full refund within ${LEGAL.refundWindowDays} days, as long as you've started no more than ${LEGAL.refundMaxAttempts} tests.`,
   ],
   [
     "Your data stays yours",

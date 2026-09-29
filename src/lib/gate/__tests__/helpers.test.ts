@@ -147,14 +147,12 @@ describe("normalizeOptions", () => {
     expect(result[0]).toEqual({
       id: "a",
       markdown: "Option A",
-      text: "Option A",
       isCorrect: true,
       isSelected: true,
     });
     expect(result[1]).toEqual({
       id: "b",
       markdown: "Option B",
-      text: "Option B",
       isCorrect: false,
       isSelected: false,
     });

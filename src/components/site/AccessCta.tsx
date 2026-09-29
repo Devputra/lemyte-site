@@ -17,7 +17,7 @@ export type Access = {
 };
 
 let cached: Promise<Access> | null = null;
-export function loadAccess(): Promise<Access> {
+function loadAccess(): Promise<Access> {
   cached ??= fetch("/api/gate/me/access", { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : { signedIn: false, hasPlan: false, name: null }))
     .catch(() => ({ signedIn: false, hasPlan: false, name: null }));

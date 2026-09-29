@@ -5,6 +5,7 @@ import {
   generateCertificateId,
   generateVerificationToken,
 } from "@/lib/certificates";
+import { SITE_URL } from "@/lib/site";
 
 const ADMIN_ISSUE_SECRET = process.env.ADMIN_ISSUE_SECRET;
 
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
     }
 
     const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+      SITE_URL;
 
     const verifyUrl = `${baseUrl.replace(/\/+$/, "")}/verify/${verifyToken}`;
 

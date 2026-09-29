@@ -15,6 +15,7 @@ import { PaletteState } from "@/lib/gate/contracts";
 import type { DraftAnswer } from "@/lib/gate/contracts";
 import { safeJson } from "@/lib/fetch-helpers";
 import { LoadingScene } from "@/components/motion";
+import { usePreloadImages } from "@/lib/gate/preload-images";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -25,12 +26,7 @@ interface QuestionData {
   type: "MCQ" | "MSQ" | "NAT";
   marks: number;
   markdown: string;
-  text: string;
-  options: Array<{
-    id: string;
-    markdown: string;
-    text: string;
-  }>;
+  options: Array<{ id: string; markdown: string }>;
   section: string;
 }
 
@@ -582,7 +578,7 @@ export default function GateAttemptPage() {
   const [isOnline, setIsOnline] = useState(true);
   const [offlineCountdown, setOfflineCountdown] = useState(180);
   const offlineStartRef = useRef<number | null>(null);
-  const cachedPayloadRef = useRef<any>(null);
+  const cachedPayloadRef = useRef<Record<string, unknown> | null>(null);
 
   // ── Load attempt
   useEffect(() => {
@@ -773,6 +769,7 @@ export default function GateAttemptPage() {
   const currentIdx = questionOrder.indexOf(currentQvId);
   const currentQ = questions[currentQvId];
   const currentDraft = drafts[currentQvId];
+  usePreloadImages(questions, questionOrder, currentIdx);
 
   const orderedOptions = useMemo(() => {
     if (!currentQ) return [];
@@ -1034,7 +1031,7 @@ export default function GateAttemptPage() {
               </div>
 
               <div className="mb-4 text-base leading-relaxed">
-                <GateMarkdown content={currentQ.markdown || currentQ.text} />
+                <GateMarkdown content={currentQ.markdown} />
               </div>
 
               {(currentQ.type === "MCQ" || currentQ.type === "MSQ") && (
@@ -1082,7 +1079,7 @@ export default function GateAttemptPage() {
                           className="mt-1 accent-[#00A86B]"
                         />
                         <div className="flex-1">
-                          <GateOptionMarkdown content={opt.markdown || opt.text} />
+                          <GateOptionMarkdown content={opt.markdown} />
                         </div>
                       </label>
                     );

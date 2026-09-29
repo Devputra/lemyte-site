@@ -44,3 +44,7 @@ next-env.d.ts
 
 src.zip
 .gate-work/
+
+# Third-party artwork kept locally only (licence unverified) — never commit
+public/images/cartoons/
+__pycache__/

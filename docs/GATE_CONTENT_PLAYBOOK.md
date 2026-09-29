@@ -22,6 +22,7 @@ answers per paper, and one paper (2020) had content shifted by one question.
 
 - **Source PDFs**: `/media/devputra/F414D25114D21708/OFFICE/DXOCTAGON/Products/Lemyte/Product/GATE/Questions/<SUBJ>/<YEAR>/` (paper + key PDF; `images/` folder)
 - **Images**: user usually uploads them to `images/` **and** S3 `s3://learnamyte-gate-media/<SUBJ>/pyq/<year>_<subj>[_<set>]/`. If missing, crop them ourselves.
+- **WebP copies (required)**: the app serves `<key>.webp` (max 1600 px, q90) from S3 via signed URLs, not the PNG. `apply.py` runs `node scripts/gate-content/webp-sync.mjs <folder>` automatically; after any manual S3 upload/replace run it yourself (idempotent). A missing WebP falls back to the slow PNG route. Replacing an image? Bump the key version (`.v2`) — browsers cache WebPs for a week.
 - **DB**: Supabase `rqmgmlhltjylgkvgnokh`, schema `gate`, table `question_versions` (one row per question). Keys in `.env.local`. Repo `db/gate/schema.sql` is **stale**.
 - **Toolkit**: `scripts/gate-content/` (below). Work files: `.gate-work/<PAPER_CODE>/` (gitignored, survives sessions).
 - **Site**: Vercel project `lemyte-site` → https://lemyte.com. Push to `main` auto-deploys. Content changes need no deploy.

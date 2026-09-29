@@ -8,11 +8,12 @@ export function getErrorMessage(err: unknown): string {
   return String(err);
 }
 
-export function isZodError(err: unknown): err is z.ZodError {
+function isZodError(err: unknown): err is z.ZodError {
   return err instanceof z.ZodError;
 }
 
 export function handleRouteError(err: unknown, label: string): Response {
+  if (err instanceof Response) return err; // e.g. requireUser() throws a ready 401
   if (isZodError(err)) {
     return Response.json(
       { error: "Invalid request body", details: err.issues },

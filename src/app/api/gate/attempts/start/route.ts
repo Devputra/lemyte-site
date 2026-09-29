@@ -42,10 +42,10 @@ import { handleRouteError } from "@/lib/gate/errors";
 import { PaletteState } from "@/lib/gate/contracts";
 import type { AttemptSession } from "@/lib/gate/contracts";
 import crypto from "crypto";
+import { DEMO_COOKIE_NAME } from "@/lib/gate/attempt-route";
 
 export const runtime = "nodejs";
 
-const DEMO_COOKIE_NAME = "lm_demo_token";
 
 const StartSchema = z.object({
   mode: z.enum(["RANKED", "PRACTICE", "DEMO"]),

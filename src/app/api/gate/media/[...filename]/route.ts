@@ -9,13 +9,13 @@
 // question images for guest users.
 
 import { type NextRequest } from "next/server";
-import { getGateMedia } from "@/lib/gate/s3";
+import { getGateMedia } from "@/lib/gate/media";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { DEMO_COOKIE_NAME } from "@/lib/gate/attempt-route";
 
 export const runtime = "nodejs";
 
-const DEMO_COOKIE_NAME = "lm_demo_token";
 
 // Folder names like: 2025_cs_1
 const FOLDER_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,80}$/;

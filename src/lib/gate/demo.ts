@@ -90,26 +90,3 @@ export async function enforceDemoRateLimit(
   return { allowed: true };
 }
 
-export async function getDemoTestVersionId(): Promise<string | null> {
-  const { data, error } = await supabaseAdmin
-    .schema("gate")
-    .from("test_versions")
-    .select("id")
-    .eq("is_demo", true)
-    .eq("is_active", true)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error("[gate/demo] getDemoTestVersionId failed", error);
-    return null;
-  }
-
-  if (!data) {
-    console.error("[gate/demo] getDemoTestVersionId returned no rows");
-    return null;
-  }
-
-  return data.id as string;
-}

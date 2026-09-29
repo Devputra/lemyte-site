@@ -22,12 +22,19 @@ import {
   SectionHeader,
   type,
 } from "@/components/site/ui";
-import { fmtInt, GATE_SUBJECTS, GATE_TOTALS } from "@/lib/gate/catalog";
+import { fmtInr, fmtInt } from "@/lib/gate/catalog";
+import { getCatalog } from "@/lib/gate/catalog.server";
+import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = {
-  title: "GATE assessment — Lemyte",
-  description: `Take ${GATE_TOTALS.papers} official GATE papers as timed tests, marked with the official answer key. Then practise the topics where you lost marks.`,
-};
+export const revalidate = 3600; // numbers and prices come from the database
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { totals } = await getCatalog();
+  return {
+    title: "GATE assessment — Lemyte",
+    description: `Take ${totals.papers} official GATE papers as timed tests, marked with the official answer key. Then practise the topics where you lost marks.`,
+  };
+}
 
 const SCREEN = [
   {
@@ -52,7 +59,7 @@ const SCREEN = [
   },
 ];
 
-const MODES = [
+const modesFor = (papers: number) => [
   {
     name: "Free demo",
     href: "/gate/demo",
@@ -61,7 +68,7 @@ const MODES = [
   {
     name: "Full PYQ papers",
     href: "/gate/practice",
-    text: `All ${GATE_TOTALS.papers} official papers as complete 3-hour tests. Take any paper as many times as you like.`,
+    text: `All ${papers} official papers as complete 3-hour tests. Take any paper as many times as you like.`,
   },
   {
     name: "Topic practice",
@@ -98,7 +105,8 @@ const CHECKS = [
   "A worked solution for every question, checked against the key",
 ];
 
-export default function GateOverviewPage() {
+export default async function GateOverviewPage() {
+  const { subjects, totals, plans } = await getCatalog();
   return (
     <div className="bg-white text-ink">
       {/* Hero */}
@@ -126,9 +134,9 @@ export default function GateOverviewPage() {
           <dl className="grid grid-cols-2 gap-6 py-10 sm:grid-cols-4">
             {(
               [
-                [GATE_TOTALS.questions, "past-paper questions"],
-                [GATE_TOTALS.papers, "official papers"],
-                [GATE_TOTALS.subjects, "GATE subjects"],
+                [totals.questions, "past-paper questions"],
+                [totals.papers, "official papers"],
+                [totals.subjects, "GATE subjects"],
                 [3, "hours per full paper, like the exam"],
               ] as const
             ).map(([v, l]) => (
@@ -149,8 +157,8 @@ export default function GateOverviewPage() {
           <Reveal>
             <SectionHeader
               eyebrow="Subjects"
-              title="Seven GATE papers, with more on the way"
-              lead="Each subject includes the General Aptitude section of its papers. Computer Science goes back to 2014; the others cover every paper since 2020."
+              title={`${totals.subjects} GATE subjects, with more on the way`}
+              lead="Each subject includes the General Aptitude section of its papers. The table shows which years are covered for each one."
             />
           </Reveal>
           <Reveal
@@ -171,7 +179,7 @@ export default function GateOverviewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {GATE_SUBJECTS.map((s) => (
+                {subjects.map((s) => (
                   <tr key={s.code}>
                     <td className="px-4 py-3">
                       <span className="font-medium text-ink">{s.name}</span>
@@ -185,7 +193,7 @@ export default function GateOverviewPage() {
                     <td className="px-4 py-3 text-right tabular-nums text-zinc-600">
                       {fmtInt(s.questions)}
                       <SubjectBar
-                        pct={(s.questions / GATE_SUBJECTS[0].questions) * 100}
+                        pct={(s.questions / subjects[0].questions) * 100}
                       />
                     </td>
                     <td className="hidden px-4 py-3 text-right tabular-nums text-zinc-500 sm:table-cell">
@@ -209,7 +217,7 @@ export default function GateOverviewPage() {
             />
           </Reveal>
           <div className="mt-12 grid gap-5 sm:grid-cols-2">
-            {MODES.map((m, i) => (
+            {modesFor(totals.papers).map((m, i) => (
               <Reveal key={m.name} delay={i * 0.07}>
                 <Link
                   href={m.href}
@@ -351,16 +359,12 @@ export default function GateOverviewPage() {
             lead="Every plan includes all subjects, full past papers, topic practice and ranked tests. Plans don't renew automatically."
           />
           <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
-            {[
-              ["1 month", "₹299"],
-              ["3 months", "₹799"],
-              ["6 months", "₹1,099"],
-            ].map(([d, p], i) => (
+            {plans.map(({ name: d, priceInr }, i) => (
               <Reveal key={d} delay={i * 0.08}>
                 <Card className="h-full text-left transition-all duration-300 hover:-translate-y-1 hover:border-brand/40">
                   <p className="text-sm text-zinc-500">{d}</p>
                   <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">
-                    {p}
+                    {fmtInr(priceInr)}
                   </p>
                 </Card>
               </Reveal>
@@ -378,7 +382,8 @@ export default function GateOverviewPage() {
             />
           </div>
           <p className="mt-4 text-sm text-zinc-500">
-            Full refund within 7 days if you have started no more than 2 tests.{" "}
+            Full refund within {LEGAL.refundWindowDays} days if you have started no more than{" "}
+            {LEGAL.refundMaxAttempts} tests.{" "}
             <Link
               href="/refund-policy"
               className="underline underline-offset-2 hover:text-ink"

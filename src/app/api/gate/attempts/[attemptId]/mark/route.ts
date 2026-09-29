@@ -1,104 +1,21 @@
-// src/app/api/gate/attempts/[attemptId]/mark/route.ts
-
-import { NextRequest } from "next/server";
+// src/app/api/gate/attempts/[attemptId]/mark/route.ts — toggle "marked for review" on a question.
 import { z } from "zod";
-import { supabaseServer } from "@/lib/supabase/server";
-import { atomicUpdateSession, emitAttemptEvent } from "@/lib/gate/redis";
+
+import { attemptRoute, emitEvent, getActor, updateInProgress } from "@/lib/gate/attempt-route";
 import { onMarkToggle } from "@/lib/gate/palette";
-import { isAuthorizedActor } from "@/lib/gate/auth";
-import { handleRouteError } from "@/lib/gate/errors";
-import crypto from "crypto";
 
 export const runtime = "nodejs";
 
-const DEMO_COOKIE_NAME = "lm_demo_token";
+const MarkSchema = z.object({ questionId: z.string().uuid() });
 
-const MarkSchema = z.object({
-  questionId: z.string().uuid(),
+export const PUT = attemptRoute("mark", async (req, attemptId) => {
+  const actor = await getActor(req);
+  const { questionId } = MarkSchema.parse(await req.json());
+  const now = new Date();
+
+  const updated = await updateInProgress(attemptId, actor, questionId, now, (s) => onMarkToggle(s.palette, questionId));
+  if (updated instanceof Response) return updated;
+
+  await emitEvent(attemptId, actor.authUserId, "PALETTE_UPDATE", now, { questionId, action: "MARK_TOGGLE" });
+  return Response.json({ ok: true, questionId, paletteState: updated.palette[questionId], updatedAt: now.toISOString() });
 });
-
-export async function PUT(
-  req: NextRequest,
-  ctx: { params: Promise<{ attemptId: string }> }
-) {
-  try {
-    const { attemptId } = await ctx.params;
-
-    const supabase = await supabaseServer();
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-
-    // Logged-in user is optional for DEMO mode
-    const authUserId = authErr ? null : authData?.user?.id ?? null;
-    const demoCookie = req.cookies.get(DEMO_COOKIE_NAME)?.value ?? null;
-
-    const body = await req.json();
-    const { questionId } = MarkSchema.parse(body);
-    const now = new Date();
-
-    let forbidden = false;
-    let attemptEnded = false;
-    let questionNotInAttempt = false;
-
-    const updated = await atomicUpdateSession(attemptId, (session) => {
-      const allowed = isAuthorizedActor({
-        ownerUserId: session.userId ?? null,
-        ownerGuestToken: session.guestToken ?? null,
-        authUserId,
-        demoCookie,
-      });
-
-      if (!allowed) {
-        forbidden = true;
-        return session;
-      }
-
-      if (now >= new Date(session.endsAt)) {
-        attemptEnded = true;
-        return session;
-      }
-
-      if (!session.questionOrder.includes(questionId)) {
-        questionNotInAttempt = true;
-        return session;
-      }
-
-      onMarkToggle(session.palette, questionId);
-      session.lastSeenAt = now.toISOString();
-      return session;
-    });
-
-    if (!updated) {
-      return Response.json({ error: "Session not found" }, { status: 404 });
-    }
-
-    if (forbidden) {
-      return Response.json({ error: "FORBIDDEN" }, { status: 403 });
-    }
-
-    if (attemptEnded) {
-      return Response.json({ error: "ATTEMPT_ENDED" }, { status: 409 });
-    }
-
-    if (questionNotInAttempt) {
-      return Response.json({ error: "QUESTION_NOT_IN_ATTEMPT" }, { status: 400 });
-    }
-
-    await emitAttemptEvent({
-      eventId: crypto.randomUUID(),
-      attemptId,
-      userId: authUserId,
-      type: "PALETTE_UPDATE",
-      occurredAt: now.toISOString(),
-      payload: { questionId, action: "MARK_TOGGLE" },
-    });
-
-    return Response.json({
-      ok: true,
-      questionId,
-      paletteState: updated.palette[questionId],
-      updatedAt: now.toISOString(),
-    });
-  } catch (err: unknown) {
-    return handleRouteError(err, "gate/attempts/[attemptId]/mark");
-  }
-}

@@ -13,7 +13,7 @@ export interface InventoryQuestion {
   activeUsageCount: number;
 }
 
-export interface BlueprintResult {
+interface BlueprintResult {
   gaQuestions: InventoryQuestion[];
   coreQuestions: InventoryQuestion[];
   chosenCoreMcqCount: number;

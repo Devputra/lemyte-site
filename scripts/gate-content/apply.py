@@ -7,6 +7,7 @@ Only DRAFT rows are updated. Publishing is a separate, explicit step (see playbo
 import json
 import os
 import re
+import subprocess
 import sys
 
 from common import BUCKET, QUESTIONS_ROOT, aws, get, patch, s3_names, workdir
@@ -25,6 +26,9 @@ for a, b in json.load(open(f"{w}/copies.json")).items():
               "--metadata-directive", "REPLACE", "--only-show-errors")
     if res.returncode:
         print("COPY FAIL", a, res.stderr[:200])
+# Optimised WebP copies (what the app actually serves); only new or changed PNGs are converted.
+webp = subprocess.run(["node", os.path.join(os.path.dirname(__file__), "webp-sync.mjs"), folder], capture_output=True, text=True)
+print("webp", (webp.stdout.strip().splitlines() or ["?"])[-1] if webp.returncode == 0 else webp.stderr[:300])
 
 rows = json.load(open(f"{w}/rows_new.json"))
 ok = 0

@@ -1,11 +1,11 @@
 // src/components/home/Home.tsx — the Lemyte home page (client: motion + scrollytelling).
 // Structure follows a conversion landing page: hero → proof → what/why → how it works → benefits →
-// product → use case → FAQ → CTA. Every number is real (src/lib/gate/catalog.ts).
+// product → use case → FAQ → CTA. Every number comes from the database (getCatalog).
 "use client";
 
 import Link from "next/link";
 import { motion, useInView, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -32,7 +32,8 @@ import {
   useSectionProgress,
 } from "@/components/motion";
 import { AnswerSheetScene, JourneyScene, PlanScene, RecallScene } from "@/components/motion/scenes";
-import { fmtInt, GATE_SUBJECTS, GATE_TOTALS } from "@/lib/gate/catalog";
+import { type Catalog, fmtInr, fmtInt } from "@/lib/gate/catalog";
+import { LEGAL } from "@/lib/legal";
 
 const KINDS = [
   { when: "Before you start", name: "Diagnostic", text: "Shows where you are starting from, so you don't spend weeks on topics you already know." },
@@ -77,18 +78,19 @@ const PLAN = [
   { when: "Weeks 7–8", what: "Two to three full papers a week, reviewing every wrong answer. A ranked test to check readiness." },
 ];
 
-const FAQ = [
+const faqFor = (c: Catalog) => [
   { q: "Where do the questions come from?", a: "From official GATE question papers. Each one is checked against the published answer key, figures are taken from the original paper, and every question has a worked solution." },
   { q: "Can I try it before paying?", a: "Yes. The demo test is free and you don't need a card. You can also create an account and look around before choosing a plan." },
-  { q: "Does my plan renew automatically?", a: "No. Plans are one-time payments for 1, 3 or 6 months. If a plan isn't right for you, you can get a full refund within 7 days as long as you have started no more than 2 tests." },
-  { q: "Which GATE papers are covered?", a: `${GATE_SUBJECTS.map((s) => s.name).join(", ")}. More papers are being added.` },
+  { q: "Does my plan renew automatically?", a: `No. Plans are one-time payments for ${c.plans.map((p) => p.months).join(", ").replace(/, (\d+)$/, " or $1")} months. If a plan isn't right for you, you can get a full refund within ${LEGAL.refundWindowDays} days as long as you have started no more than ${LEGAL.refundMaxAttempts} tests.` },
+  { q: "Which GATE papers are covered?", a: `${c.subjects.map((s) => s.name).join(", ")}. More papers are being added.` },
 ];
 
-const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
+const CatalogContext = createContext<Catalog | null>(null);
+const useCatalog = () => useContext(CatalogContext)!;
 
-export default function Home() {
+export default function Home({ catalog }: { catalog: Catalog }) {
   return (
-    <>
+    <CatalogContext.Provider value={catalog}>
       <ScrollProgress />
       <Hero />
       <ProofStrip />
@@ -101,12 +103,13 @@ export default function Home() {
       <Faq />
       <AboutTeaser />
       <FinalCta />
-    </>
+    </CatalogContext.Provider>
   );
 }
 
 /* ---------------- Hero ---------------- */
 function Hero() {
+  const { totals } = useCatalog();
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
@@ -126,7 +129,7 @@ function Hero() {
           <Reveal delay={0.35}>
             <p className={`${type.lead} mt-6 max-w-xl`}>
               Lemyte runs exam-style online tests and turns every attempt into a clear list of what to work on. We are
-              starting with GATE: {fmtInt(GATE_TOTALS.questions)} questions from {GATE_TOTALS.papers} official papers, marked
+              starting with GATE: {fmtInt(totals.questions)} questions from {totals.papers} official papers, marked
               exactly the way GATE marks them.
             </p>
           </Reveal>
@@ -212,15 +215,18 @@ function ReportPreview() {
 
 /* ---------------- Proof: real numbers + marquee of papers ---------------- */
 function ProofStrip() {
+  const { totals, papers, subjects } = useCatalog();
+  // The three most recent papers of each subject, newest first.
+  const recent = subjects.flatMap((s) => papers.filter((p) => p.code === s.code).slice(0, 3));
   return (
     <section className="border-b border-zinc-100 bg-zinc-50/70 py-12">
       <Container>
         <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {(
             [
-              [GATE_TOTALS.questions, "", "past-paper questions"],
-              [GATE_TOTALS.papers, "", "official papers"],
-              [GATE_TOTALS.subjects, "", "GATE subjects"],
+              [totals.questions, "", "past-paper questions"],
+              [totals.papers, "", "official papers"],
+              [totals.subjects, "", "GATE subjects"],
               [100, "%", "marked with the official key"],
             ] as const
           ).map(([v, suffix, l]) => (
@@ -236,13 +242,11 @@ function ProofStrip() {
       </Container>
       <div className="mt-10">
         <Marquee speed={55}>
-          {GATE_SUBJECTS.flatMap((s) =>
-            YEARS.filter((y) => Number(s.years.slice(0, 4)) <= y).slice(0, 3).map((y) => (
-              <span key={`${s.code}${y}`} className="whitespace-nowrap rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-600">
-                GATE {y} · <span className="font-medium text-ink">{s.code}</span>
-              </span>
-            )),
-          )}
+          {recent.map((p, i) => (
+            <span key={`${p.code}${p.year}${i}`} className="whitespace-nowrap rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-600">
+              GATE {p.year} · <span className="font-medium text-ink">{p.code}</span>
+            </span>
+          ))}
         </Marquee>
       </div>
     </section>
@@ -526,7 +530,8 @@ function Benefits() {
 
 /* ---------------- GATE product: interactive infographic ---------------- */
 function GateProduct() {
-  const max = Math.max(...GATE_SUBJECTS.map((s) => s.questions));
+  const { subjects, totals, fromInr } = useCatalog();
+  const max = Math.max(...subjects.map((s) => s.questions));
   const [hover, setHover] = useState<string | null>(null);
   return (
     <section id="gate" className="relative overflow-hidden bg-ink py-20 text-white sm:py-28">
@@ -550,7 +555,7 @@ function GateProduct() {
             <ButtonLink href="/gate" size="lg">
               Explore GATE assessment <ArrowRight className="h-4 w-4" />
             </ButtonLink>
-            <p className="text-sm text-zinc-400">From ₹299 a month · paid once</p>
+            <p className="text-sm text-zinc-400">Plans from {fmtInr(fromInr)} · paid once</p>
           </div>
         </Reveal>
 
@@ -558,10 +563,10 @@ function GateProduct() {
           <div className="rounded-3xl border border-zinc-800 bg-zinc-950/60 p-6 sm:p-8">
             <div className="flex items-baseline justify-between">
               <p className="text-sm font-medium text-zinc-300">Questions by subject</p>
-              <p className="text-xs text-zinc-500">{hover ? GATE_SUBJECTS.find((s) => s.code === hover)?.years : `${GATE_TOTALS.papers} papers`}</p>
+              <p className="text-xs text-zinc-500">{hover ? subjects.find((s) => s.code === hover)?.years : `${totals.papers} papers`}</p>
             </div>
             <ul className="mt-6 space-y-4">
-              {GATE_SUBJECTS.map((s, i) => (
+              {subjects.map((s, i) => (
                 <li key={s.code} onMouseEnter={() => setHover(s.code)} onMouseLeave={() => setHover(null)} className="cursor-default">
                   <div className="flex justify-between text-sm">
                     <span className={hover && hover !== s.code ? "text-zinc-500" : "text-zinc-100"}>{s.name}</span>
@@ -624,6 +629,7 @@ function UseCase() {
 
 /* ---------------- FAQ ---------------- */
 function Faq() {
+  const catalog = useCatalog();
   return (
     <section id="faq" className="border-t border-zinc-100 py-20 sm:py-28">
       <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
@@ -631,7 +637,7 @@ function Faq() {
           <SectionHeader eyebrow="Questions" title="Good to know" />
         </Reveal>
         <div className="divide-y divide-zinc-200 border-y border-zinc-200">
-          {FAQ.map((f) => (
+          {faqFor(catalog).map((f) => (
             <details key={f.q} className="group py-5">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-semibold text-ink">
                 {f.q}

@@ -9,7 +9,7 @@ import { Container } from "./ui";
 
 export type NavItem = { href: string; label: string };
 
-export const HOME_NAV: NavItem[] = [
+const HOME_NAV: NavItem[] = [
   { href: "/gate", label: "GATE" },
   { href: "/#how-it-works", label: "How it works" },
   { href: "/gate/pricing", label: "Pricing" },

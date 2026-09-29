@@ -5,7 +5,7 @@ import { Constellation, SplitWords } from "@/components/motion";
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
 import { LEGAL } from "@/lib/legal";
 
-export const LEGAL_LINKS = [
+const LEGAL_LINKS = [
   { href: "/terms", label: "Terms & Conditions" },
   { href: "/privacy", label: "Privacy Policy" },
   { href: "/refund-policy", label: "Refund & Cancellation" },

@@ -76,11 +76,9 @@ interface AttemptReport {
     section: string;
     marks: number;
     questionMarkdown: string;
-    questionText: string;
     options: Array<{
       id: string;
       markdown: string;
-      text: string;
       isCorrect: boolean;
       isSelected: boolean;
     }>;
@@ -1154,7 +1152,7 @@ export default function GateReportPage() {
                               )}
                             </div>
 
-                            <GateOptionMarkdown content={option.markdown || option.text} />
+                            <GateOptionMarkdown content={option.markdown} />
                           </div>
                         ))}
                       </div>

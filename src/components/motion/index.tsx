@@ -258,10 +258,7 @@ export function Constellation({ className, density = 0.00009, rgb = "25,59,200" 
   return <canvas ref={ref} aria-hidden className={`pointer-events-none absolute inset-0 h-full w-full ${className ?? ""}`} />;
 }
 
-/* ---------- Loading: skeleton shimmer + an illustrated loading scene ---------- */
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={`relative overflow-hidden rounded-lg bg-zinc-100 ${className ?? ""}`}><span className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_infinite] bg-gradient-to-r from-transparent via-white/70 to-transparent motion-reduce:hidden" /></div>;
-}
+/* ---------- Loading: an illustrated loading scene ---------- */
 
 /** An answer sheet being filled in: lines draw, answers tick, a timer ring runs. */
 export function LoadingScene({ label = "Loading…", className }: { label?: string; className?: string }) {

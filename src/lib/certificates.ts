@@ -2,7 +2,7 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "./supabase/admin";
 
-export type CertificateStatus = "valid" | "revoked" | "expired" | "pending";
+type CertificateStatus = "valid" | "revoked" | "expired" | "pending";
 
 export interface CertificateRecord {
   id: string;

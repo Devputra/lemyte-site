@@ -98,10 +98,10 @@ export async function POST(req: NextRequest) {
 
     // MCQ/MSQ: check options and correct_option_ids
     if (type === "MCQ" || type === "MSQ") {
-      if (!row.options || !Array.isArray(row.options) || (row.options as any[]).length < 2) {
+      if (!row.options || !Array.isArray(row.options) || row.options.length < 2) {
         rowErrors.push({ field: "options", message: "MCQ/MSQ must have at least 2 options" });
       }
-      if (!row.correct_option_ids || !Array.isArray(row.correct_option_ids) || (row.correct_option_ids as any[]).length === 0) {
+      if (!row.correct_option_ids || !Array.isArray(row.correct_option_ids) || row.correct_option_ids.length === 0) {
         rowErrors.push({ field: "correct_option_ids", message: "MCQ/MSQ must specify correct_option_ids" });
       }
     }

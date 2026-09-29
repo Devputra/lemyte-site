@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +89,7 @@ export default async function VerifyPage(props: VerifyPageProps) {
   const badgeSrc = `/badges/${cert.courseCode}.png`;
   const downloadHref = `/api/certificate/${cert.token}`;
   const verifyBase =
-    process.env.NEXT_PUBLIC_BASE_URL ?? "https://lemyte.com";
+    SITE_URL;
 
   /* --------- Valid Certificate UI --------- */
 

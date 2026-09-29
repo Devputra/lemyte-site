@@ -10,6 +10,7 @@ import { Check, ShieldCheck } from "lucide-react";
 import { useAccess } from "@/components/site/AccessCta";
 import { safeJson } from "@/lib/fetch-helpers";
 import { Constellation, LoadingScene, Reveal } from "@/components/motion";
+import { LEGAL } from "@/lib/legal";
 
 interface Plan {
   id: string;
@@ -226,8 +227,9 @@ export default function GatePricingPage() {
                 </h1>
                 <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
                   Every plan unlocks everything on Lemyte for its duration.
-                  Plans don&apos;t renew, and you can get a full refund within 7
-                  days if you have started no more than 2 tests.
+                  Plans don&apos;t renew, and you can get a full refund within{" "}
+                  {LEGAL.refundWindowDays} days if you have started no more than{" "}
+                  {LEGAL.refundMaxAttempts} tests.
                 </p>
               </>
             )}
@@ -367,8 +369,8 @@ export default function GatePricingPage() {
                 Payments are handled by Razorpay (UPI, cards, net banking and
                 wallets). Your plan starts as soon as the payment is confirmed,
                 usually within a minute. If a plan isn&apos;t right for you, ask
-                for a refund within 7 days, as long as you have started no more
-                than 2 tests.
+                for a refund within {LEGAL.refundWindowDays} days, as long as you have
+                started no more than {LEGAL.refundMaxAttempts} tests.
               </p>
               <p className="mt-4 text-sm leading-6 text-zinc-500">
                 By buying a plan you agree to our{" "}
