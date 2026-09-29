@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Calculator, Check, Clock3, Flag, LayoutGrid } from "lucide-react";
 
+import { TrialButton } from "@/components/site/AccessCta";
 import { ButtonLink, Card, Container, Eyebrow, SectionHeader, type } from "@/components/site/ui";
 import { fmtInt, GATE_SUBJECTS, GATE_TOTALS } from "@/lib/gate/catalog";
 
@@ -20,7 +21,7 @@ const SCREEN = [
 
 const MODES = [
   { name: "Free demo", href: "/gate/demo", text: "A short General Aptitude test to try the exam screen and the report. No payment or card needed." },
-  { name: "Full past papers", href: "/gate/practice", text: `All ${GATE_TOTALS.papers} official papers as complete 3-hour tests. Take any paper as many times as you like.` },
+  { name: "Full PYQ papers", href: "/gate/practice", text: `All ${GATE_TOTALS.papers} official papers as complete 3-hour tests. Take any paper as many times as you like.` },
   { name: "Topic practice", href: "/gate/practice/topics", text: "Choose one topic and get 5 to 30 past questions from it, timed at about two minutes per question." },
   { name: "Ranked tests", href: "/gate/ranked", text: "Scheduled tests with one counted attempt. Your score is ranked against everyone who took the same test." },
 ];
@@ -62,9 +63,7 @@ export default function GateOverviewPage() {
               shows where you lost marks, and topic practice helps you win them back.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/gate/demo" size="lg">
-                Take the free demo <ArrowRight className="h-4 w-4" />
-              </ButtonLink>
+              <TrialButton size="lg" arrow label="Take the free demo" paidLabel="Start a PYQ paper" paidHref="/gate/practice" />
               <ButtonLink href="/gate/pricing" variant="secondary" size="lg">
                 See plans
               </ButtonLink>
@@ -249,9 +248,7 @@ export default function GateOverviewPage() {
             <ButtonLink href="/gate/pricing" size="lg">
               Choose a plan
             </ButtonLink>
-            <ButtonLink href="/gate/demo" variant="secondary" size="lg">
-              Try the free demo first
-            </ButtonLink>
+            <TrialButton variant="secondary" size="lg" label="Try the free demo first" paidLabel="Go to your dashboard" />
           </div>
           <p className="mt-4 text-sm text-zinc-500">
             Full refund within 7 days if you have started no more than 2 tests.{" "}

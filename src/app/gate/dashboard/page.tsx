@@ -134,14 +134,7 @@ export default function GateDashboardPage() {
         if (res.status === 401) return router.push("/gate/auth/sign-in?next=/gate/dashboard");
         if (res.status === 403) return router.push("/gate/pricing");
         if (!res.ok) throw new Error(d.error ?? `Failed to set up practice (${res.status})`);
-        const start = await fetch("/api/gate/attempts/start", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: "PRACTICE", testVersionId: d.testVersionId }),
-        });
-        const s = await safeJson(start);
-        if ((start.ok || start.status === 409) && s.attemptId) return router.push(`/gate/attempt/${s.attemptId}`);
-        throw new Error(s.error ?? `Failed to start practice (${start.status})`);
+        router.push(`/gate/instructions?test=${d.testVersionId}&mode=PRACTICE`);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to start practice");
         setBusyTopic(null);

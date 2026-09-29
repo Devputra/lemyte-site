@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ShieldCheck } from "lucide-react";
+
+import { useAccess } from "@/components/site/AccessCta";
 import { safeJson } from "@/lib/fetch-helpers";
 
 interface Plan {
@@ -24,7 +26,7 @@ declare global {
 }
 
 const INCLUDED = [
-  "All 7 GATE subjects and all 71 official past papers",
+  "All 7 GATE subjects and all 71 official PYQ papers",
   "Topic practice on any topic, as often as you like",
   "Ranked tests when they are open",
   "A full report after every test, with worked solutions",
@@ -40,6 +42,7 @@ const FIT: Record<number, string> = {
 
 export default function GatePricingPage() {
   const router = useRouter();
+  const access = useAccess();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
@@ -169,18 +172,20 @@ export default function GatePricingPage() {
             <div className="mx-auto mb-6 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <div className={`grid grid-cols-1 gap-5 md:grid-cols-2 ${access?.hasPlan ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}>
+            {!access?.hasPlan && (
             <div className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6">
-              <h2 className="text-lg font-semibold text-ink">Free demo</h2>
-              <p className="mt-4 text-4xl font-semibold tracking-tight tabular-nums">₹0</p>
-              <p className="mt-1 text-sm text-zinc-500">No account or card needed</p>
-              <p className="mt-5 flex-1 text-sm leading-6 text-zinc-600">
-                A 10-question General Aptitude test to try the exam screen and see a real report.
-              </p>
-              <Link href="/gate/demo" className="mt-6 inline-flex h-11 items-center justify-center rounded-[10px] border border-zinc-300 text-[15px] font-medium text-ink hover:bg-zinc-50">
-                Take the demo
-              </Link>
-            </div>
+                <h2 className="text-lg font-semibold text-ink">Free demo</h2>
+                <p className="mt-4 text-4xl font-semibold tracking-tight tabular-nums">₹0</p>
+                <p className="mt-1 text-sm text-zinc-500">No account or card needed</p>
+                <p className="mt-5 flex-1 text-sm leading-6 text-zinc-600">
+                  A 10-question General Aptitude test to try the exam screen and see a real report.
+                </p>
+                <Link href="/gate/demo" className="mt-6 inline-flex h-11 items-center justify-center rounded-[10px] border border-zinc-300 text-[15px] font-medium text-ink hover:bg-zinc-50">
+                  Take the demo
+                </Link>
+              </div>
+            )}
 
             {loadingPlans ? (
               <div className="rounded-2xl border border-zinc-200 p-10 text-center text-sm text-zinc-500 lg:col-span-3">Loading plans…</div>

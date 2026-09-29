@@ -3,6 +3,7 @@
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { stripInlineOptions } from "@/lib/gate/question-text";
 import { checkEntitlement } from "@/lib/gate/entitlements";
 import { getAttemptSession } from "@/lib/gate/redis";
 import { isAuthorizedActor } from "@/lib/gate/auth";
@@ -335,8 +336,8 @@ export async function GET(
         type,
         section,
         marks: safeNumber(v?.marks, 0),
-        questionMarkdown: String(v?.markdown_content ?? ""),
-        questionText: String(v?.markdown_content ?? ""),
+        questionMarkdown: stripInlineOptions(String(v?.markdown_content ?? ""), Array.isArray(v?.options_array) && v.options_array.length > 0),
+        questionText: stripInlineOptions(String(v?.markdown_content ?? ""), Array.isArray(v?.options_array) && v.options_array.length > 0),
         options,
         correctOptionIds,
         selectedOptionIds,

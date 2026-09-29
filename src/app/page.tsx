@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, BarChart3, BookOpenCheck, CheckCircle2, ClipboardList, LineChart, ListChecks, Medal, Timer } from "lucide-react";
 
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
+import { TrialButton } from "@/components/site/AccessCta";
 import { ButtonLink, Card, Container, Eyebrow, SectionHeader, type } from "@/components/site/ui";
 import { fmtInt, GATE_SUBJECTS, GATE_TOTALS } from "@/lib/gate/catalog";
 
@@ -80,7 +81,7 @@ const GETS = [
 
 const MODES = [
   { name: "Free demo", text: "A short test to try the exam screen and the report. No payment needed." },
-  { name: "Full past papers", text: "Every official paper as a complete 3-hour test. Take each one as often as you like." },
+  { name: "Full PYQ papers", text: "Every official paper as a complete 3-hour test. Take each one as often as you like." },
   { name: "Topic practice", text: "Ten to thirty past questions from a single topic, timed at about two minutes each." },
   { name: "Ranked tests", text: "Scheduled tests with one counted attempt, so you can compare yourself with other students." },
 ];
@@ -122,15 +123,12 @@ export default function HomePage() {
                 marked exactly the way GATE marks them.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <ButtonLink href="/gate/demo" size="lg">
-                  Take a free GATE test <ArrowRight className="h-4 w-4" />
-                </ButtonLink>
+                <TrialButton size="lg" arrow paidLabel="Start a PYQ paper" paidHref="/gate/practice" />
                 <ButtonLink href="#how-it-works" variant="secondary" size="lg">
                   How it works
                 </ButtonLink>
               </div>
-              <p className="mt-4 text-sm text-zinc-500">Free demo. No card needed.</p>
-            </div>
+                          </div>
             <ReportPreview />
           </Container>
         </section>
@@ -329,9 +327,7 @@ export default function HomePage() {
             <h2 className={type.h2}>See where you stand today.</h2>
             <p className={`${type.lead} mx-auto mt-4 max-w-xl`}>Take the free demo test and look at your report. It takes a few minutes.</p>
             <div className="mt-8 flex justify-center gap-3">
-              <ButtonLink href="/gate/demo" size="lg">
-                Take a free GATE test
-              </ButtonLink>
+              <TrialButton size="lg" paidLabel="Start a PYQ paper" paidHref="/gate/practice" />
               <ButtonLink href="/gate/pricing" variant="secondary" size="lg">
                 See plans
               </ButtonLink>

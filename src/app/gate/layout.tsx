@@ -3,6 +3,7 @@ import "katex/dist/katex.min.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { ChromeGate } from "@/components/site/ChromeGate";
 import { SiteFooter, SiteHeader, type NavItem } from "@/components/site/SiteChrome";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 
 const GATE_NAV: NavItem[] = [
   { href: "/gate", label: "Overview" },
-  { href: "/gate/practice", label: "Past papers" },
+  { href: "/gate/practice", label: "PYQ" },
   { href: "/gate/practice/topics", label: "Topic practice" },
   { href: "/gate/ranked", label: "Ranked" },
   { href: "/gate/pricing", label: "Pricing" },
@@ -22,9 +23,9 @@ const GATE_NAV: NavItem[] = [
 export default function GateLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-white text-ink">
-      <SiteHeader nav={GATE_NAV} app />
-      <main>{children}</main>
-      <SiteFooter />
+      <ChromeGate header={<SiteHeader nav={GATE_NAV} />} footer={<SiteFooter />}>
+        <main>{children}</main>
+      </ChromeGate>
     </div>
   );
 }

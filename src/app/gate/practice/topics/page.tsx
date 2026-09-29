@@ -94,20 +94,7 @@ export default function TopicPracticePage() {
         throw new Error(data.error ?? `Failed to set up practice (${res.status})`);
       }
 
-      const startRes = await fetch("/api/gate/attempts/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "PRACTICE", testVersionId: data.testVersionId }),
-      });
-      const startData = await safeJson(startRes);
-      if (startRes.status === 409 && startData.attemptId) {
-        router.push(`/gate/attempt/${startData.attemptId}`);
-        return;
-      }
-      if (!startRes.ok) {
-        throw new Error(startData.error ?? `Failed to start attempt (${startRes.status})`);
-      }
-      router.push(`/gate/attempt/${startData.attemptId}`);
+      router.push(`/gate/instructions?test=${data.testVersionId}&mode=PRACTICE`);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Couldn't start practice. Please try again.");
       setBusy(false);
@@ -121,7 +108,7 @@ export default function TopicPracticePage() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-zinc-500">
-                <Link href="/gate/practice" className="hover:text-ink">Past papers</Link>
+                <Link href="/gate/practice" className="hover:text-ink">PYQ</Link>
                 <span>/</span>
                 <span className="text-ink">Topic practice</span>
               </div>

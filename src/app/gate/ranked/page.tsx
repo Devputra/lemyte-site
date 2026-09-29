@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowRight, Clock3, ShieldAlert, Trophy } from "lucide-react";
-import { safeJson } from "@/lib/fetch-helpers";
 
 interface CatalogTest {
   id: string;
@@ -56,43 +55,9 @@ export default function GateRankedPage() {
   }, []);
 
   async function startRanked(testId: string) {
-    setError(null);
-    setBusyId(testId);
     setConfirmId(null);
-    try {
-      const res = await fetch("/api/gate/attempts/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "RANKED", testVersionId: testId }),
-      });
-      const data = await safeJson(res);
-
-      if (res.status === 401) {
-        router.push("/gate/auth/sign-in?next=/gate/ranked");
-        return;
-      }
-      if (res.status === 403) {
-        router.push("/gate/pricing");
-        return;
-      }
-      if (res.status === 409 && data.attemptId) {
-        router.push(`/gate/attempt/${data.attemptId}`);
-        return;
-      }
-      if (res.status === 422) {
-        setError(data.error ?? "You have already taken this ranked test. You can see your report on your dashboard.");
-        setBusyId(null);
-        return;
-      }
-      if (!res.ok) {
-        throw new Error(data.error ?? `Failed to start (${res.status})`);
-      }
-
-      router.push(`/gate/attempt/${data.attemptId}`);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Couldn't start the test. Please try again.");
-      setBusyId(null);
-    }
+    setBusyId(testId);
+    router.push(`/gate/instructions?test=${testId}&mode=RANKED`);
   }
 
   return (

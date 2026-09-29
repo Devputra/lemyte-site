@@ -4,7 +4,8 @@ import Link from "next/link";
 
 import { LEGAL } from "@/lib/legal";
 
-import { ButtonLink, Container } from "./ui";
+import { HeaderActions } from "./AccessCta";
+import { Container } from "./ui";
 
 export type NavItem = { href: string; label: string };
 
@@ -14,7 +15,7 @@ export const HOME_NAV: NavItem[] = [
   { href: "/gate/pricing", label: "Pricing" },
 ];
 
-export function SiteHeader({ nav = HOME_NAV, app = false }: { nav?: NavItem[]; app?: boolean }) {
+export function SiteHeader({ nav = HOME_NAV }: { nav?: NavItem[] }) {
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/90 backdrop-blur">
       <Container className="flex h-16 items-center justify-between gap-6">
@@ -33,18 +34,7 @@ export function SiteHeader({ nav = HOME_NAV, app = false }: { nav?: NavItem[]; a
           ))}
         </nav>
         <div className="flex shrink-0 items-center gap-2">
-          {app ? (
-            <ButtonLink href="/gate/dashboard" variant="secondary" size="sm">
-              My dashboard
-            </ButtonLink>
-          ) : (
-            <Link href="/gate/auth/sign-in" className="hidden px-3 text-sm font-medium text-zinc-600 hover:text-ink sm:inline">
-              Sign in
-            </Link>
-          )}
-          <ButtonLink href="/gate/demo" size="sm">
-            Try a free test
-          </ButtonLink>
+          <HeaderActions />
         </div>
       </Container>
       <div className="border-t border-zinc-100 md:hidden">
@@ -65,8 +55,9 @@ const FOOTER = [
     heading: "GATE",
     links: [
       { href: "/gate", label: "Overview" },
-      { href: "/gate/demo", label: "Free test" },
+      { href: "/gate/practice", label: "PYQ papers" },
       { href: "/gate/practice/topics", label: "Topic practice" },
+      { href: "/gate/demo", label: "Free test" },
       { href: "/gate/pricing", label: "Pricing" },
     ],
   },

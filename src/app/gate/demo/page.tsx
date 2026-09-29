@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 
 import { buttonClass, Container, Eyebrow, type } from "@/components/site/ui";
-import { safeJson } from "@/lib/fetch-helpers";
 
 const FACTS = [
   ["10", "General Aptitude questions"],
@@ -24,24 +23,11 @@ const WHAT = [
 export default function GateDemoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   async function startDemo() {
     setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/gate/attempts/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "DEMO" }),
-      });
-      const data = await safeJson(res);
-      if (!res.ok) throw new Error(data.error ?? `Couldn't start the demo (${res.status}).`);
-      router.push(`/gate/attempt/${data.attemptId}`);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Couldn't start the demo. Please try again.");
-      setLoading(false);
-    }
+    router.push("/gate/instructions?mode=DEMO");
   }
 
   return (

@@ -1,13 +1,12 @@
-// src/app/gate/practice/page.tsx — catalog of full past papers (practice tests), grouped by subject.
+// src/app/gate/practice/page.tsx — PYQ: full official GATE papers as practice tests, in collapsible subject groups.
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Clock3, Search } from "lucide-react";
+import { ChevronDown, Clock3, Search } from "lucide-react";
 
 import { buttonClass, Container, Eyebrow, type } from "@/components/site/ui";
-import { safeJson } from "@/lib/fetch-helpers";
 
 interface CatalogTest {
   id: string;
@@ -34,6 +33,7 @@ export default function GatePracticePage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState("ALL");
+  const [open, setOpen] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -70,32 +70,25 @@ export default function GatePracticePage() {
   }, [query, subject, tests]);
 
   async function startPractice(testId: string) {
-    setError(null);
     setBusyId(testId);
-    try {
-      const res = await fetch("/api/gate/attempts/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "PRACTICE", testVersionId: testId }),
-      });
-      const data = await safeJson(res);
-      if (res.status === 401) return router.push("/gate/auth/sign-in?next=/gate/practice");
-      if (res.status === 403) return router.push("/gate/pricing");
-      if (res.status === 409 && data.attemptId) return router.push(`/gate/attempt/${data.attemptId}`);
-      if (!res.ok) throw new Error(data.error ?? `Couldn't start the test (${res.status}).`);
-      router.push(`/gate/attempt/${data.attemptId}`);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Couldn't start the test. Please try again.");
-      setBusyId(null);
-    }
+    router.push(`/gate/instructions?test=${testId}&mode=PRACTICE`);
   }
+
+  const searching = query.trim().length > 0;
+  const toggle = (name: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
 
   return (
     <div className="bg-white">
       <section className="border-b border-zinc-100">
         <Container className="py-12 sm:py-16">
-          <Eyebrow>Past papers</Eyebrow>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Take a full GATE paper</h1>
+          <Eyebrow>PYQ</Eyebrow>
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Full GATE PYQ papers</h1>
           <p className={`${type.lead} mt-4 max-w-2xl`}>
             Each test is the complete official paper: 65 questions, 100 marks and 3 hours, marked with the official answer
             key. You can retake any paper as often as you like.
@@ -110,19 +103,22 @@ export default function GatePracticePage() {
       </section>
 
       <Container className="py-10">
-        <div className="mb-8 grid gap-3 md:grid-cols-[1fr_280px]">
+        <div className="mb-6 grid gap-3 md:grid-cols-[1fr_280px]">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by year or subject, e.g. 2024"
+              placeholder="Search by year, e.g. 2024"
               className="h-11 w-full rounded-[10px] border border-zinc-300 bg-white pl-10 pr-3 text-sm outline-none focus:border-brand focus:ring-4 focus:ring-brand/10"
             />
           </label>
           <select
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={(e) => {
+              setSubject(e.target.value);
+              if (e.target.value !== "ALL") setOpen(new Set([e.target.value]));
+            }}
             className="h-11 rounded-[10px] border border-zinc-300 bg-white px-3 text-sm font-medium outline-none focus:border-brand focus:ring-4 focus:ring-brand/10"
             aria-label="Subject"
           >
@@ -144,35 +140,50 @@ export default function GatePracticePage() {
         ) : groups.length === 0 ? (
           <p className="py-16 text-center text-sm text-zinc-500">No papers match your search.</p>
         ) : (
-          <div className="space-y-10">
-            {groups.map(([name, list]) => (
-              <section key={name}>
-                <div className="flex items-baseline justify-between border-b border-zinc-200 pb-3">
-                  <h2 className="text-lg font-semibold text-ink">{name}</h2>
-                  <span className="text-sm text-zinc-500">{list.length} papers</span>
-                </div>
-                <ul className="divide-y divide-zinc-100">
-                  {list.map((t) => (
-                    <li key={t.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="font-medium text-ink">{t.title.replace(` · ${name}`, "")}</p>
-                        <p className="mt-0.5 flex items-center gap-1.5 text-sm text-zinc-500">
-                          <Clock3 className="h-3.5 w-3.5" /> {fmtDuration(t.durationSeconds)} · 65 questions · 100 marks
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => startPractice(t.id)}
-                        disabled={busyId !== null}
-                        className={buttonClass({ variant: "secondary", size: "sm" }, "shrink-0")}
-                      >
-                        {busyId === t.id ? "Starting…" : "Start paper"}
-                        {busyId !== t.id && <ArrowRight className="h-4 w-4" />}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
+          <div className="divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200">
+            {groups.map(([name, list]) => {
+              const isOpen = searching || open.has(name);
+              const years = list.map((t) => Number(t.title.match(/GATE (\d{4})/)?.[1])).filter(Boolean);
+              return (
+                <section key={name}>
+                  <button
+                    onClick={() => toggle(name)}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-zinc-50"
+                  >
+                    <span>
+                      <span className="block font-semibold text-ink">{name}</span>
+                      <span className="mt-0.5 block text-sm text-zinc-500">
+                        {list.length} {list.length === 1 ? "paper" : "papers"}
+                        {years.length > 0 && ` · ${Math.min(...years)}–${Math.max(...years)}`}
+                      </span>
+                    </span>
+                    <ChevronDown className={`h-5 w-5 shrink-0 text-zinc-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="grid gap-3 border-t border-zinc-100 bg-zinc-50/60 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                      {list.map((t) => (
+                        <div key={t.id} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3">
+                          <div className="min-w-0">
+                            <p className="truncate font-medium text-ink">{t.title.replace(` · ${name}`, "")}</p>
+                            <p className="mt-0.5 flex items-center gap-1 text-xs text-zinc-500">
+                              <Clock3 className="h-3 w-3" /> {fmtDuration(t.durationSeconds)} · 65 Q
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => startPractice(t.id)}
+                            disabled={busyId !== null}
+                            className={buttonClass({ variant: "secondary", size: "sm" }, "shrink-0")}
+                          >
+                            {busyId === t.id ? "…" : "Start"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
         )}
       </Container>
