@@ -5,9 +5,9 @@
 
 Free-tier notes (check the sites; limits change):
   github     GitHub Models, GPT-4.1 — ~50 req/day, ~8k input / 4k output tokens per request -> small chunks (2-4 questions)
-  mistral    Pixtral Large — ~1 req/s, generous monthly cap
+  mistral    Mistral Medium (vision) — ~1 req/s, generous monthly cap
   openrouter ':free' models — ~50 req/day (1000 with $10 credit); model availability varies
-  groq       Llama 4 Scout — fast, max 5 images per request
+  groq       Qwen3.8-27B — fast, max 5 images per request
   zhipu      glm-4.1v-thinking-flash — free, weaker
 """
 import base64
@@ -21,11 +21,11 @@ from common import ENV
 
 PROVIDERS = {  # name: (url, key var, default model, max images, image style)
     "github": ("https://models.github.ai/inference/chat/completions", "GITHUB_MODELS_TOKEN", "openai/gpt-4.1", 10, "openai"),
-    "mistral": ("https://api.mistral.ai/v1/chat/completions", "MISTRAL_API_KEY", "pixtral-large-latest", 8, "string"),
+    "mistral": ("https://api.mistral.ai/v1/chat/completions", "MISTRAL_API_KEY", "mistral-medium-latest", 8, "string"),
     "openrouter": ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY",
-                   "qwen/qwen2.5-vl-72b-instruct:free", 8, "openai"),
+                   "qwen/qwen3.8-27b:free", 8, "openai"),
     "groq": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY",
-             "meta-llama/llama-4-scout-17b-16e-instruct", 5, "openai"),
+             "qwen/qwen3.8-27b", 3, "openai"),
     "zhipu": ("https://open.bigmodel.cn/api/paas/v4/chat/completions", "ZHIPUAI_API_KEY",
               "glm-4.1v-thinking-flash", 5, "raw"),
 }
@@ -53,7 +53,9 @@ def chat(provider, prompt, images=(), model=None, max_tokens=8000, tries=4):
     body = {"model": model or dmodel, "messages": [{"role": "user", "content": content}],
             "max_tokens": max_tokens, "temperature": 0.2}
     req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST",
-                                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+                                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+                                          "Accept": "application/json",
+                                          "User-Agent": "lemyte-gate-content/1.0"})  # Groq/Cloudflare blocks Python-urllib
     for i in range(tries):
         try:
             r = json.load(urllib.request.urlopen(req, timeout=900))

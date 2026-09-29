@@ -86,7 +86,7 @@ def page_span(w, lo, hi):
 
 
 def parse_json(s):
-    s = s.strip()
+    s = re.sub(r"(?s)<think>.*?</think>", "", s).strip()  # thinking models (Qwen etc.)
     s = re.sub(r"^```(?:json)?\s*|\s*```$", "", s)
     i, j = s.find("["), s.rfind("]")
     return json.loads(s[i:j + 1])
@@ -133,6 +133,19 @@ def codex(code, lo, hi):
     return parse_json(open(outp).read())
 
 
+def ai_draft(code, backend, lo, hi):
+    """Free-tier backends: split the range until its pages fit the provider's image limit."""
+    from ai import PROVIDERS, chat
+    w, text, pages = inputs(code, lo, hi)
+    if len(pages) > PROVIDERS[backend][3] and hi > lo:
+        mid = (lo + hi) // 2
+        return ai_draft(code, backend, lo, mid) + ai_draft(code, backend, mid + 1, hi)
+    pages = pages[:PROVIDERS[backend][3]]
+    out = parse_json(chat(backend, SPEC + "\n\n" + text, pages, model=os.environ.get("AI_MODEL"), max_tokens=16000))
+    print(f"  {backend} q{lo}-{hi}: {len(out)} items ({len(pages)} pages)", file=sys.stderr, flush=True)
+    return out
+
+
 if __name__ == "__main__":
     code, backend = sys.argv[1:3]
     lo, hi = (int(sys.argv[3]), int(sys.argv[4])) if len(sys.argv) > 4 else (1, 65)
@@ -142,9 +155,7 @@ if __name__ == "__main__":
     elif backend == "codex":
         data = codex(code, lo, hi)
     else:  # github | mistral | openrouter | groq | zhipu (ai.py); keep ranges small on free tiers
-        from ai import chat
-        w, text, pages = inputs(code, lo, hi)
-        data = parse_json(chat(backend, SPEC + "\n\n" + text, pages, model=os.environ.get("AI_MODEL"), max_tokens=16000))
+        data = ai_draft(code, backend, lo, hi)
     got = sorted(x["q"] for x in data)
     json.dump(data, open(os.path.join(workdir(code), f"draft_{lo}_{hi}.json"), "w"), ensure_ascii=False, indent=1)
     print(f"{code} {backend} q{lo}-{hi}: {len(data)} items, missing {sorted(set(range(lo, hi + 1)) - set(got))}, {time.time() - t0:.0f}s")

@@ -13,7 +13,7 @@ Working reference for correcting GATE PYQ papers in Supabase and publishing them
 | **EE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-28** (455 rows) | ChatGPT cross-check pending: EE 2020 Q52–65, EE 2022–2026 (fix via targeted PATCH — apply.py only touches DRAFT rows). |
 | **CE** | 2020–2026, sets 1–2 (14) | **DONE + PUBLISHED 2026-09-28** (910 rows) | Year arg `2026/set1`; folder `CE/pyq/2026_ce_1`; code `GATE2026_CE1`. ChatGPT cross-check not yet run. |
 | **AE** | 2020–2026 (7) | **DONE + PUBLISHED 2026-09-29** (455 rows) | Full rewrite of every paper (rows were skeletons); 185 figures cropped (none existed). Watermarks baked into images → whiten min-channel ≥ 170–200. 2020 had two rows both tagged Q17 (one was Q27 → re-tagged; refresh rows_before.json before build). 2021 key PDF text is scrambled → read visually. |
-| **ME** | 2020–2026 (10: 2020–22 sets 1–2) | IN PROGRESS (DRAFT) | New paper pipeline (no rows existed) — see *New paper (AI-drafted)*. Codes `GATE2021_ME1`, `GATE2023_ME`; folders `ME/pyq/2021_me_1`, `ME/pyq/2023_me`; prefix `gate_pyq_2021_set-1_ME_`. |
+| **ME** | 2020–2026 (10: 2020–22 sets 1–2) | **DONE + PUBLISHED 2026-09-29** (650 rows) | New rows (none existed), AI-drafted (Codex; see *New paper*), 211 figures cropped. Codes `GATE2021_ME1`, `GATE2023_ME`; folders `ME/pyq/2021_me_1`, `ME/pyq/2023_me`; prefix `gate_pyq_2021_set-1_ME_`. Cross-check pending. |
 
 Expect every draft paper to be wrong: EC had paraphrased stems, "STEM PENDING" rows, 6–9 wrong
 answers per paper, and one paper (2020) had content shifted by one question.
@@ -93,6 +93,12 @@ python3 build.py <CODE> <prefix>; node check_render.mjs <CODE>; python3 apply.py
   slow/overloaded (503 retries) — use it only as a fallback. Answers are never taken from the AI (build.py uses key.json).
 - autofig lessons: table rules/watermarks excluded; clusters must contain a curve/diagonal/colour/image ("rich"), else it is a table
   (drafts carry tables as markdown). Out-of-order text blocks faked a numbering restart once → restart only when n ≤ 2.
+- AI backends (`ai.py`, keys in `.env.local`): **Groq** works (Qwen3.8-27B vision; free = 7k input tok/min, 1k output tok/min,
+  200k tok/day, 3 images/request) but is slow and **mis-numbered questions on image-only papers** (2020) — discard such drafts.
+  Codex (ChatGPT plan) hits a usage cap after ~15 half-papers, resets ~5 h later. Gemini free tier failed (429/503) all night.
+  GitHub Models needs a fine-grained token (classic `ghp_` gets a stub "OK"). Mistral/OpenRouter free models were rate-limited.
+- Image-only papers (2020): `autofig_raster.py` candidates → `finalize.py --prune`; then fix mislabelled ones by hand
+  (an option image often lands as `stem`/`qNNb`, text bands above figures come as `qNN` + figure as `qNNb`).
 - Stems with text between two figures: `{FIG:a}` … `{FIG:b}` place `qNN` and `qNNb` individually.
 
 ## Token-saving rules
