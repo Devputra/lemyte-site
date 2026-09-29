@@ -29,6 +29,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}
       >
+        {/* Without JavaScript, show everything framer-motion would have faded in. */}
+        <noscript>
+          <style>{`[data-motion]{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
         {children}
       </body>
     </html>

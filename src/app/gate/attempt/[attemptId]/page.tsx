@@ -14,6 +14,7 @@ import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
 import { PaletteState } from "@/lib/gate/contracts";
 import type { DraftAnswer } from "@/lib/gate/contracts";
 import { safeJson } from "@/lib/fetch-helpers";
+import { LoadingScene } from "@/components/motion";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -942,8 +943,8 @@ export default function GateAttemptPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center text-gray-500">
-        Loading exam…
+      <div className="flex h-screen items-center justify-center">
+        <LoadingScene label="Setting up your exam…" />
       </div>
     );
   }

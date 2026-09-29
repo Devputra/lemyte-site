@@ -23,6 +23,7 @@ import {
 } from "@/components/gate/Tracker";
 import { safeJson } from "@/lib/fetch-helpers";
 import { LEVELS } from "@/lib/gate/tracker";
+import { LoadingScene } from "@/components/motion";
 
 type PeerStat = { coverage: number; accuracy: number; solved: number; tests: number; timeSec: number; points: number };
 
@@ -146,7 +147,7 @@ export default function GateDashboardPage() {
   if (loading && !data) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-10 text-center text-sm font-semibold text-zinc-500">Loading your tracker…</div>
+        <LoadingScene label="Loading your tracker…" className="rounded-2xl border border-zinc-200 bg-white" />
       </div>
     );
   }

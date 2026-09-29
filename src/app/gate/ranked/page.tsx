@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowRight, Clock3, ShieldAlert, Trophy } from "lucide-react";
+import { LoadingScene } from "@/components/motion";
 
 interface CatalogTest {
   id: string;
@@ -96,7 +97,7 @@ export default function GateRankedPage() {
         ) : null}
 
         {loading ? (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-10 text-center text-sm font-semibold text-zinc-500">Loading ranked tests…</div>
+          <LoadingScene label="Loading ranked tests…" className="rounded-2xl border border-zinc-200 bg-white" />
         ) : tests.length === 0 ? (
           <div className="rounded-2xl border border-zinc-200 p-10 text-center text-sm text-zinc-500">
             There are no ranked tests open right now. New ones are announced on this page.

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Layers3, Search } from "lucide-react";
 import { safeJson } from "@/lib/fetch-helpers";
+import { LoadingScene } from "@/components/motion";
 
 interface Subject {
   id: string;
@@ -145,7 +146,7 @@ export default function TopicPracticePage() {
         ) : null}
 
         {loading ? (
-          <div className="rounded-2xl border border-zinc-200 bg-white p-10 text-center text-sm font-semibold text-zinc-500">Loading topics…</div>
+          <LoadingScene label="Loading topics…" className="rounded-2xl border border-zinc-200 bg-white" />
         ) : subjects.length === 0 ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-10 text-sm font-semibold text-amber-800">
             Topics aren&apos;t available right now. Please check back soon.

@@ -15,6 +15,7 @@ import { ChevronLeft, ChevronRight, UserRound } from "lucide-react";
 import { useAccess } from "@/components/site/AccessCta";
 import { buttonClass } from "@/components/site/ui";
 import { safeJson } from "@/lib/fetch-helpers";
+import { LoadingScene } from "@/components/motion";
 
 type Mode = "PRACTICE" | "RANKED" | "DEMO";
 type TestInfo = {
@@ -262,7 +263,7 @@ function General({ minutes }: { minutes: number | null }) {
 }
 
 function PaperSpecific({ info, mode }: { info: TestInfo | null; mode: Mode }) {
-  if (!info) return <p className="text-center text-zinc-500">Loading test details…</p>;
+  if (!info) return <LoadingScene label="Loading test details…" />;
   const sections = [...info.sections].sort((a, b) => (a.name === "GA" ? -1 : b.name === "GA" ? 1 : 0));
   const marks = (s: { one: number; two: number }) => s.one + 2 * s.two;
   return (

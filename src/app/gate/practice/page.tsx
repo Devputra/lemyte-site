@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, Clock3, Search } from "lucide-react";
 
 import { buttonClass, Container, Eyebrow, type } from "@/components/site/ui";
+import { LoadingScene } from "@/components/motion";
 
 interface CatalogTest {
   id: string;
@@ -134,7 +135,7 @@ export default function GatePracticePage() {
         {error && <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
         {loading ? (
-          <p className="py-16 text-center text-sm text-zinc-500">Loading papers…</p>
+          <LoadingScene label="Loading papers…" />
         ) : tests.length === 0 ? (
           <p className="py-16 text-center text-sm text-zinc-500">No papers are available yet. Please check back soon.</p>
         ) : groups.length === 0 ? (

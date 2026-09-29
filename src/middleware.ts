@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 const WIP = [
   "/workshops", "/paths", "/pricing", "/for-teams",
-  "/about", "/instructors", "/careers",
+  "/instructors", "/careers",
 ];
 
 export function middleware(req: NextRequest) {

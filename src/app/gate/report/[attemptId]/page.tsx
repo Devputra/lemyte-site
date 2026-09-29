@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 
 import { safeJson } from "@/lib/fetch-helpers";
+import { LoadingScene } from "@/components/motion";
 
 type FilterKey = "ALL" | "CORRECT" | "WRONG" | "UNANSWERED";
 type ResultStatus = "CORRECT" | "WRONG" | "UNANSWERED";
@@ -447,8 +448,8 @@ export default function GateReportPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-12 md:px-6 lg:px-8">
         <Card>
-          <CardContent className="flex min-h-[240px] items-center justify-center text-sm text-gray-500">
-            Preparing your report…
+          <CardContent className="flex min-h-[240px] items-center justify-center">
+            <LoadingScene label="Preparing your report…" />
           </CardContent>
         </Card>
       </div>

@@ -32,6 +32,18 @@ Status colours only where they mean something: emerald (correct / strong), amber
 - **Icons:** lucide, 20px, stroke 1.75, brand colour inside a `brand-50` tile when decorative.
 - **Layout:** `Container` max-width 1152px, 20–24px side padding. Section spacing 80–96px.
 
+## Motion (src/components/motion)
+Motion explains or guides; it never decorates for its own sake. One primitive per job:
+- `Reveal` (fade + 18px rise on scroll-in), `SplitWords` (hero headline only), `CountUp` (stats),
+  `Marquee` (paper list), `Magnetic` (primary hero CTA only), `ScrollProgress`, `DrawPath` (scroll-drawn line),
+  `Constellation` (canvas particles: hero and final CTA only), `LoadingScene` / `Skeleton` (every loading state).
+- **Content must be visible without JavaScript.** Anything that starts hidden carries `data-motion`; a `<noscript>`
+  rule in `app/layout.tsx` forces it visible. Animate `transform`/`opacity` only — never `width` — so that rule works.
+- `CountUp` server-renders the real number; it only resets to 0 when it starts off-screen.
+- In-view margins are vertical only (`"-60px 0px"`); a horizontal inset hides narrow items at the screen edge.
+- Respect `prefers-reduced-motion`, never hijack scrolling, pause canvases off-screen.
+- Illustrations in `public/images/illustrations/` are temporary (see its README); real photos for people.
+
 ## Writing
 - Plain, specific sentences. Say what the thing does, with real numbers.
 - No hype ("unlock", "ruthless", "journey", "seamless", "supercharge", "game-changer").
