@@ -48,3 +48,4 @@ src.zip
 # Third-party artwork kept locally only (licence unverified) — never commit
 public/images/cartoons/
 __pycache__/
+.dns-backups/
