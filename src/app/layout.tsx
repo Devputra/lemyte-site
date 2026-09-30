@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 
 const inter = Inter({
@@ -35,11 +36,11 @@ export default function RootLayout({
           <style>{`[data-motion]{opacity:1!important;transform:none!important;stroke-dasharray:none!important;stroke-dashoffset:0!important}`}</style>
         </noscript>
         {children}
-        {/* Vercel Web Analytics + Speed Insights (script-tag setup; no npm packages needed).
+        {/* Vercel Web Analytics (@vercel/analytics) + Speed Insights (script tag).
             Switch both on in the Vercel dashboard first, then set VERCEL_ANALYTICS=on (else the scripts 404). */}
         {process.env.VERCEL_ANALYTICS === "on" && (
           <>
-            <Script src="/_vercel/insights/script.js" strategy="afterInteractive" />
+            <Analytics />
             <Script src="/_vercel/speed-insights/script.js" strategy="afterInteractive" />
           </>
         )}
