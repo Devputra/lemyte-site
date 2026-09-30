@@ -133,7 +133,7 @@ export default function AboutPage() {
               </div>
               <Reveal delay={0.1}>
                 <blockquote className="mt-10 border-l-2 border-brand pl-6 text-xl font-medium leading-relaxed text-ink sm:text-2xl">
-                  Every student deserves practice
+                  Textbooks tell you what&apos;s right. Feedback shows you where you went wrong. Every student deserves practice
                   that answers back.
                 </blockquote>
               </Reveal>
@@ -202,10 +202,11 @@ export default function AboutPage() {
             <Reveal>
               <p
                 lang="ta"
-                className="text-2xl font-semibold leading-relaxed text-ink sm:text-3xl"
+                className="font-semibold leading-relaxed text-ink"
               >
+                {/* A kural is two lines (4 words + 3 words): never wrap a line; shrink the type instead. */}
                 {KURAL.tamil.map((l) => (
-                  <span key={l} className="block">
+                  <span key={l} className="block whitespace-nowrap text-[clamp(0.95rem,5.2vw,1.875rem)]">
                     {l}
                   </span>
                 ))}

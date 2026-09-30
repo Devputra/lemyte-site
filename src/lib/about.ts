@@ -14,10 +14,10 @@ export const FOUNDER: Founder = {
   role: "Founder & Director",
   photo: "/images/team/devputra.jpg",
   story: [
-  "I grew up in Kuruvikarambai, a small village, and studied Electrical and Electronics Engineering at KCG College of Technology in Chennai. After college, I worked as a plumber and electrician for almost two years while preparing for GATE.",
-  "Before taking the exam, Amazon called me for an interview. The problem-solving and aptitude skills I had built up for GATE helped me get through it, and I became an Application Engineer. I spent four years there. Later, returning to prepare for GATE helped me land a Quantitative Analyst role at Glencore. I never studied at an IIT, but preparing for GATE changed the course of my life.",
-  "Through it all, my companion was a printed book of previous years' questions. Late at night, stuck on a problem, I kept wishing it could answer back: check my attempt, show me why a step works, and tell me what to fix next. Lemyte was born from that wish."
-]
+    "I grew up in Kuruvikarambai and studied Electrical and Electronics Engineering. After college, I worked as a plumber and electrician for almost two years while preparing for competitive exams.",
+    "Before I could sit the exams, Amazon called me for an interview. The problem-solving and aptitude skills I had built up while preparing helped me get through it, and I joined as an Application Engineer. I spent four years there, and later joined Glencore as a Quantitative Analyst. Preparing for competitive exams changed the course of my life.",
+    "Through it all, my only late-night companion was a thick, dog-eared book of previous years' questions. It was exceptional at telling me what was right: clean formulas, final answers and polished derivations. But late at night, stuck on a problem, I kept wishing for something that could evaluate my attempt, show me where I stood and track my progress. Lemyte was born from that wish.",
+  ],
 };
 
 // Thirukkural 400 — the line that sits behind Lemyte.
