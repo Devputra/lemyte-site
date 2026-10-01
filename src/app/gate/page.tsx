@@ -14,7 +14,7 @@ import { TrialButton } from "@/components/site/AccessCta";
 import { CountUp, Reveal } from "@/components/motion";
 import { ExamScreenScene } from "@/components/motion/scenes";
 import { PageHero } from "@/components/site/PageHero";
-import { SubjectBar } from "@/components/site/SubjectBar";
+import { SubjectCoverage } from "@/components/gate/SubjectCoverage";
 import {
   ButtonLink,
   Card,
@@ -22,7 +22,7 @@ import {
   SectionHeader,
   type,
 } from "@/components/site/ui";
-import { fmtInr, fmtInt } from "@/lib/gate/catalog";
+import { fmtInr } from "@/lib/gate/catalog";
 import { getCatalog } from "@/lib/gate/catalog.server";
 import { LEGAL } from "@/lib/legal";
 
@@ -106,7 +106,7 @@ const CHECKS = [
 ];
 
 export default async function GateOverviewPage() {
-  const { subjects, totals, plans } = await getCatalog();
+  const { subjects, papers, totals, plans } = await getCatalog();
   return (
     <div className="bg-white text-ink">
       {/* Hero */}
@@ -154,56 +154,19 @@ export default async function GateOverviewPage() {
       {/* Subjects */}
       <section className="py-20 sm:py-24">
         <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
-          <Reveal>
-            <SectionHeader
-              eyebrow="Subjects"
-              title={`${totals.subjects} GATE subjects, with more on the way`}
-              lead="Each subject includes the General Aptitude section of its papers. The table shows which years are covered for each one."
-            />
-          </Reveal>
-          <Reveal
-            delay={0.1}
-            className="overflow-hidden rounded-2xl border border-zinc-200"
-          >
-            <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-zinc-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Subject</th>
-                  <th className="px-4 py-3 text-right font-medium">Papers</th>
-                  <th className="px-4 py-3 text-right font-medium">
-                    Questions
-                  </th>
-                  <th className="hidden px-4 py-3 text-right font-medium sm:table-cell">
-                    Years
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {subjects.map((s) => (
-                  <tr key={s.code}>
-                    <td className="px-4 py-3">
-                      <span className="font-medium text-ink">{s.name}</span>
-                      <span className="ml-2 text-xs text-zinc-400">
-                        {s.code}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-zinc-600">
-                      {s.papers}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-zinc-600">
-                      {fmtInt(s.questions)}
-                      <SubjectBar
-                        pct={(s.questions / subjects[0].questions) * 100}
-                      />
-                    </td>
-                    <td className="hidden px-4 py-3 text-right tabular-nums text-zinc-500 sm:table-cell">
-                      {s.years}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Reveal>
+          <SubjectCoverage
+            subjects={subjects}
+            papers={papers}
+            intro={
+              <Reveal>
+                <SectionHeader
+                  eyebrow="Subjects"
+                  title={`${totals.subjects} GATE subjects, with more on the way`}
+                  lead="Each subject includes the General Aptitude section of its papers. The map shows every year we cover: hover a subject to see its papers."
+                />
+              </Reveal>
+            }
+          />
         </Container>
       </section>
 
