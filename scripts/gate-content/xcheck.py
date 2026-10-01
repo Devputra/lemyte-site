@@ -1,6 +1,8 @@
 """Batched cross-check: one Codex call checks a block of questions (saves the ChatGPT usage cap).
 
     python3 xcheck.py <CODE> [lo hi]          # default 1-65 in 5 even blocks (<=16 questions)
+    python3 xcheck.py <CODE> --via groq       # text-only questions via Groq gpt-oss (4 per call)
+    python3 xcheck.py <CODE> --figures-only   # Codex only for questions with figures (saves its quota)
     python3 xcheck.py --report <CODE> ...     # print flagged rows from saved results
 
 Live DB rows (any status) -> Codex solves each independently (figures attached), compares with the stored
@@ -44,6 +46,8 @@ def run(code, lo, hi):
     R = rows(code)
     done = {int(x["q"]) for f in glob.glob(f"{w}/xcheck_*.json") for x in json.load(open(f))}
     qs = [q for q in range(lo, hi + 1) if q in R and R[q].get("grading_policy") != "MARKS_TO_ALL" and q not in done]
+    if FIGURES_ONLY:  # keep Codex's limited quota for questions that need vision; Groq takes the text-only ones
+        qs = [q for q in qs if "gate-media://" in R[q]["markdown_content"]]
     imgs, parts = [], []
     for q in qs:
         r = R[q]
@@ -55,18 +59,27 @@ def run(code, lo, hi):
     if not qs:
         return
     if VIA == "groq":  # text-only model: only questions without figures
-        from ai import chat
         keep = [i for i, q in enumerate(qs) if "figures: none" in parts[i].splitlines()[0]]
         qs, parts = [qs[i] for i in keep], [parts[i] for i in keep]
         if not qs:
             json.dump([], open(out, "w"))
             return
-        s = chat("groq", PROMPT + "\n\n" + "\n".join(parts), model="openai/gpt-oss-120b", max_tokens=6000)
-    else:
-        s = codex_run(imgs, parts, code, lo, hi)
-    s = re.sub(r"(?s)<think>.*?</think>", "", s)
-    s = re.sub(r"^```(?:json)?\s*|\s*```$", "", s.strip())
-    data = json.loads(s[s.find("["):s.rfind("]") + 1])
+    data = None
+    for attempt in (1, 2):  # models occasionally return malformed JSON: retry once, then leave the block for a rerun
+        if VIA == "groq":
+            from ai import chat
+            s = chat("groq", PROMPT + "\n\n" + "\n".join(parts), model="openai/gpt-oss-120b", max_tokens=6000)
+        else:
+            s = codex_run(imgs, parts, code, lo, hi)
+        s = re.sub(r"(?s)<think>.*?</think>", "", s)
+        s = re.sub(r"^```(?:json)?\s*|\s*```$", "", s.strip())
+        try:
+            data = json.loads(s[s.find("["):s.rfind("]") + 1])
+            break
+        except json.JSONDecodeError:
+            print(f"{code} q{lo}-{hi} [{VIA}]: bad JSON (attempt {attempt})", flush=True)
+    if data is None:
+        return
     for x in data:
         x["via"] = VIA
         if int(x["q"]) in R:
@@ -127,6 +140,7 @@ def report(code):
 
 
 VIA = "codex"
+FIGURES_ONLY = False
 
 if __name__ == "__main__":
     if sys.argv[1] == "--report":
@@ -137,6 +151,9 @@ if __name__ == "__main__":
             i = sys.argv.index("--via")
             VIA = sys.argv[i + 1]
             del sys.argv[i:i + 2]
+        if "--figures-only" in sys.argv:
+            FIGURES_ONLY = True
+            sys.argv.remove("--figures-only")
         code = sys.argv[1]
         lo, hi = (int(sys.argv[2]), int(sys.argv[3])) if len(sys.argv) > 3 else (1, 65)
         per = 4 if VIA == "groq" else 16  # groq free tier: 8k tokens/min
