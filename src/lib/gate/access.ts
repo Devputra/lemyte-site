@@ -48,6 +48,27 @@ function toAccessPass(row: AccessPassRow): AccessPassRecord {
  * - if the user already has active access, extend from the later ends_at
  * - duplicate verify/webhook calls return the existing pass
  */
+/** End of access for a plan bought now: a fixed date (e.g. "Until GATE 2027") or N months after `startsAt`. */
+export function planEnd(plan: { duration_months: number; ends_at?: string | null }, startsAt: Date): Date {
+  return plan.ends_at ? new Date(plan.ends_at) : addMonths(startsAt, Number(plan.duration_months));
+}
+
+/** When the user's latest active access pass ends (null if none). */
+export async function latestActiveEnd(userId: string, now = new Date()): Promise<Date | null> {
+  const { data, error } = await supabaseAdmin
+    .schema("gate")
+    .from("access_passes")
+    .select("ends_at")
+    .eq("user_id", userId)
+    .eq("status", "ACTIVE")
+    .gt("ends_at", now.toISOString())
+    .order("ends_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`[gate/access] active access lookup failed: ${error.message}`);
+  return data?.ends_at ? new Date(data.ends_at) : null;
+}
+
 export async function grantAccessForPaidOrder(args: {
   paymentOrderId: string;
   paymentId?: string | null;
@@ -101,7 +122,7 @@ export async function grantAccessForPaidOrder(args: {
   const planRes = await supabaseAdmin
     .schema("gate")
     .from("plans")
-    .select("id, duration_months")
+    .select("id, duration_months, ends_at")
     .eq("id", order.plan_id)
     .single();
 
@@ -114,29 +135,9 @@ export async function grantAccessForPaidOrder(args: {
   const now = new Date();
 
   // Extend from existing active pass if present.
-  const activeRes = await supabaseAdmin
-    .schema("gate")
-    .from("access_passes")
-    .select("id, ends_at")
-    .eq("user_id", order.user_id)
-    .eq("status", "ACTIVE")
-    .gt("ends_at", now.toISOString())
-    .order("ends_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (activeRes.error) {
-    throw new Error(
-      `[gate/access] active access lookup failed: ${activeRes.error.message}`
-    );
-  }
-
-  const startsAt =
-    activeRes.data?.ends_at && new Date(activeRes.data.ends_at) > now
-      ? new Date(activeRes.data.ends_at)
-      : now;
-
-  const endsAt = addMonths(startsAt, Number(planRes.data.duration_months));
+  const currentEnd = await latestActiveEnd(order.user_id, now);
+  const startsAt = currentEnd && currentEnd > now ? currentEnd : now;
+  const endsAt = planEnd(planRes.data, startsAt);
 
   const markOrder = await supabaseAdmin
     .schema("gate")

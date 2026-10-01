@@ -2,7 +2,7 @@
 // The data itself comes from the database via getCatalog() in catalog.server.ts.
 
 export type CatalogSubject = { code: string; name: string; questions: number; papers: number; years: string };
-export type CatalogPlan = { name: string; months: number; priceInr: number };
+export type CatalogPlan = { name: string; months: number; priceInr: number; endsAt: string | null }; // endsAt: fixed-date plan
 
 export type Catalog = {
   subjects: CatalogSubject[]; // biggest question bank first

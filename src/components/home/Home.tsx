@@ -81,7 +81,7 @@ const PLAN = [
 const faqFor = (c: Catalog) => [
   { q: "Where do the questions come from?", a: "From official GATE question papers. Each one is checked against the published answer key, figures are taken from the original paper, and every question has a worked solution." },
   { q: "Can I try it before paying?", a: "Yes. The demo test is free and you don't need a card. You can also create an account and look around before choosing a plan." },
-  { q: "Does my plan renew automatically?", a: `No. Plans are one-time payments for ${c.plans.map((p) => p.months).join(", ").replace(/, (\d+)$/, " or $1")} months. If a plan isn't right for you, you can get a full refund within ${LEGAL.refundWindowDays} days as long as you have started no more than ${LEGAL.refundMaxAttempts} tests.` },
+  { q: "Does my plan renew automatically?", a: `No. Plans are one-time payments: ${c.plans.map((p) => (p.endsAt ? p.name[0].toLowerCase() + p.name.slice(1) : p.name.toLowerCase())).join(", ").replace(/, ([^,]+)$/, " or $1")}. If a plan isn't right for you, you can get a full refund within ${LEGAL.refundWindowDays} days as long as you have started no more than ${LEGAL.refundMaxAttempts} tests.` },
   { q: "Which GATE papers are covered?", a: `${c.subjects.map((s) => s.name).join(", ")}. More papers are being added.` },
 ];
 

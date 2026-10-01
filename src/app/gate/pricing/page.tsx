@@ -18,11 +18,13 @@ interface Plan {
   name: string;
   durationMonths: number;
   priceInr: number;
+  endsAt: string | null; // fixed-date plan, e.g. "Until GATE 2027"
 }
+
+const DAY = 86_400_000;
 
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Razorpay?: new (opts: Record<string, unknown>) => {
       open: () => void;
       on: (event: string, cb: (resp: Record<string, unknown>) => void) => void;
@@ -91,9 +93,10 @@ export default function GatePricingPage() {
   }, []);
 
   const sortedPlans = useMemo(
-    () => [...plans].sort((a, b) => a.durationMonths - b.durationMonths),
+    () => plans.filter((p) => !p.endsAt).sort((a, b) => a.durationMonths - b.durationMonths),
     [plans],
   );
+  const examPlans = useMemo(() => plans.filter((p) => p.endsAt), [plans]);
 
   async function startCheckout(plan: Plan) {
     setError(null);
@@ -242,6 +245,43 @@ export default function GatePricingPage() {
               {error}
             </div>
           ) : null}
+
+          {examPlans.map((plan) => {
+            const end = new Date(plan.endsAt!);
+            const from = current?.endsAt && new Date(current.endsAt) > new Date() ? new Date(current.endsAt) : new Date();
+            const days = Math.max(0, Math.ceil((end.getTime() - from.getTime()) / DAY));
+            const covered = days === 0;
+            const perMonth = days ? Math.round(plan.priceInr / (days / 30.44)) : 0;
+            return (
+              <Reveal
+                key={plan.id}
+                className="relative mb-8 grid gap-6 overflow-hidden rounded-2xl border border-brand bg-gradient-to-br from-brand-50 via-white to-white p-6 ring-1 ring-brand sm:p-8 md:grid-cols-[1fr_auto] md:items-center"
+              >
+                <div>
+                  <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-medium text-white">For GATE 2027</span>
+                  <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ink">{plan.name}</h2>
+                  <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-zinc-600">
+                    {covered
+                      ? `Your current plan already runs past ${fmtDate(plan.endsAt)}, so you're covered for GATE 2027.`
+                      : current
+                        ? `Extends your plan to ${fmtDate(plan.endsAt)}: ${days} more days, through the exam and a week after the last paper.`
+                        : `Full access until ${fmtDate(plan.endsAt)}: ${days} days from today, through the exam and a week after the last paper. One payment, no renewal.`}
+                  </p>
+                </div>
+                <div className="md:text-right">
+                  <p className="text-4xl font-semibold tracking-tight tabular-nums">₹{plan.priceInr.toLocaleString("en-IN")}</p>
+                  {!covered && <p className="mt-1 text-sm text-zinc-500">about ₹{perMonth.toLocaleString("en-IN")} a month, paid once</p>}
+                  <button
+                    onClick={() => startCheckout(plan)}
+                    disabled={busyPlanId !== null || covered}
+                    className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-brand px-6 text-[15px] font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50 md:w-auto"
+                  >
+                    {busyPlanId === plan.id ? "Opening checkout…" : covered ? "Already covered" : current ? `Extend to ${fmtDate(plan.endsAt)}` : "Buy until GATE 2027"}
+                  </button>
+                </div>
+              </Reveal>
+            );
+          })}
 
           <div
             className={`grid grid-cols-1 gap-5 md:grid-cols-2 ${access?.hasPlan ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createRazorpayOrder, isRazorpayConfigured } from "@/lib/gate/razorpay";
+import { latestActiveEnd } from "@/lib/gate/access";
 import { LEGAL } from "@/lib/legal";
 import { handleRouteError, getErrorMessage } from "@/lib/gate/errors";
 
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     const { data: plan, error: planErr } = await supabaseAdmin
       .schema("gate")
       .from("plans")
-      .select("id, code, name, duration_months, price_inr, is_active")
+      .select("id, code, name, duration_months, price_inr, is_active, ends_at")
       .eq("id", input.planId)
       .maybeSingle();
 
@@ -48,8 +49,19 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Failed to load plan" }, { status: 500 });
     }
 
-    if (!plan || !plan.is_active) {
+    if (!plan || !plan.is_active || (plan.ends_at && new Date(plan.ends_at) <= new Date())) {
       return Response.json({ error: "Plan not available" }, { status: 404 });
+    }
+
+    // A fixed-date plan ("Until GATE 2027") adds nothing if the current plan already runs past that date.
+    if (plan.ends_at) {
+      const currentEnd = await latestActiveEnd(userId);
+      if (currentEnd && currentEnd >= new Date(plan.ends_at)) {
+        return Response.json(
+          { error: `Your current plan already runs past ${new Date(plan.ends_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.` },
+          { status: 409 },
+        );
+      }
     }
 
     const { data: ord, error: ordErr } = await supabaseAdmin

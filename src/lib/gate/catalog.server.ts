@@ -25,7 +25,12 @@ async function loadCatalog(): Promise<Catalog> {
       .like("title", "GATE %")
       .not("description", "ilike", "[adhoc-topic-practice]%")
       .returns<PaperRow[]>(),
-    db.from("plans").select("name, duration_months, price_inr").eq("is_active", true).order("duration_months"),
+    db
+      .from("plans")
+      .select("name, duration_months, price_inr, ends_at")
+      .eq("is_active", true)
+      .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`)
+      .order("price_inr"),
   ]);
   if (papersRes.error) throw papersRes.error;
   if (plansRes.error) throw plansRes.error;
@@ -47,7 +52,12 @@ async function loadCatalog(): Promise<Catalog> {
   const subjects = [...bySubject.values()]
     .map(({ yearList, ...s }) => ({ ...s, years: `${Math.min(...yearList)}–${Math.max(...yearList)}` }))
     .sort((a, b) => b.questions - a.questions);
-  const plans = (plansRes.data ?? []).map((p) => ({ name: p.name, months: p.duration_months, priceInr: p.price_inr }));
+  const plans = (plansRes.data ?? []).map((p) => ({
+    name: p.name,
+    months: p.duration_months,
+    priceInr: p.price_inr,
+    endsAt: p.ends_at ?? null,
+  }));
 
   return {
     subjects,
