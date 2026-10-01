@@ -30,6 +30,18 @@ Do not run commands or read files. Your FINAL message must be only a JSON array,
 """
 
 
+def options_text(r):
+    """Options as students see them (from options_array; correctness flags never included)."""
+    opts = [o for o in (r.get("options_array") or []) if str(o.get("markdown", "")).strip()]
+    return "\n".join(f"({str(o['id']).upper()}) {str(o['markdown']).strip()}" for o in opts)
+
+
+def full_text(r):
+    """Stem plus options: some papers (e.g. CE) keep options only in options_array, not in the stem."""
+    opts = options_text(r)
+    return r["markdown_content"].strip() + (f"\nOptions:\n{opts}" if opts and r["type"] in ("MCQ", "MSQ") else "")
+
+
 def rows(code):
     out = {}
     for r in get(f"question_versions?pyq_paper_code=eq.{code}&select=markdown_content,type,options_array,"
@@ -47,14 +59,14 @@ def run(code, lo, hi):
     done = {int(x["q"]) for f in glob.glob(f"{w}/xcheck_*.json") for x in json.load(open(f))}
     qs = [q for q in range(lo, hi + 1) if q in R and R[q].get("grading_policy") != "MARKS_TO_ALL" and q not in done]
     if FIGURES_ONLY:  # keep Codex's limited quota for questions that need vision; Groq takes the text-only ones
-        qs = [q for q in qs if "gate-media://" in R[q]["markdown_content"]]
+        qs = [q for q in qs if "gate-media://" in full_text(R[q])]
     imgs, parts = [], []
     for q in qs:
         r = R[q]
-        mine = local_images(r["markdown_content"], meta["subj"], meta["year"])
+        text = full_text(r)
+        mine = local_images(text, meta["subj"], meta["year"])
         imgs += mine
-        parts.append(f"=== Q{q} ({r['type']}) figures: {[os.path.basename(p) for p in mine] or 'none'}\n"
-                     f"{r['markdown_content'].strip()}\n")
+        parts.append(f"=== Q{q} ({r['type']}) figures: {[os.path.basename(p) for p in mine] or 'none'}\n{text}\n")
     out = os.path.join(w, f"xcheck_{lo}_{hi}.json")
     if not qs:
         return
@@ -62,7 +74,8 @@ def run(code, lo, hi):
         keep = [i for i, q in enumerate(qs) if "figures: none" in parts[i].splitlines()[0]]
         qs, parts = [qs[i] for i in keep], [parts[i] for i in keep]
         if not qs:
-            json.dump([], open(out, "w"))
+            if not os.path.exists(out):
+                json.dump([], open(out, "w"))
             return
     data = None
     for attempt in (1, 2):  # models occasionally return malformed JSON: retry once, then leave the block for a rerun
@@ -84,7 +97,9 @@ def run(code, lo, hi):
         x["via"] = VIA
         if int(x["q"]) in R:
             x["agrees_with_key"] = agrees(R[int(x["q"])], x.get("my_answer"))
-    json.dump(data, open(out, "w"), indent=1, ensure_ascii=False)
+    old = json.load(open(out)) if os.path.exists(out) else []  # merge with results already in this block
+    json.dump([x for x in old if int(x["q"]) not in {int(y["q"]) for y in data}] + data, open(out, "w"),
+              indent=1, ensure_ascii=False)
     bad = [x for x in data if flagged(x)]
     print(f"{code} q{lo}-{hi} [{VIA}]: checked {len(data)}/{len(qs)}, flagged {len(bad)}", flush=True)
 
@@ -161,5 +176,4 @@ if __name__ == "__main__":
         size = -(-(hi - lo + 1) // n)
         for a in range(lo, hi + 1, size):
             b = min(a + size - 1, hi)
-            if not os.path.exists(os.path.join(workdir(code), f"xcheck_{a}_{b}.json")):
-                run(code, a, b)
+            run(code, a, b)  # run() skips questions that already have a result
