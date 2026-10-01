@@ -11,7 +11,8 @@ TARGET="${1:?usage: vercel-env-sync.sh production|preview [--check]}"
 [[ "$TARGET" == production || "$TARGET" == preview ]] || { echo "target must be production or preview"; exit 1; }
 
 NAMES=(RAZORPAY_KEY_ID RAZORPAY_KEY_SECRET RAZORPAY_WEBHOOK_SECRET NEXT_PUBLIC_RAZORPAY_KEY_ID
-       SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM NEXT_PUBLIC_BASE_URL)
+       SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM)
+# Not synced on purpose: NEXT_PUBLIC_BASE_URL differs per environment (localhost locally, https://lemyte.com in production).
 
 raw() {  # value of $1 from .env.local (last occurrence)
   grep -E "^$1=" .env.local | tail -1 | cut -d= -f2- || true
@@ -45,6 +46,8 @@ for n in "${NAMES[@]}"; do
   v=$(val "$n")
   if [ -z "$v" ]; then
     echo "  skip $n (empty in .env.local)"
+  elif [ "$TARGET" = production ] && [[ "$v" == *localhost* || "$v" == *127.0.0.1* ]]; then
+    echo "  skip $n (points at localhost — never pushed to production)"
   elif [ "$TARGET" = production ] && [ $test_keys = 1 ] && [[ "$n" == *RAZORPAY_KEY* ]]; then
     echo "  skip $n (test key — put rzp_live_ keys in .env.local for production)"
   elif [ "${2:-}" = "--check" ]; then
