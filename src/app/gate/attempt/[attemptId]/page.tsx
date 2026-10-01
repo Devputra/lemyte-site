@@ -2,19 +2,15 @@
 
 "use client";
 
-import {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
 import { PaletteState } from "@/lib/gate/contracts";
 import type { DraftAnswer } from "@/lib/gate/contracts";
 import { safeJson } from "@/lib/fetch-helpers";
+import { Calculator } from "@/components/gate/Calculator";
 import { LoadingScene } from "@/components/motion";
+import { useExamIntegrity } from "@/lib/gate/exam-integrity";
 import { usePreloadImages } from "@/lib/gate/preload-images";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -33,6 +29,7 @@ interface QuestionData {
 interface SessionState {
   attemptId: string;
   testTitle?: string | null;
+  mode?: "PRACTICE" | "RANKED" | "DEMO";
   status: "IN_PROGRESS" | "SUBMITTED" | "EXPIRED" | "ABANDONED";
   endsAt: string;
   startedAt?: string;
@@ -88,181 +85,6 @@ function PaletteDot({ state }: { state: PaletteState }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Calculator
-// ─────────────────────────────────────────────────────────────────────────────
-
-function CalculatorModal({
-  open,
-  onClose,
-  memory,
-  onMemoryChange,
-}: {
-  open: boolean;
-  onClose: () => void;
-  memory: number;
-  onMemoryChange: (m: number) => void;
-}) {
-  const [display, setDisplay] = useState("0");
-  const [prevVal, setPrevVal] = useState<number | null>(null);
-  const [op, setOp] = useState<string | null>(null);
-  const [fresh, setFresh] = useState(true);
-
-  const input = useCallback(
-    (ch: string) => {
-      if (fresh) {
-        setDisplay(ch === "." ? "0." : ch);
-        setFresh(false);
-      } else {
-        if (ch === "." && display.includes(".")) return;
-        setDisplay(display + ch);
-      }
-    },
-    [display, fresh]
-  );
-
-  const clear = () => {
-    setDisplay("0");
-    setPrevVal(null);
-    setOp(null);
-    setFresh(true);
-  };
-
-  const compute = useCallback(() => {
-    if (prevVal === null || !op) return;
-    const cur = parseFloat(display);
-    let result = 0;
-    switch (op) {
-      case "+":
-        result = prevVal + cur;
-        break;
-      case "-":
-        result = prevVal - cur;
-        break;
-      case "*":
-        result = prevVal * cur;
-        break;
-      case "/":
-        result = cur !== 0 ? prevVal / cur : NaN;
-        break;
-    }
-    setDisplay(String(result));
-    setPrevVal(null);
-    setOp(null);
-    setFresh(true);
-  }, [display, prevVal, op]);
-
-  const doOp = (nextOp: string) => {
-    if (prevVal !== null && op) compute();
-    setPrevVal(parseFloat(display));
-    setOp(nextOp);
-    setFresh(true);
-  };
-
-  const unary = (fn: (x: number) => number) => {
-    const val = fn(parseFloat(display));
-    setDisplay(String(val));
-    setFresh(true);
-  };
-
-  if (!open) return null;
-
-  const btn = (label: string, action: () => void, className = "") => (
-    <button
-      key={label}
-      onClick={action}
-      className={`rounded border bg-gray-50 px-2 py-2 text-sm font-mono hover:bg-gray-100 active:bg-gray-200 ${className}`}
-    >
-      {label}
-    </button>
-  );
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-      onClick={onClose}
-    >
-      <div
-        className="w-72 rounded-xl border bg-white p-4 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-2 flex items-center justify-between text-xs text-gray-500">
-          <span>Scientific Calculator</span>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-700"
-          >
-            &#10005;
-          </button>
-        </div>
-
-        <div className="mb-3 rounded border bg-gray-900 px-3 py-2 text-right font-mono text-lg text-green-400 truncate">
-          {display}
-        </div>
-
-        <div className="grid grid-cols-5 gap-1">
-          {btn("MC", () => onMemoryChange(0))}
-          {btn("MR", () => {
-            setDisplay(String(memory));
-            setFresh(true);
-          })}
-          {btn("MS", () => onMemoryChange(parseFloat(display)))}
-          {btn("M+", () => onMemoryChange(memory + parseFloat(display)))}
-          {btn("M-", () => onMemoryChange(memory - parseFloat(display)))}
-
-          {btn("sin", () => unary(Math.sin))}
-          {btn("cos", () => unary(Math.cos))}
-          {btn("tan", () => unary(Math.tan))}
-          {btn("log", () => unary(Math.log10))}
-          {btn("ln", () => unary(Math.log))}
-
-          {btn("x!", () => {
-            const n = Math.round(parseFloat(display));
-            let f = 1;
-            for (let i = 2; i <= n; i++) f *= i;
-            setDisplay(String(f));
-            setFresh(true);
-          })}
-          {btn("π", () => {
-            setDisplay(String(Math.PI));
-            setFresh(true);
-          })}
-          {btn("e", () => {
-            setDisplay(String(Math.E));
-            setFresh(true);
-          })}
-          {btn("(", () => {})}
-          {btn(")", () => {})}
-
-          {btn("C", clear, "bg-red-100")}
-          {btn("⌫", () =>
-            setDisplay(display.length > 1 ? display.slice(0, -1) : "0")
-          )}
-          {btn("/", () => doOp("/"))}
-          {btn("*", () => doOp("*"))}
-          {btn("-", () => doOp("-"))}
-
-          {btn("7", () => input("7"))}
-          {btn("8", () => input("8"))}
-          {btn("9", () => input("9"))}
-          {btn("+", () => doOp("+"))}
-          {btn("=", compute, "row-span-2 bg-[#00A86B] text-white")}
-
-          {btn("4", () => input("4"))}
-          {btn("5", () => input("5"))}
-          {btn("6", () => input("6"))}
-          {btn(".", () => input("."))}
-
-          {btn("1", () => input("1"))}
-          {btn("2", () => input("2"))}
-          {btn("3", () => input("3"))}
-          {btn("0", () => input("0"), "col-span-2")}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NAT keypad
 // ─────────────────────────────────────────────────────────────────────────────
 
 function NATKeypad({
@@ -558,6 +380,7 @@ export default function GateAttemptPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<SessionState | null>(null);
+  const integrity = useExamIntegrity(session?.status === "IN_PROGRESS");
   const [currentQvId, setCurrentQvId] = useState("");
   const [palette, setPalette] = useState<Record<string, PaletteState>>({});
   const [drafts, setDrafts] = useState<Record<string, DraftAnswer>>({});
@@ -658,30 +481,34 @@ export default function GateAttemptPage() {
     if (!session || !currentQvId) return;
 
     const hb = setInterval(async () => {
+      const focus = integrity.takeFocusDelta();
       const payload = {
         currentQuestionId: currentQvId,
         draftAnswer: drafts[currentQvId] ?? undefined,
         calcState: { memory: calcMemory },
+        focusLostDelta: focus.delta,
       };
 
       if (!isOnline) {
-        cachedPayloadRef.current = payload;
+        focus.restore(); // counted again in the next heartbeat that gets through
+        cachedPayloadRef.current = { ...payload, focusLostDelta: undefined };
         return;
       }
 
       try {
-        await fetch(`/api/gate/attempts/${attemptId}/heartbeat`, {
+        const res = await fetch(`/api/gate/attempts/${attemptId}/heartbeat`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
+        if (!res.ok) focus.restore();
       } catch {
-        // offline handled by navigator events
+        focus.restore(); // offline handled by navigator events
       }
     }, 15_000);
 
     return () => clearInterval(hb);
-  }, [session, currentQvId, drafts, calcMemory, isOnline, attemptId]);
+  }, [session, currentQvId, drafts, calcMemory, isOnline, attemptId, integrity]);
 
   // ── Offline detection
   useEffect(() => {
@@ -968,6 +795,28 @@ export default function GateAttemptPage() {
     <div className="flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden">
       {!isOnline && <OfflineBanner countdown={offlineCountdown} />}
 
+      {integrity.warning && (
+        <div role="alert" className="flex items-center justify-between gap-4 border-b border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          <span>
+            <strong>You left the test window</strong>
+            {integrity.leftCount > 1 ? ` (${integrity.leftCount} times)` : ""}.{" "}
+            {session?.mode === "RANKED"
+              ? "In a ranked test every time is recorded with your attempt. Stay on this screen until you submit."
+              : "In the real exam you can't switch away, so practise staying on this screen."}
+          </span>
+          <span className="flex shrink-0 gap-2">
+            {integrity.fullscreenSupported && !integrity.fullscreen && (
+              <button onClick={integrity.toggleFullscreen} className="rounded bg-amber-900 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-950">
+                Back to full screen
+              </button>
+            )}
+            <button onClick={integrity.dismissWarning} className="rounded border border-amber-400 px-3 py-1 text-xs font-semibold hover:bg-amber-100">
+              OK
+            </button>
+          </span>
+        </div>
+      )}
+
       {isLocked && !submitBusy && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/80">
           <div className="text-center text-white">
@@ -991,6 +840,11 @@ export default function GateAttemptPage() {
         </div>
 
         <div className="flex items-center gap-4">
+          {integrity.fullscreenSupported && (
+            <button onClick={integrity.toggleFullscreen} className="rounded border px-2 py-1 text-xs hover:bg-gray-100">
+              {integrity.fullscreen ? "Exit full screen" : "Full screen"}
+            </button>
+          )}
           <button
             onClick={() => setCalcOpen(true)}
             className="rounded border px-2 py-1 text-xs hover:bg-gray-100"
@@ -1233,7 +1087,7 @@ export default function GateAttemptPage() {
         </div>
       </div>
 
-      <CalculatorModal
+      <Calculator
         open={calcOpen}
         onClose={() => setCalcOpen(false)}
         memory={calcMemory}

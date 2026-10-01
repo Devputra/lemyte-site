@@ -16,6 +16,7 @@ import { useAccess } from "@/components/site/AccessCta";
 import { buttonClass } from "@/components/site/ui";
 import { safeJson } from "@/lib/fetch-helpers";
 import { LoadingScene } from "@/components/motion";
+import { requestExamFullscreen } from "@/lib/gate/exam-integrity";
 
 type Mode = "PRACTICE" | "RANKED" | "DEMO";
 type TestInfo = {
@@ -75,6 +76,7 @@ export default function InstructionsPage() {
 
   async function begin() {
     if (!params || !info) return;
+    requestExamFullscreen(); // must run inside the click; carries over to the test screen (same document)
     setBusy(true);
     setError(null);
     try {

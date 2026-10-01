@@ -192,3 +192,8 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }
+
+/* During a test the page cannot be printed or saved as PDF (src/lib/gate/exam-integrity.ts). */
+@media print {
+  html.exam-lock body { display: none !important; }
+}
