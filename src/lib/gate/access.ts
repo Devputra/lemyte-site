@@ -197,21 +197,54 @@ export async function grantAccessForPaidOrder(args: {
 }
 
 /**
- * A fully refunded order loses its access: the order is marked REFUNDED and its access pass ends now.
- * (Ending the pass is what revokes access — every check requires ACTIVE and ends_at > now.)
+ * A fully refunded order loses its access: the order is marked REFUNDED and its pass ends now.
+ * A pass that was stacked to start in the future also gets its start pulled back (the table requires
+ * ends_at > starts_at), and any passes stacked after it move earlier by the refunded time, so the
+ * student doesn't lose days they still paid for.
  */
 export async function revokeAccessForRefundedOrder(paymentOrderId: string): Promise<void> {
-  const now = new Date().toISOString();
+  const now = new Date();
   const db = supabaseAdmin.schema("gate");
-  const ord = await db.from("payment_orders").update({ status: "REFUNDED", updated_at: now }).eq("id", paymentOrderId);
+  const ord = await db.from("payment_orders").update({ status: "REFUNDED", updated_at: now.toISOString() }).eq("id", paymentOrderId);
   if (ord.error) throw new Error(`[gate/access] refund order update failed: ${ord.error.message}`);
-  const pass = await db
+
+  const { data: passes, error } = await db
     .from("access_passes")
-    .update({ status: "REFUNDED", ends_at: now, updated_at: now })
+    .select("id, user_id, starts_at, ends_at")
     .eq("payment_order_id", paymentOrderId);
-  if (pass.error) {
-    // If the status value is not allowed, still end the pass so access stops.
-    const fallback = await db.from("access_passes").update({ ends_at: now, updated_at: now }).eq("payment_order_id", paymentOrderId);
-    if (fallback.error) throw new Error(`[gate/access] refund pass update failed: ${fallback.error.message}`);
+  if (error) throw new Error(`[gate/access] refund pass lookup failed: ${error.message}`);
+
+  for (const p of passes ?? []) {
+    const start = new Date(p.starts_at);
+    const end = new Date(p.ends_at);
+    if (end <= now) continue; // already over
+    const removedMs = end.getTime() - Math.max(start.getTime(), now.getTime());
+    const patch = {
+      starts_at: new Date(Math.min(start.getTime(), now.getTime() - 1000)).toISOString(),
+      ends_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    };
+    let upd = await db.from("access_passes").update({ ...patch, status: "REFUNDED" }).eq("id", p.id);
+    if (upd.error) upd = await db.from("access_passes").update(patch).eq("id", p.id); // status value not allowed: ending it is enough
+    if (upd.error) throw new Error(`[gate/access] refund pass update failed: ${upd.error.message}`);
+
+    // Close the gap: passes stacked after this one start earlier by the refunded time.
+    const { data: later } = await db
+      .from("access_passes")
+      .select("id, starts_at, ends_at")
+      .eq("user_id", p.user_id)
+      .eq("status", "ACTIVE")
+      .gte("starts_at", end.toISOString())
+      .order("starts_at");
+    for (const l of later ?? []) {
+      await db
+        .from("access_passes")
+        .update({
+          starts_at: new Date(new Date(l.starts_at).getTime() - removedMs).toISOString(),
+          ends_at: new Date(new Date(l.ends_at).getTime() - removedMs).toISOString(),
+          updated_at: now.toISOString(),
+        })
+        .eq("id", l.id);
+    }
   }
 }
