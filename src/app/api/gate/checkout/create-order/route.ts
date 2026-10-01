@@ -4,7 +4,8 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { createRazorpayOrder } from "@/lib/gate/razorpay";
+import { createRazorpayOrder, isRazorpayConfigured } from "@/lib/gate/razorpay";
+import { LEGAL } from "@/lib/legal";
 import { handleRouteError, getErrorMessage } from "@/lib/gate/errors";
 
 export const runtime = "nodejs";
@@ -20,6 +21,16 @@ export async function POST(req: NextRequest) {
 
     if (authErr || !auth?.user) {
       return Response.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    // Before live keys exist, say so plainly instead of failing after creating an order row.
+    if (!isRazorpayConfigured()) {
+      return Response.json(
+        {
+          error: `Online payments are being activated and will open in a few days. To buy a plan now, write to ${LEGAL.email}.`,
+        },
+        { status: 503 },
+      );
     }
 
     const userId = auth.user.id;

@@ -14,6 +14,11 @@ import crypto from "crypto";
 
 const BASE = "https://api.razorpay.com/v1";
 
+/** True when server keys are set (false until live keys are added to production). */
+export function isRazorpayConfigured(): boolean {
+  return Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
+}
+
 function authHeader(): string {
   const id = process.env.RAZORPAY_KEY_ID;
   const secret = process.env.RAZORPAY_KEY_SECRET;
