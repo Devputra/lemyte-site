@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       amountInr: plan.price_inr,
       amountPaise: rzpOrder.amount,
       currency: rzpOrder.currency,
-      keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? null,
+      keyId: process.env.RAZORPAY_KEY_ID ?? null, // key ids are public by design; one variable for server and checkout
       plan: {
         id: plan.id,
         code: plan.code,

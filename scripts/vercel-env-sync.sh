@@ -4,13 +4,13 @@
 #   bash scripts/vercel-env-sync.sh preview    [--check]
 # Empty values are skipped (reported). Safety: Razorpay TEST keys (rzp_test_) are never pushed to
 # production — with test keys on the live site anyone could buy a plan with a test card.
-# NEXT_PUBLIC_* values are baked in at build time, so redeploy after syncing.
+# Redeploy after syncing so running functions pick up the new values.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 TARGET="${1:?usage: vercel-env-sync.sh production|preview [--check]}"
 [[ "$TARGET" == production || "$TARGET" == preview ]] || { echo "target must be production or preview"; exit 1; }
 
-NAMES=(RAZORPAY_KEY_ID RAZORPAY_KEY_SECRET RAZORPAY_WEBHOOK_SECRET NEXT_PUBLIC_RAZORPAY_KEY_ID
+NAMES=(RAZORPAY_KEY_ID RAZORPAY_KEY_SECRET RAZORPAY_WEBHOOK_SECRET
        SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM)
 # Not synced on purpose: NEXT_PUBLIC_BASE_URL differs per environment (localhost locally, https://lemyte.com in production).
 
@@ -22,12 +22,11 @@ val() {  # value to push for $1 (surrounding quotes removed)
   local v
   # Preview always gets the TEST keys (kept as RAZORPAY_KEY_TEST_*), so live keys never reach preview deploys.
   case "$TARGET:$1" in
-    preview:RAZORPAY_KEY_ID|preview:NEXT_PUBLIC_RAZORPAY_KEY_ID) v=$(raw RAZORPAY_KEY_TEST_API_KEY) ;;
+    preview:RAZORPAY_KEY_ID) v=$(raw RAZORPAY_KEY_TEST_API_KEY) ;;
     preview:RAZORPAY_KEY_SECRET) v=$(raw RAZORPAY_KEY_TEST_SECRET) ;;
     *) v=$(raw "$1") ;;
   esac
   v="${v%\"}"; v="${v#\"}"; v="${v%\'}"; v="${v#\'}"
-  if [ -z "$v" ] && [ "$1" = NEXT_PUBLIC_RAZORPAY_KEY_ID ]; then v=$(val RAZORPAY_KEY_ID); fi
   printf '%s' "$v"
 }
 

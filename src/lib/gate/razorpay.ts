@@ -7,7 +7,7 @@
 //   RAZORPAY_KEY_ID
 //   RAZORPAY_KEY_SECRET
 //   RAZORPAY_WEBHOOK_SECRET   (used by the webhook route, not here)
-//   NEXT_PUBLIC_RAZORPAY_KEY_ID  (exposed to the browser checkout)
+//   (the key id is also sent to the browser checkout by create-order)
 
 import "server-only";
 import crypto from "crypto";
