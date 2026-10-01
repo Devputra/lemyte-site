@@ -195,3 +195,23 @@ export async function grantAccessForPaidOrder(args: {
     `[gate/access] access_pass insert failed: ${insertRes.error?.message ?? "unknown"}`
   );
 }
+
+/**
+ * A fully refunded order loses its access: the order is marked REFUNDED and its access pass ends now.
+ * (Ending the pass is what revokes access — every check requires ACTIVE and ends_at > now.)
+ */
+export async function revokeAccessForRefundedOrder(paymentOrderId: string): Promise<void> {
+  const now = new Date().toISOString();
+  const db = supabaseAdmin.schema("gate");
+  const ord = await db.from("payment_orders").update({ status: "REFUNDED", updated_at: now }).eq("id", paymentOrderId);
+  if (ord.error) throw new Error(`[gate/access] refund order update failed: ${ord.error.message}`);
+  const pass = await db
+    .from("access_passes")
+    .update({ status: "REFUNDED", ends_at: now, updated_at: now })
+    .eq("payment_order_id", paymentOrderId);
+  if (pass.error) {
+    // If the status value is not allowed, still end the pass so access stops.
+    const fallback = await db.from("access_passes").update({ ends_at: now, updated_at: now }).eq("payment_order_id", paymentOrderId);
+    if (fallback.error) throw new Error(`[gate/access] refund pass update failed: ${fallback.error.message}`);
+  }
+}

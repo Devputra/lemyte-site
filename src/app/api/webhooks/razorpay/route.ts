@@ -2,7 +2,7 @@
 
 import { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { grantAccessForPaidOrder } from "@/lib/gate/access";
+import { grantAccessForPaidOrder, revokeAccessForRefundedOrder } from "@/lib/gate/access";
 import { getErrorMessage } from "@/lib/gate/errors";
 import crypto from "crypto";
 
@@ -141,6 +141,20 @@ export async function POST(req: NextRequest) {
           break;
         }
 
+        case "refund.processed": {
+          // Only a full refund removes access (our policy refunds the whole amount).
+          const payment = event.payload?.payment?.entity ?? {};
+          const paymentOrderId = (payment.notes ?? {}).payment_order_id as string | undefined;
+          const fullyRefunded = Number(payment.amount_refunded ?? 0) >= Number(payment.amount ?? Infinity);
+          if (paymentOrderId && fullyRefunded) {
+            await revokeAccessForRefundedOrder(paymentOrderId);
+            finalStatus = "PROCESSED";
+          } else {
+            console.warn("[razorpay webhook] refund not applied (partial or no order id)", { eventId, paymentOrderId });
+            finalStatus = "IGNORED";
+          }
+          break;
+        }
         default: {
           finalStatus = "IGNORED";
           break;
