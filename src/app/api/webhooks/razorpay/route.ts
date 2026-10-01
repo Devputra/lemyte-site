@@ -37,12 +37,18 @@ export async function POST(req: NextRequest) {
     const signature = req.headers.get("x-razorpay-signature") ?? "";
 
     if (!signature || !verifyWebhookSignature(rawBody, signature, webhookSecret)) {
+      // Logged so a secret mismatch with the Razorpay dashboard shows up in Vercel logs.
+      console.warn("[razorpay webhook] rejected: bad or missing signature", {
+        hasSignature: Boolean(signature),
+        event: rawBody.match(/"event"\s*:\s*"([^"]+)"/)?.[1] ?? null,
+      });
       return Response.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     const event = JSON.parse(rawBody);
     const eventId = (event.id as string) ?? null;
     const eventType = (event.event as string) ?? null;
+    console.info("[razorpay webhook] received", { eventType, eventId });
 
     if (!eventId || !eventType) {
       return Response.json({ error: "Missing event id or type" }, { status: 400 });
