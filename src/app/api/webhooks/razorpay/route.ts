@@ -58,33 +58,35 @@ export async function POST(req: NextRequest) {
     const existing = await supabaseAdmin
       .schema("gate")
       .from("payment_events")
-      .select("id")
+      .select("id, status")
       .eq("provider_event_id", eventId)
       .maybeSingle();
 
-    if (existing.data) {
+    // Done events are duplicates; a FAILED (or interrupted) event is processed again when Razorpay retries.
+    if (existing.data && (existing.data.status === "PROCESSED" || existing.data.status === "IGNORED")) {
       return Response.json({ ok: true, deduped: true });
     }
 
-    const insertEvent = await supabaseAdmin
-      .schema("gate")
-      .from("payment_events")
-      .insert({
-        provider: "razorpay",
-        provider_event_id: eventId,
-        event_type: eventType,
-        payload: event,
-        status: "RECEIVED",
-        received_at: new Date().toISOString(),
-      });
+    if (!existing.data) {
+      const insertEvent = await supabaseAdmin
+        .schema("gate")
+        .from("payment_events")
+        .insert({
+          provider: "razorpay",
+          provider_event_id: eventId,
+          event_type: eventType,
+          payload: event,
+          status: "RECEIVED",
+          received_at: new Date().toISOString(),
+        });
 
-    if (insertEvent.error) {
-      if (insertEvent.error.code === "23505") {
-        return Response.json({ ok: true, deduped: true });
+      if (insertEvent.error) {
+        if (insertEvent.error.code === "23505") {
+          return Response.json({ ok: true, deduped: true });
+        }
+        console.error("[razorpay webhook] insert error", insertEvent.error);
+        return Response.json({ error: "Failed to store event" }, { status: 500 });
       }
-
-      console.error("[razorpay webhook] insert error", insertEvent.error);
-      return Response.json({ error: "Failed to store event" }, { status: 500 });
     }
 
     const processedAt = new Date().toISOString();
