@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
     }
 
     const event = JSON.parse(rawBody);
-    const eventId = (event.id as string) ?? null;
+    // Razorpay sends the unique event id in a header, not in the body (body.id is absent).
+    const eventId = req.headers.get("x-razorpay-event-id") ?? (event.id as string | undefined) ?? null;
     const eventType = (event.event as string) ?? null;
     console.info("[razorpay webhook] received", { eventType, eventId });
 
