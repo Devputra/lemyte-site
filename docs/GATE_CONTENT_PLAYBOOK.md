@@ -22,6 +22,7 @@ answers per paper, and one paper (2020) had content shifted by one question.
 
 - **Source PDFs**: `/media/devputra/F414D25114D21708/OFFICE/DXOCTAGON/Products/Lemyte/Product/GATE/Questions/<SUBJ>/<YEAR>/` (paper + key PDF; `images/` folder)
 - **Images**: user usually uploads them to `images/` **and** S3 `s3://learnamyte-gate-media/<SUBJ>/pyq/<year>_<subj>[_<set>]/`. If missing, crop them ourselves.
+- **Keys with "OR" (check every paper)**: MSQ like `A;B OR B` → options in *every* alternative get `is_correct`, the rest `optional_correct` (here B required, A optional). NAT like `-0.61 to -0.57 OR 0.57 to 0.61` → first range in `nat_lower/upper_bound`, the others in `question_versions.nat_alt_ranges` as `[[lo,hi],...]` (scoring accepts any). Audit (2026-10-02) found 3 MSQ + 13 NAT published rows missing these; all fixed.
 - **WebP copies (required)**: the app serves `<key>.webp` (max 1600 px, q90) from S3 via signed URLs, not the PNG. `apply.py` runs `node scripts/gate-content/webp-sync.mjs <folder>` automatically; after any manual S3 upload/replace run it yourself (idempotent). A missing WebP falls back to the slow PNG route. Replacing an image? Bump the key version (`.v2`) — browsers cache WebPs for a week.
 - **DB**: Supabase `rqmgmlhltjylgkvgnokh`, schema `gate`, table `question_versions` (one row per question). Keys in `.env.local`. Repo `db/gate/schema.sql` is **stale**.
 - **Toolkit**: `scripts/gate-content/` (below). Work files: `.gate-work/<PAPER_CODE>/` (gitignored, survives sessions).
