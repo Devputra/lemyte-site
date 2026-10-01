@@ -4,6 +4,9 @@ import re, sys
 from common import get, patch
 SUBS = [
     (r"\n[ \t]*Source: supplied[^\n]*", ""),
+    (r"\n[ \t]*\*\*Supplied[- ]key entry:\*\*[^\n]*", ""),
+    (r"Therefore, the official key accepts \*\*([^*]*\bto\b[^*]*)\*\*(?: as its numerical interval)?\.", r"Therefore, the answer lies in the range **\1**."),
+    (r"Therefore, the official key accepts \*\*((?:(?!\bOR\b)[^*])+)\*\*\.", r"Therefore, the correct answer is **\1**."),
     (r"(?i)the supplied (answer )?key (accepts|gives|selects|lists)", r"the official key \2"),
     (r"(?i)\bsupplied (answer )?key\b", "official key"),
     (r"(?i)\bsupplied question paper\b", "question paper"),

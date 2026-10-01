@@ -36,10 +36,24 @@ def options_text(r):
     return "\n".join(f"({str(o['id']).upper()}) {str(o['markdown']).strip()}" for o in opts)
 
 
+def strip_inline_options(md):
+    """Drop a trailing "(A) … (D) …" block from the stem, as the app does (src/lib/gate/question-text.ts)."""
+    starts = [m.start(2) for m in re.finditer(r"(^|\n)[ \t]*(\(A\))(?=\s)", md)]
+    if not starts:
+        return md
+    tail = md[starts[-1]:]
+    if all(re.search(rf"\n[ \t]*\({c}\)(?=\s)", tail) for c in "BCD"):
+        return md[:starts[-1]].rstrip() + "\n"
+    return md
+
+
 def full_text(r):
-    """Stem plus options: some papers (e.g. CE) keep options only in options_array, not in the stem."""
+    """Stem plus options as students see them: the stem's own option copy is dropped (the app hides it)
+    and the options come from options_array (some papers, e.g. CE, keep them only there)."""
     opts = options_text(r)
-    return r["markdown_content"].strip() + (f"\nOptions:\n{opts}" if opts and r["type"] in ("MCQ", "MSQ") else "")
+    if opts and r["type"] in ("MCQ", "MSQ"):
+        return strip_inline_options(r["markdown_content"]).strip() + f"\nOptions:\n{opts}"
+    return r["markdown_content"].strip()
 
 
 def rows(code):
