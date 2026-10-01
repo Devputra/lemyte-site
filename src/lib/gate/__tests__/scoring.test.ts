@@ -315,3 +315,24 @@ describe("gradeAttempt", () => {
     expect(result.percent).toBe(0);
   });
 });
+
+describe("NAT alternative ranges (official key 'X OR Y')", () => {
+  const q: QuestionMeta = {
+    questionVersionId: "nat-alt",
+    type: "NAT",
+    marks: 2,
+    natLowerBound: -0.61,
+    natUpperBound: -0.57,
+    natAltRanges: [[0.57, 0.61]],
+  };
+  const ans = (v: number): CommittedAnswer => ({ type: "NAT", natRaw: String(v), natNormalized: v, savedAt: new Date().toISOString() });
+  it("accepts the primary range", () => {
+    expect(gradeQuestion(q, ans(-0.59)).correct).toBe(true);
+  });
+  it("accepts an alternative range", () => {
+    expect(gradeQuestion(q, ans(0.59)).correct).toBe(true);
+  });
+  it("still rejects values outside every range", () => {
+    expect(gradeQuestion(q, ans(0.7)).correct).toBe(false);
+  });
+});

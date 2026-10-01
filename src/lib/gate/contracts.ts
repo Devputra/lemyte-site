@@ -95,6 +95,8 @@ export interface QuestionMeta {
   natLowerBound?: number;
   natUpperBound?: number;
   natPrecision?: number;
+  // Extra ranges the official key also accepts ("X to Y OR Z to W")
+  natAltRanges?: [number, number][];
 }
 
 export interface GradeResult {

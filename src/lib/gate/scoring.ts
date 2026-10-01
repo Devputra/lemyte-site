@@ -131,7 +131,9 @@ export function gradeQuestion(
         return { earned: 0, maxMarks, correct: false };
       }
 
-      const isCorrect = isNATCorrect(normalizedValue, lower, upper);
+      const isCorrect =
+        isNATCorrect(normalizedValue, lower, upper) ||
+        (question.natAltRanges ?? []).some(([lo, hi]) => isNATCorrect(normalizedValue, lo, hi));
 
       return {
         earned: isCorrect ? maxMarks : 0,

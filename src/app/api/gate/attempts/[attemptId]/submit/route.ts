@@ -59,7 +59,7 @@ async function loadQuestionMeta(
     .schema("gate")
     .from("question_versions")
     .select(
-      "id, type, marks, options_array, nat_lower_bound, nat_upper_bound, nat_precision, grading_policy",
+      "id, type, marks, options_array, nat_lower_bound, nat_upper_bound, nat_precision, nat_alt_ranges, grading_policy",
     )
     .in("id", questionVersionIds);
 
@@ -88,6 +88,9 @@ async function loadQuestionMeta(
         row.nat_precision === null || row.nat_precision === undefined
           ? undefined
           : Number(row.nat_precision),
+      natAltRanges: Array.isArray(row.nat_alt_ranges)
+        ? (row.nat_alt_ranges as unknown[][]).map((r) => [Number(r[0]), Number(r[1])] as [number, number])
+        : undefined,
       correctOptionIds:
         type === "NAT" ? undefined : extractCorrectOptionIds(row.options_array),
       optionalCorrectOptionIds:

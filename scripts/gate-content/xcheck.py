@@ -45,7 +45,7 @@ def full_text(r):
 def rows(code):
     out = {}
     for r in get(f"question_versions?pyq_paper_code=eq.{code}&select=markdown_content,type,options_array,"
-                 "nat_lower_bound,nat_upper_bound,grading_policy,explanation_markdown"):
+                 "nat_lower_bound,nat_upper_bound,nat_alt_ranges,grading_policy,explanation_markdown"):
         m = re.search(r"-Q(\d+)\]", r["markdown_content"])
         if m:
             out[int(m.group(1))] = r
@@ -125,9 +125,10 @@ def agrees(r, ans):
         m = re.search(r"-?\d+(?:\.\d+)?(?:[eE]-?\d+)?", ans.replace(",", ""))
         if not m or r["nat_lower_bound"] is None:
             return r["nat_lower_bound"] is None
-        v, lo, hi = float(m.group()), r["nat_lower_bound"], r["nat_upper_bound"]
-        slack = max(abs(lo), abs(hi)) * 0.01 + 1e-9
-        return lo - slack <= v <= hi + slack
+        v = float(m.group())
+        ranges = [(r["nat_lower_bound"], r["nat_upper_bound"])] + [tuple(x) for x in (r.get("nat_alt_ranges") or [])]
+        return any(lo - (max(abs(lo), abs(hi)) * 0.01 + 1e-9) <= v <= hi + (max(abs(lo), abs(hi)) * 0.01 + 1e-9)
+                   for lo, hi in ranges)
     got = set(re.findall(r"[A-D]", ans.upper()))
     opts = r["options_array"] or []
     key = {o["id"].upper() for o in opts if o.get("is_correct")}
