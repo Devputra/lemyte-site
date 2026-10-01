@@ -103,7 +103,7 @@ export default function InstructionsPage() {
       {/* Top bar */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 px-4 sm:px-6">
         <Link href="/gate" aria-label="Lemyte">
-          <Image src="/white_lemyte_logo.png" alt="Lemyte" width={6000} height={3375} className="h-8 w-auto" />
+          <Image src="/lemyte-logo.svg" alt="Lemyte" width={1346} height={430} unoptimized className="h-5 w-auto" />
         </Link>
         <p className="truncate pl-4 text-sm font-medium text-zinc-600">{info?.title ?? ""}</p>
       </header>

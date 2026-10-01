@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
@@ -14,6 +14,10 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+// The site is designed light-only: stop browsers' "auto dark mode" from force-darkening it
+// (which turned the white-background logo into a white box and would hide dark text).
+export const viewport: Viewport = { colorScheme: "only light", themeColor: "#ffffff" };
 
 export const metadata: Metadata = {
   title: "Lemyte — Practice tests for competitive exams",

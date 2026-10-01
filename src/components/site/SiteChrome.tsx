@@ -20,7 +20,7 @@ export function SiteHeader({ nav = HOME_NAV }: { nav?: NavItem[] }) {
     <header className="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/90 backdrop-blur">
       <Container className="flex h-16 items-center justify-between gap-6">
         <Link href="/" className="shrink-0" aria-label="Lemyte home">
-          <Image src="/white_lemyte_logo.png" alt="Lemyte" width={6000} height={3375} priority className="h-9 w-auto" />
+          <Image src="/lemyte-logo.svg" alt="Lemyte" width={1346} height={430} priority unoptimized className="h-6 w-auto" />
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {nav.map((item) => (
@@ -84,7 +84,7 @@ export function SiteFooter() {
     <footer className="border-t border-zinc-200 bg-white">
       <Container className="grid gap-10 py-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
-          <Image src="/white_lemyte_logo.png" alt="Lemyte" width={6000} height={3375} className="h-9 w-auto" />
+          <Image src="/lemyte-logo.svg" alt="Lemyte" width={1346} height={430} unoptimized className="h-6 w-auto" />
           <p className="mt-4 max-w-xs text-sm leading-6 text-zinc-500">
             Practice tests for competitive exams. Starting with GATE.
           </p>
