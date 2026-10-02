@@ -11,6 +11,7 @@ export type NavItem = { href: string; label: string };
 
 const HOME_NAV: NavItem[] = [
   { href: "/gate", label: "GATE" },
+  { href: "/gate/2027", label: "GATE 2027" },
   { href: "/gate/papers", label: "Past papers" },
   { href: "/#how-it-works", label: "How it works" },
   { href: "/gate/pricing", label: "Pricing" },
@@ -56,6 +57,7 @@ const FOOTER = [
     heading: "GATE",
     links: [
       { href: "/gate", label: "Overview" },
+      { href: "/gate/2027", label: "GATE 2027 dates & syllabus" },
       { href: "/gate/papers", label: "Past papers & answer keys" },
       { href: "/gate/practice", label: "PYQ tests" },
       { href: "/gate/practice/topics", label: "Topic practice" },

@@ -118,7 +118,7 @@ export default async function PaperPage({ params }: Props) {
   const sameYear = all.filter((p) => p.year === paper.year && p.code !== paper.code);
   const crumbs = [
     { name: "GATE", path: "/gate" },
-    { name: "Past papers", path: "/gate/papers" },
+    { name: `GATE ${paper.code}`, path: `/gate/${paper.code.toLowerCase()}` },
     { name: paper.name, path: `/gate/papers/${paper.slug}` },
   ];
 
@@ -280,11 +280,14 @@ export default async function PaperPage({ params }: Props) {
         <section aria-labelledby="more" className="grid gap-8 sm:grid-cols-2">
           <h2 id="more" className="sr-only">More GATE papers</h2>
           {[
-            [`Other GATE ${paper.code} papers`, sameSubject],
-            [`Other GATE ${paper.year} papers`, sameYear],
-          ].map(([title, list]) => (
+            [`Other GATE ${paper.code} papers`, sameSubject, `/gate/${paper.code.toLowerCase()}`, `GATE ${paper.code} topic-wise weightage and 2027 syllabus`],
+            [`Other GATE ${paper.year} papers`, sameYear, "/gate/2027", "GATE 2027 dates and syllabus changes"],
+          ].map(([title, list, href, label]) => (
             <div key={title as string}>
               <p className="text-sm font-semibold text-ink">{title as string}</p>
+              <Link href={href as string} className="mt-1 inline-block text-sm text-brand underline underline-offset-2">
+                {label as string}
+              </Link>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {(list as typeof all).map((p) => (
                   <li key={p.slug}>

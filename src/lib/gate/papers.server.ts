@@ -212,3 +212,52 @@ async function loadPaper(slug: string): Promise<Paper | null> {
 
 export const getPaper = (slug: string) =>
   unstable_cache(() => loadPaper(slug), ["gate-paper", slug], { revalidate: 86400 })();
+
+// ---------- subject pages ----------
+
+export type SubjectWeightage = {
+  code: string;
+  subject: string;
+  papers: PaperSummary[];
+  years: number[]; // oldest first
+  topics: { name: string; byYear: Record<number, number>; average: number; questions: number }[]; // average marks per paper
+  gaMarks: number;
+};
+
+/** Marks per topic per year across every paper of a subject (sets of the same year are averaged). */
+async function loadSubject(code: string): Promise<SubjectWeightage | null> {
+  const papers = (await getPapers()).filter((p) => p.code === code.toUpperCase());
+  if (!papers.length) return null;
+  const full = (await Promise.all(papers.map((p) => getPaper(p.slug)))).filter((p): p is Paper => !!p);
+  const years = [...new Set(full.map((p) => p.year))].sort((a, b) => a - b);
+  const setsPerYear = new Map(years.map((y) => [y, full.filter((p) => p.year === y).length]));
+  const topics = new Map<string, { byYear: Record<number, number>; questions: number }>();
+  for (const p of full) {
+    for (const q of p.questionList) {
+      if (q.section === "GA") continue;
+      const t = topics.get(q.topic) ?? { byYear: {}, questions: 0 };
+      t.byYear[p.year] = (t.byYear[p.year] ?? 0) + q.marks / setsPerYear.get(p.year)!;
+      t.questions += 1;
+      topics.set(q.topic, t);
+    }
+  }
+  const round = (n: number) => Math.round(n * 10) / 10;
+  return {
+    code: papers[0].code,
+    subject: papers[0].subject,
+    papers,
+    years,
+    gaMarks: 15,
+    topics: [...topics.entries()]
+      .map(([name, t]) => ({
+        name,
+        questions: t.questions,
+        byYear: Object.fromEntries(Object.entries(t.byYear).map(([y, m]) => [y, round(m)])),
+        average: round(years.reduce((n, y) => n + (t.byYear[y] ?? 0), 0) / years.length),
+      }))
+      .sort((a, b) => b.average - a.average),
+  };
+}
+
+export const getSubject = (code: string) =>
+  unstable_cache(() => loadSubject(code), ["gate-subject", code.toUpperCase()], { revalidate: 86400 })();

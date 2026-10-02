@@ -10,6 +10,7 @@ export const revalidate = 3600;
 const PAGES: [path: string, priority: number][] = [
   ["/", 1],
   ["/gate", 0.9],
+  ["/gate/2027", 0.9],
   ["/gate/papers", 0.9],
   ["/gate/pricing", 0.8],
   ["/gate/demo", 0.7],
@@ -29,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const papers = await getPapers();
   return [
     ...PAGES.map(([path, priority]) => ({ url: abs(path), priority })),
+    ...[...new Set(papers.map((p) => p.code.toLowerCase()))].map((c) => ({ url: abs(`/gate/${c}`), priority: 0.8 })),
     ...papers.map((p) => ({ url: abs(`/gate/papers/${p.slug}`), priority: 0.7 })),
   ];
 }

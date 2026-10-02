@@ -3,6 +3,7 @@
 import { fmtInr } from "@/lib/gate/catalog";
 import { getCatalog } from "@/lib/gate/catalog.server";
 import { NEGATIVE_MARKING, PAPER_HOURS } from "@/lib/gate/exam-facts";
+import { GATE_2027, SYLLABUS_2027 } from "@/lib/gate/gate2027";
 import { getPapers } from "@/lib/gate/papers.server";
 import { LEGAL } from "@/lib/legal";
 import { abs } from "@/lib/seo";
@@ -28,7 +29,13 @@ Lemyte is run by ${LEGAL.company}, Chennai, India. It is not affiliated with IIS
 - Plans: ${plans.map((p) => `${p.name} ${fmtInr(p.priceInr)}`).join("; ")}. A short General Aptitude demo test is free.
 - Contact: ${LEGAL.email}, ${LEGAL.phone}.
 
+## GATE 2027
+- Organised by ${GATE_2027.organiser}; exam on 6, 7, 13, 14, 20 and 21 February 2027 (forenoon ${GATE_2027.sessions.forenoon}, afternoon ${GATE_2027.sessions.afternoon}); results on 19 March 2027. Source: ${GATE_2027.brochure}
+- ${GATE_2027.papers} papers, including the new ${GATE_2027.newPaper} paper.
+- Syllabus changes from 2026 (compared line by line by Lemyte): ${Object.entries(SYLLABUS_2027).map(([c, s]) => `${c}: ${s.status === "unchanged" ? "no topic changes" : "revised"}`).join("; ")}. Details: ${abs("/gate/2027")}
+
 ## Main pages
+- [GATE 2027](${abs("/gate/2027")}): dates, pattern and syllabus changes by subject
 - [GATE overview](${abs("/gate")}): how the tests, reports and topic practice work
 - [GATE past papers](${abs("/gate/papers")}): all papers with answer keys
 - [Pricing](${abs("/gate/pricing")}): plans and what each includes
@@ -38,7 +45,7 @@ Lemyte is run by ${LEGAL.company}, Chennai, India. It is not affiliated with IIS
 
 ## GATE papers with answer keys and solved questions
 ${[...bySubject.entries()]
-  .map(([name, list]) => `### ${name}\n${list.map((p) => `- [${p.name}](${abs(`/gate/papers/${p.slug}`)})`).join("\n")}`)
+  .map(([name, list]) => `### ${name}: [topic-wise weightage and 2027 syllabus](${abs(`/gate/${list[0].code.toLowerCase()}`)})\n${list.map((p) => `- [${p.name}](${abs(`/gate/papers/${p.slug}`)})`).join("\n")}`)
   .join("\n\n")}
 
 ## Policies

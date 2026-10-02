@@ -49,6 +49,7 @@ export const organizationLd = {
   "@type": "EducationalOrganization",
   "@id": ORG_ID,
   name: LEGAL.brand,
+  alternateName: ["Lemyte GATE", "Lemyte.com"],
   legalName: LEGAL.company,
   url: CANONICAL_ORIGIN,
   logo: abs("/icon.png"),

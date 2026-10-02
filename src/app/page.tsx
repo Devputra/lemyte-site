@@ -7,9 +7,9 @@ import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
 import { pageMeta } from "@/lib/seo";
 
 export const metadata: Metadata = pageMeta({
-  title: "Lemyte — GATE practice tests from official past papers",
+  title: "Lemyte — GATE 2027 test series from official past papers",
   description:
-    "Exam-style online tests built from official past papers and marked the way the real exam marks them. Starting with GATE: every recent paper as a timed test, with a topic-wise report.",
+    "Lemyte's GATE 2027 test series: official GATE papers as timed 3-hour tests, marked with the official answer key, with a topic-wise report and GATE 2027 syllabus changes for every subject.",
   path: "/",
   exactTitle: true,
 });

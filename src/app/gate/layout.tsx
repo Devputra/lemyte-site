@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 
 const GATE_NAV: NavItem[] = [
   { href: "/gate", label: "Overview" },
+  { href: "/gate/2027", label: "GATE 2027" },
   { href: "/gate/papers", label: "Papers" },
   { href: "/gate/practice", label: "PYQ tests" },
   { href: "/gate/practice/topics", label: "Topic practice" },
