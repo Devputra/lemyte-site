@@ -4,6 +4,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 
+import { Tracker } from "@/components/site/Tracker";
 import { LEGAL } from "@/lib/legal";
 import { CANONICAL_ORIGIN, JsonLd, organizationLd, websiteLd } from "@/lib/seo";
 
@@ -57,6 +58,7 @@ export default function RootLayout({
         </noscript>
         <JsonLd data={[organizationLd, websiteLd]} />
         {children}
+        <Tracker />
         {/* Vercel Web Analytics (@vercel/analytics) + Speed Insights (script tag).
             Switch both on in the Vercel dashboard first, then set VERCEL_ANALYTICS=on (else the scripts 404). */}
         {process.env.VERCEL_ANALYTICS === "on" && (

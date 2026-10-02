@@ -31,6 +31,7 @@ export default function PrivacyPage() {
             <><b>Payment data:</b> plan purchased, amount, order and payment IDs and payment status. Card, UPI and bank details are collected and processed by Razorpay, not by us.</>,
             <><b>Communications:</b> emails you send us, issue reports, and newsletter subscriptions.</>,
             <><b>Technical data:</b> IP address, browser and device information and server logs, plus cookies needed to keep you signed in.</>,
+            <><b>Usage data:</b> the pages you open on our website, the buttons and links you click (not your answers in a test), how long a page is on screen, the site that referred you, your device type and country. If you are signed in, this is linked to your account.</>,
           ]}
         />
       </Section>
@@ -75,8 +76,12 @@ export default function PrivacyPage() {
 
       <Section title="4. Cookies">
         <p>
-          We use essential cookies to keep you signed in and to secure your session. We do not use advertising
-          cookies. You can block cookies in your browser, but signing in will then not work.
+          We use essential cookies to keep you signed in and to secure your session. We also set two first-party
+          analytics cookies with random IDs (<code>lm_vid</code>, kept for one year, and <code>lm_sid</code>, which ends
+          after 30 minutes of inactivity) so we can count visits and see which parts of the site are useful. This data
+          stays with us and is not shared with advertisers. If your browser sends a Do Not Track or Global Privacy
+          Control signal, we do not collect usage data. We do not use advertising cookies. You can block cookies in
+          your browser, but signing in will then not work.
         </p>
       </Section>
 

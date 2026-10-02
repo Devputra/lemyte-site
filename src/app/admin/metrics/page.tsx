@@ -1,13 +1,12 @@
 // src/app/admin/metrics/page.tsx — business dashboard (signed-in admins only: ADMIN_EMAILS).
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 
 import { SiteHeader } from "@/components/site/SiteChrome";
 import { Container } from "@/components/site/ui";
+import { requireAdmin } from "@/lib/admin/guard";
 import { type DayRow, getMetrics } from "@/lib/admin/metrics";
 import { fmtInr, fmtInt } from "@/lib/gate/catalog";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { supabaseServer } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -15,10 +14,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const ADMINS = (process.env.ADMIN_EMAILS ?? "")
-  .split(",")
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean);
 
 function Stat({
   label,
@@ -78,9 +73,7 @@ function Bars({
 }
 
 export default async function MetricsPage() {
-  const { data } = await (await supabaseServer()).auth.getUser();
-  if (!data.user?.email || !ADMINS.includes(data.user.email.toLowerCase()))
-    notFound();
+  await requireAdmin();
 
   const m = await getMetrics(30);
   const { data: qs } = m.suspicious.length
@@ -104,7 +97,10 @@ export default async function MetricsPage() {
             Business metrics
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Last {m.days} days unless stated. Live from the database.
+            Last {m.days} days unless stated. Live from the database.{" "}
+            <a href="/admin/analytics" className="text-brand underline underline-offset-2">
+              Visitors, clicks and engagement
+            </a>
           </p>
         </div>
 
