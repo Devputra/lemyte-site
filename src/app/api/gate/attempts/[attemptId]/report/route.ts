@@ -282,7 +282,7 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
     .schema("gate")
     .from("question_versions")
     .select(
-      "id, type, marks, markdown_content, options_array, explanation_markdown",
+      "id, type, marks, markdown_content, options_array, explanation_markdown, syllabus_note",
     )
     .in("id", idsForQuestionLoad);
 
@@ -361,6 +361,7 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
       maxMarks,
       resultStatus,
       explanationMarkdown: String(v?.explanation_markdown ?? ""),
+      syllabusNote: (v?.syllabus_note as string | null) ?? null,
     };
   });
 

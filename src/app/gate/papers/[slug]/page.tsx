@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
+import { SyllabusBadge } from "@/components/gate/SyllabusBadge";
 import { FaqList } from "@/components/site/FaqList";
 import { ButtonLink, Container, Eyebrow, type } from "@/components/site/ui";
 import { NEGATIVE_MARKING, ORGANISER, PAPER_HOURS } from "@/lib/gate/exam-facts";
@@ -51,6 +52,7 @@ function stats(p: Paper) {
     msq: byType("MSQ"),
     nat: byType("NAT"),
     mta: q.filter((x) => x.marksToAll),
+    outOfSyllabus: q.filter((x) => x.syllabusNote),
     topics: [...topics.entries()].map(([name, v]) => ({ name, ...v })).sort((a, b) => b.marks - a.marks),
   };
 }
@@ -161,6 +163,16 @@ export default async function PaperPage({ params }: Props) {
               </div>
             ))}
           </dl>
+          {s.outOfSyllabus.length > 0 && (
+            <p className="mt-6 max-w-2xl text-sm text-zinc-600">
+              <SyllabusBadge note="Not in the GATE 2027 syllabus" compact /> {s.outOfSyllabus.length} question
+              {s.outOfSyllabus.length > 1 ? "s" : ""} (Q {s.outOfSyllabus.map((x) => x.n).join(", ")}) {s.outOfSyllabus.length > 1 ? "are" : "is"} on
+              topics removed from the GATE 2027 syllabus. They are marked in the answer key below.{" "}
+              <Link href={`/gate/${paper.code.toLowerCase()}#syllabus`} className="text-brand underline underline-offset-2">
+                What changed for {paper.code}
+              </Link>
+            </p>
+          )}
         </Container>
       </section>
 
@@ -209,6 +221,11 @@ export default async function PaperPage({ params }: Props) {
                 <p className="text-xs font-medium text-zinc-500">
                   Q{q.n} · {q.section === "GA" ? "General Aptitude" : q.topic} · {TYPE_LABEL[q.type]} · {q.marks} mark{q.marks > 1 ? "s" : ""}
                 </p>
+                {q.syllabusNote && (
+                  <p className="mt-2">
+                    <SyllabusBadge note={q.syllabusNote} />
+                  </p>
+                )}
                 <GateMarkdown content={q.markdown} className="mt-3 overflow-x-auto text-[15px] leading-relaxed text-zinc-800" />
                 {q.options.length > 0 && (
                   <ul className="mt-4 grid gap-2">
@@ -259,7 +276,14 @@ export default async function PaperPage({ params }: Props) {
                 {paper.questionList.map((q) => (
                   <tr key={q.n}>
                     <td className="px-4 py-2 tabular-nums text-zinc-500">{q.n}</td>
-                    <td className="px-4 py-2 text-zinc-700">{q.topic}</td>
+                    <td className="px-4 py-2 text-zinc-700">
+                      {q.topic}
+                      {q.syllabusNote && (
+                        <span className="ml-2">
+                          <SyllabusBadge note={q.syllabusNote} />
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-zinc-600">{TYPE_LABEL[q.type]}</td>
                     <td className="px-4 py-2 text-right tabular-nums text-zinc-600">{q.marks}</td>
                     <td className="px-4 py-2 font-medium tabular-nums text-ink">{q.answer}</td>

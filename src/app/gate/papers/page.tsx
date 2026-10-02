@@ -1,7 +1,6 @@
 // src/app/gate/papers/page.tsx — every official GATE paper we carry, grouped by subject. Each links to
 // its own page with the answer key, topic-wise marks and solved questions.
-import Link from "next/link";
-
+import { PaperFilter } from "@/components/gate/PaperFilter";
 import { FaqList } from "@/components/site/FaqList";
 import { PageHero } from "@/components/site/PageHero";
 import { ButtonLink, Container, type } from "@/components/site/ui";
@@ -59,26 +58,13 @@ export default async function PapersPage() {
       </PageHero>
 
       <Container className="grid grid-cols-[minmax(0,1fr)] gap-12 py-14 sm:py-20">
-        {subjects.map(([name, list]) => (
-          <section key={name} aria-labelledby={`s-${list[0].code}`} id={list[0].code.toLowerCase()}>
-            <h2 id={`s-${list[0].code}`} className={type.h3}>
-              GATE {name} ({list[0].code}) papers
-            </h2>
-            <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-              {list.map((p) => (
-                <li key={p.slug}>
-                  <Link
-                    href={`/gate/papers/${p.slug}`}
-                    className="block rounded-lg border border-zinc-200 px-3 py-2.5 text-sm text-zinc-700 transition-colors hover:border-brand hover:text-brand"
-                  >
-                    <span className="font-medium tabular-nums">{p.year}</span>
-                    {p.set && <span className="text-zinc-500"> · Set {p.set}</span>}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        <PaperFilter
+          groups={subjects.map(([name, list]) => ({
+            code: list[0].code,
+            name,
+            papers: list.map((p) => ({ slug: p.slug, year: p.year, set: p.set })),
+          }))}
+        />
 
         <section aria-labelledby="faq">
           <h2 id="faq" className={type.h2}>Questions about GATE past papers</h2>

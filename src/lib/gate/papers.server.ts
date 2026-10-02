@@ -31,6 +31,7 @@ export type PaperQuestion = {
   answer: string; // as printed in the official key
   marksToAll: boolean;
   hasFigure: boolean;
+  syllabusNote: string | null; // e.g. "Not in the GATE 2027 syllabus: UDP"
 };
 
 export type SampleQuestion = PaperQuestion & {
@@ -121,6 +122,7 @@ type QRow = {
     nat_alt_ranges: [number, number][] | null;
     explanation_markdown: string | null;
     grading_policy: string | null;
+    syllabus_note: string | null;
     topics: { name: string } | null;
   } | null;
 };
@@ -141,7 +143,7 @@ function officialAnswer(q: NonNullable<QRow["question_versions"]>): string {
 
 /** Deterministic pick: 2 aptitude + 3 core questions with real solutions, mixing types and including a figure. */
 function pickSamples(rows: { q: PaperQuestion; explanationLen: number }[], seed: number) {
-  const good = rows.filter((r) => !r.q.marksToAll && r.explanationLen >= 160);
+  const good = rows.filter((r) => !r.q.marksToAll && !r.q.syllabusNote && r.explanationLen >= 160);
   const rot = <T,>(xs: T[]) => xs.map((_, i) => xs[(i + seed) % xs.length]);
   const ga = rot(good.filter((r) => r.q.section === "GA")).slice(0, 2);
   const core = rot(good.filter((r) => r.q.section === "CORE"));
@@ -161,7 +163,7 @@ async function loadPaper(slug: string): Promise<Paper | null> {
     .schema("gate")
     .from("test_version_questions")
     .select(
-      "section, question_order, question_versions(type, marks, markdown_content, options_array, nat_lower_bound, nat_upper_bound, nat_alt_ranges, explanation_markdown, grading_policy, topics(name))",
+      "section, question_order, question_versions(type, marks, markdown_content, options_array, nat_lower_bound, nat_upper_bound, nat_alt_ranges, explanation_markdown, grading_policy, syllabus_note, topics(name))",
     )
     .eq("test_version_id", summary.id)
     .order("question_order")
@@ -180,6 +182,7 @@ async function loadPaper(slug: string): Promise<Paper | null> {
       answer: officialAnswer(v),
       marksToAll: v.grading_policy === "MARKS_TO_ALL",
       hasFigure: v.markdown_content.includes("gate-media://"),
+      syllabusNote: v.syllabus_note,
     };
     return [{ q, v, explanationLen: v.explanation_markdown?.length ?? 0 }];
   });
@@ -210,8 +213,9 @@ async function loadPaper(slug: string): Promise<Paper | null> {
   return { slug: s, year, code, subject, set, name, questions, questionList: rows.map((r) => r.q), samples };
 }
 
+// Bump the cache key (-vN) whenever the shape of Paper or SubjectWeightage changes: cached entries survive deploys.
 export const getPaper = (slug: string) =>
-  unstable_cache(() => loadPaper(slug), ["gate-paper", slug], { revalidate: 86400 })();
+  unstable_cache(() => loadPaper(slug), ["gate-paper-v2", slug], { revalidate: 86400 })();
 
 // ---------- subject pages ----------
 
@@ -222,6 +226,7 @@ export type SubjectWeightage = {
   years: number[]; // oldest first
   topics: { name: string; byYear: Record<number, number>; average: number; questions: number }[]; // average marks per paper
   gaMarks: number;
+  removed: { slug: string; paper: string; n: number; note: string }[]; // past questions outside the 2027 syllabus
 };
 
 /** Marks per topic per year across every paper of a subject (sets of the same year are averaged). */
@@ -242,12 +247,16 @@ async function loadSubject(code: string): Promise<SubjectWeightage | null> {
     }
   }
   const round = (n: number) => Math.round(n * 10) / 10;
+  const removed = full.flatMap((p) =>
+    p.questionList.filter((q) => q.syllabusNote).map((q) => ({ slug: p.slug, paper: p.name, n: q.n, note: q.syllabusNote! })),
+  );
   return {
     code: papers[0].code,
     subject: papers[0].subject,
     papers,
     years,
     gaMarks: 15,
+    removed,
     topics: [...topics.entries()]
       .map(([name, t]) => ({
         name,
@@ -260,4 +269,4 @@ async function loadSubject(code: string): Promise<SubjectWeightage | null> {
 }
 
 export const getSubject = (code: string) =>
-  unstable_cache(() => loadSubject(code), ["gate-subject", code.toUpperCase()], { revalidate: 86400 })();
+  unstable_cache(() => loadSubject(code), ["gate-subject-v2", code.toUpperCase()], { revalidate: 86400 })();

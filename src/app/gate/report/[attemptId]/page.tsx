@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 
 import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
+import { SyllabusBadge } from "@/components/gate/SyllabusBadge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -92,6 +93,7 @@ interface AttemptReport {
     maxMarks: number;
     resultStatus: ResultStatus;
     explanationMarkdown: string | null;
+    syllabusNote?: string | null;
   }>;
   // Keep compatibility with the earlier shape.
   questionScores?: Array<{
@@ -1023,6 +1025,7 @@ export default function GateReportPage() {
                         >
                           {humanizeStatus(activeQuestion.resultStatus)}
                         </span>
+                        <SyllabusBadge note={activeQuestion.syllabusNote} />
                       </div>
 
                       <div className="text-sm text-gray-500">

@@ -175,6 +175,30 @@ export default async function SubjectPage({ params }: Props) {
                 ))}
               </div>
             )}
+            {s.removed.length > 0 && (
+              <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/40 p-5">
+                <h3 className="text-sm font-semibold text-ink">
+                  {s.removed.length} past {s.code} question{s.removed.length > 1 ? "s are" : " is"} on removed topics
+                </h3>
+                <p className="mt-1 text-sm text-zinc-600">
+                  These are no longer examined, so you can give them less time. They stay in the papers (the papers are
+                  official), marked in each answer key.
+                </p>
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {s.removed.map((r) => (
+                    <li key={`${r.slug}-${r.n}`}>
+                      <Link
+                        href={`/gate/papers/${r.slug}`}
+                        title={r.note}
+                        className="inline-block rounded-md border border-amber-200 bg-white px-2.5 py-1 text-xs text-zinc-700 hover:border-amber-400"
+                      >
+                        {r.paper} Q{r.n} · <span className="text-zinc-500">{r.note.replace(/^Not in the GATE 2027 syllabus:\s*/, "")}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <p className="mt-4 text-sm text-zinc-500">
               Compared line by line with the official 2026 syllabus. Source:{" "}
               <a href={GATE_2027.brochure} className="text-brand underline underline-offset-2" rel="noopener" target="_blank">
