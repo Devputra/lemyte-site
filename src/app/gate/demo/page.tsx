@@ -23,7 +23,7 @@ const FACTS = [
 
 const WHAT = [
   "The same exam screen as every Lemyte test: timer, question palette, mark for review and calculator",
-  "MCQ, MSQ and numerical-answer questions",
+  "A new random set of real GATE questions every time",
   "A full report when you submit, with the correct answers and worked solutions",
 ];
 

@@ -25,6 +25,8 @@ import {
   hasCountedRankedAttempt,
 } from "@/lib/gate/entitlements";
 import {
+  createRandomDemoTest,
+  DEMO_TEMPLATE_FILTER,
   enforceDemoRateLimit,
   generateGuestToken,
 } from "@/lib/gate/demo";
@@ -163,12 +165,14 @@ export async function POST(req: NextRequest) {
     let testVersionId: string;
 
     if (input.mode === "DEMO") {
+      // The hand-made demo is the template (title, timer, kind); each start gets 10 random GA questions.
       const { data: demoTv, error: demoErr } = await supabaseAdmin
         .schema("gate")
         .from("test_versions")
-        .select("id")
+        .select("id, blueprint_profile_id, title, kind, access_tier, subject_id")
         .eq("is_demo", true)
         .eq("is_active", true)
+        .or(DEMO_TEMPLATE_FILTER)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -179,7 +183,12 @@ export async function POST(req: NextRequest) {
           { status: 404 }
         );
       }
-      testVersionId = demoTv.id as string;
+      try {
+        testVersionId = await createRandomDemoTest(demoTv);
+      } catch (e) {
+        console.error("[gate/attempts/start] random demo failed; using the fixed demo", e);
+        testVersionId = demoTv.id as string;
+      }
     } else {
       // For RANKED/PRACTICE, the catalog page MUST send testVersionId.
       // Resolving an arbitrary "latest" test breaks the kind boundary, so we

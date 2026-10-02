@@ -1,5 +1,6 @@
 // GET /api/gate/tests/:testId — public summary of one test for the instructions page.
 // testId "demo" resolves to the active demo test.
+import { DEMO_TEMPLATE_FILTER } from "@/lib/gate/demo";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -9,7 +10,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ testId: string
   const { testId } = await ctx.params;
   const gate = supabaseAdmin.schema("gate");
   let q = gate.from("test_versions").select("id, title, kind, is_demo, is_active, blueprint_profile_id, subject_id");
-  q = testId === "demo" ? q.eq("is_demo", true).eq("is_active", true) : q.eq("id", testId);
+  q = testId === "demo" ? q.eq("is_demo", true).eq("is_active", true).or(DEMO_TEMPLATE_FILTER) : q.eq("id", testId);
   const { data: tv, error } = await q.limit(1).maybeSingle();
   if (error || !tv || !tv.is_active) return Response.json({ error: "Test not found" }, { status: 404 });
 
