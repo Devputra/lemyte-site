@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 
+import { pageMeta } from "@/lib/seo";
+
 import { LegalPage, Mail, Section } from "@/components/LegalPage";
 import { fill, LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Contact Us | Lemyte" };
+export const metadata: Metadata = pageMeta({
+  title: "Contact us",
+  description: "Email, phone, support hours and registered office address for Lemyte (DXOCTAGON (OPC) Private Limited), Chennai.",
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (

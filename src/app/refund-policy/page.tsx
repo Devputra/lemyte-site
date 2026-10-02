@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 
+import { pageMeta } from "@/lib/seo";
+
 import { LegalPage, List, Mail, Section } from "@/components/LegalPage";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Refund & Cancellation Policy | Lemyte" };
+export const metadata: Metadata = pageMeta({
+  title: "Refund and cancellation policy",
+  description: "When and how you can get a refund on a Lemyte plan, and how long it takes.",
+  path: "/refund-policy",
+});
 
 export default function RefundPolicyPage() {
   const days = LEGAL.refundWindowDays;

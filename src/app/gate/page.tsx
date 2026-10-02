@@ -13,6 +13,7 @@ import {
 import { TrialButton } from "@/components/site/AccessCta";
 import { CountUp, Reveal } from "@/components/motion";
 import { ExamScreenScene } from "@/components/motion/scenes";
+import { FaqList } from "@/components/site/FaqList";
 import { PageHero } from "@/components/site/PageHero";
 import { SubjectCoverage } from "@/components/gate/SubjectCoverage";
 import {
@@ -25,15 +26,18 @@ import {
 import { fmtInr } from "@/lib/gate/catalog";
 import { getCatalog } from "@/lib/gate/catalog.server";
 import { LEGAL } from "@/lib/legal";
+import { NEGATIVE_MARKING } from "@/lib/gate/exam-facts";
+import { pageMeta } from "@/lib/seo";
 
 export const revalidate = 3600; // numbers and prices come from the database
 
 export async function generateMetadata(): Promise<Metadata> {
   const { totals } = await getCatalog();
-  return {
-    title: "GATE assessment — Lemyte",
+  return pageMeta({
+    title: "GATE online test series from official past papers",
     description: `Take ${totals.papers} official GATE papers as timed tests, marked with the official answer key. Then practise the topics where you lost marks.`,
-  };
+    path: "/gate",
+  });
 }
 
 const SCREEN = [
@@ -353,6 +357,51 @@ export default async function GateOverviewPage() {
             >
               Refund policy
             </Link>
+          </p>
+        </Container>
+      </section>
+
+      {/* Questions (also FAQPage data for answer engines) */}
+      <section className="border-t border-zinc-100 bg-zinc-50/70 py-20 sm:py-24" aria-labelledby="gate-faq">
+        <Container>
+          <h2 id="gate-faq" className={type.h2}>
+            Questions about Lemyte for GATE
+          </h2>
+          <FaqList
+            className="mt-8 max-w-3xl"
+            faqs={[
+              {
+                q: "What is Lemyte?",
+                a: `An online GATE test series built from official past papers. You take any of ${totals.papers} official papers as a timed 3-hour test on an exam-style screen, it is marked with the official answer key, and your report shows which topics cost you marks.`,
+              },
+              {
+                q: "Which GATE subjects does Lemyte cover?",
+                a: `${subjects.map((s) => `${s.name} (${s.code}, ${s.years})`).join(", ")}.`,
+              },
+              {
+                q: "Are the questions the real GATE questions?",
+                a: "Yes. Question text and figures come from the official papers, and every answer comes from the official answer key, including marks-to-all decisions and range answers for numerical questions.",
+              },
+              {
+                q: "Is it marked like the real GATE exam?",
+                a: `Yes. ${NEGATIVE_MARKING}`,
+              },
+              {
+                q: "Is there a free GATE mock test?",
+                a: "Yes. The demo is 10 General Aptitude questions from real GATE papers in 30 minutes, with the same screen and report as the full tests. It needs no payment details.",
+              },
+              {
+                q: "Where can I see a paper's answer key before paying?",
+                a: "Every paper has a free page with its official answer key, topic-wise marks and a few fully solved questions, under GATE past papers.",
+              },
+            ]}
+          />
+          <p className="mt-6 text-sm text-zinc-500">
+            Browse every paper and its answer key in{" "}
+            <Link href="/gate/papers" className="text-brand underline underline-offset-2">
+              GATE past papers
+            </Link>
+            .
           </p>
         </Container>
       </section>

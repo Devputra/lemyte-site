@@ -7,14 +7,15 @@ import { ChromeGate } from "@/components/site/ChromeGate";
 import { SiteFooter, SiteHeader, type NavItem } from "@/components/site/SiteChrome";
 
 export const metadata: Metadata = {
-  title: "GATE assessment — Lemyte",
+  title: "GATE practice tests — Lemyte",
   description:
     "Official GATE past papers as timed tests, marked with the official answer key, with topic practice and a progress tracker.",
 };
 
 const GATE_NAV: NavItem[] = [
   { href: "/gate", label: "Overview" },
-  { href: "/gate/practice", label: "PYQ" },
+  { href: "/gate/papers", label: "Papers" },
+  { href: "/gate/practice", label: "PYQ tests" },
   { href: "/gate/practice/topics", label: "Topic practice" },
   { href: "/gate/ranked", label: "Ranked" },
   { href: "/gate/pricing", label: "Pricing" },

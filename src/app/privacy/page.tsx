@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 
+import { pageMeta } from "@/lib/seo";
+
 import { LegalPage, List, Mail, Section } from "@/components/LegalPage";
 import { fill, LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Privacy Policy | Lemyte" };
+export const metadata: Metadata = pageMeta({
+  title: "Privacy policy",
+  description: "How Lemyte collects, uses and protects your personal data, and how to reach our Grievance Officer.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

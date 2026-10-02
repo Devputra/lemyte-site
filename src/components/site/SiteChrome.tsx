@@ -11,6 +11,7 @@ export type NavItem = { href: string; label: string };
 
 const HOME_NAV: NavItem[] = [
   { href: "/gate", label: "GATE" },
+  { href: "/gate/papers", label: "Past papers" },
   { href: "/#how-it-works", label: "How it works" },
   { href: "/gate/pricing", label: "Pricing" },
 ];
@@ -55,7 +56,8 @@ const FOOTER = [
     heading: "GATE",
     links: [
       { href: "/gate", label: "Overview" },
-      { href: "/gate/practice", label: "PYQ papers" },
+      { href: "/gate/papers", label: "Past papers & answer keys" },
+      { href: "/gate/practice", label: "PYQ tests" },
       { href: "/gate/practice/topics", label: "Topic practice" },
       { href: "/gate/demo", label: "Free test" },
       { href: "/gate/pricing", label: "Pricing" },
@@ -64,7 +66,7 @@ const FOOTER = [
   {
     heading: "Company",
     links: [
-      { href: "/#about", label: "About" },
+      { href: "/about", label: "About" },
       { href: "/contact", label: "Contact" },
     ],
   },

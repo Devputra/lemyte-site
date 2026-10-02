@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 
+import { pageMeta } from "@/lib/seo";
+
 import { LegalPage, List, Mail, Section } from "@/components/LegalPage";
 import { LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Shipping & Delivery Policy | Lemyte" };
+export const metadata: Metadata = pageMeta({
+  title: "Delivery policy",
+  description: "Lemyte plans are digital: access is added to your account as soon as payment is confirmed. Nothing is shipped.",
+  path: "/shipping-policy",
+});
 
 export default function ShippingPolicyPage() {
   return (

@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
+
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 
 import { LegalPage, List, Mail, Section } from "@/components/LegalPage";
 import { fill, LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Terms & Conditions | Lemyte" };
+export const metadata: Metadata = pageMeta({
+  title: "Terms and conditions",
+  description: "The terms for using Lemyte's GATE tests, plans and payments.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

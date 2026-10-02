@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
     // from blocking production builds. Remove once types are cleaned up.
     ignoreDuringBuilds: true,
   },
+  // Share-card images (src/lib/og.tsx) read the icon at request time when a page is regenerated.
+  outputFileTracingIncludes: { "/**": ["./src/app/icon.png"] },
 };
 
 export default nextConfig;
