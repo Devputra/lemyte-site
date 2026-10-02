@@ -16,6 +16,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 from common import get, workdir
 from crosscheck import local_images, stored_key
@@ -191,4 +192,11 @@ if __name__ == "__main__":
         size = -(-(hi - lo + 1) // n)
         for a in range(lo, hi + 1, size):
             b = min(a + size - 1, hi)
-            run(code, a, b)  # run() skips questions that already have a result
+            try:
+                run(code, a, b)  # run() skips questions that already have a result
+            except Exception as e:  # one failed block (rate limit, timeout) must not end the paper
+                print(f"{code} q{a}-{b} [{VIA}]: FAIL {type(e).__name__}: {str(e)[:200]}", flush=True)
+                if "per day" in str(e) or "TPD" in str(e) or "usage limit" in str(e).lower():
+                    raise
+            if VIA == "groq":
+                time.sleep(20)  # free tier: 8k tokens/min
