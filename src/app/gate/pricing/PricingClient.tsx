@@ -14,7 +14,7 @@ import { Constellation, Reveal } from "@/components/motion";
 import { LEGAL } from "@/lib/legal";
 import { rankedLine } from "@/lib/gate/catalog";
 import { buttonClass } from "@/components/site/ui";
-import { currentTier, type PriceTier } from "@/lib/gate/plan-price";
+import { addMonthsClamped, currentTier, type PriceTier } from "@/lib/gate/plan-price";
 
 const shortDay = (iso: string) => new Date(`${iso}T00:00:00+05:30`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
 const nextDay = (iso: string) => new Date(new Date(`${iso}T00:00:00Z`).getTime() + DAY).toISOString().slice(0, 10);
@@ -93,12 +93,11 @@ export function PricingClient({
   );
   const examPlans = useMemo(() => plans.filter((p) => p.endsAt), [plans]);
 
-  // When a monthly plan bought now would end: same rule as planEnd() in src/lib/gate/access.ts
-  // (calendar months, stacked after the current plan if one is active).
+  // When a monthly plan bought now would end: same rule as gate.grant_access_for_order (calendar months with
+  // month-end clamping, stacked after the current plan if one is active).
   const monthlyEnd = (plan: Plan) => {
     const start = current?.endsAt && new Date(current.endsAt) > new Date() ? new Date(current.endsAt) : new Date();
-    start.setMonth(start.getMonth() + plan.durationMonths);
-    return start.toISOString();
+    return addMonthsClamped(start, plan.durationMonths).toISOString();
   };
 
   // ?plan=<code>: the plan a student picked before being asked to sign in.

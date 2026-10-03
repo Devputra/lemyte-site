@@ -21,6 +21,18 @@ export function priceOn(plan: { price_inr?: number; priceInr?: number; price_sch
   return (tiers.find((t) => t.until === null || day <= t.until) ?? tiers[tiers.length - 1]).price;
 }
 
+/** Add calendar months the way Postgres does (31 Jan + 1 month = 28/29 Feb), so the date shown on the plans page
+ *  matches the access the database grants (gate.grant_access_for_order). */
+export function addMonthsClamped(d: Date, months: number): Date {
+  const out = new Date(d);
+  const day = out.getDate();
+  out.setDate(1);
+  out.setMonth(out.getMonth() + months);
+  const last = new Date(out.getFullYear(), out.getMonth() + 1, 0).getDate();
+  out.setDate(Math.min(day, last));
+  return out;
+}
+
 /** The tier in force on a day, with the last day it lasts (null when it runs to the end). */
 export function currentTier(tiers: PriceTier[] | null | undefined, at = new Date()): PriceTier | null {
   if (!tiers?.length) return null;

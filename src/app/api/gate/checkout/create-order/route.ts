@@ -38,6 +38,20 @@ export async function POST(req: NextRequest) {
     const userId = auth.user.id;
     const input = Body.parse(await req.json());
 
+    // Count all attempts, including failed orders, to limit repeated checkout creation.
+    const { count, error: limitErr } = await supabaseAdmin.schema("gate")
+      .from("payment_orders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", new Date(Date.now() - 3_600_000).toISOString());
+    if (limitErr) {
+      console.error("[gate/checkout/create-order] order limit lookup failed", limitErr);
+      return Response.json({ error: "Failed to check order limit" }, { status: 500 });
+    }
+    if ((count ?? 0) >= 10) {
+      return Response.json({ error: "Too many orders. Please try again in an hour." }, { status: 429 });
+    }
+
     const { data: plan, error: planErr } = await supabaseAdmin
       .schema("gate")
       .from("plans")
@@ -121,7 +135,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await supabaseAdmin
+    const savedOrder = await supabaseAdmin
       .schema("gate")
       .from("payment_orders")
       .update({
@@ -129,7 +143,14 @@ export async function POST(req: NextRequest) {
         raw_payload: rzpOrder as unknown as Record<string, unknown>,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", ord.id);
+      .eq("id", ord.id)
+      .select("id")
+      .single();
+
+    if (savedOrder.error || !savedOrder.data) {
+      console.error("[gate/checkout/create-order] provider order save failed", savedOrder.error);
+      return Response.json({ error: "Failed to save payment order" }, { status: 500 });
+    }
 
     return Response.json({
       paymentOrderId: ord.id,

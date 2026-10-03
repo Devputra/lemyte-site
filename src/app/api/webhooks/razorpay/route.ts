@@ -2,9 +2,10 @@
 
 import { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { grantAccessForPaidOrder, revokeAccessForRefundedOrder } from "@/lib/gate/access";
+import { AccessGrantError, grantAccessForPaidOrder, revokeAccessForRefundedOrder } from "@/lib/gate/access";
 import { getErrorMessage } from "@/lib/gate/errors";
 import crypto from "crypto";
+import { paymentMatchesOrder } from "@/lib/gate/razorpay";
 
 export const runtime = "nodejs";
 
@@ -94,60 +95,62 @@ export async function POST(req: NextRequest) {
     let finalError: string | null = null;
 
     try {
+      const payment = event.payload?.payment?.entity;
+      const resolveOrder = async () => {
+        const db = supabaseAdmin.schema("gate");
+        const columns = "id, provider_order_id, amount_inr, currency";
+        if (payment?.order_id) {
+          const { data, error } = await db.from("payment_orders").select(columns)
+            .eq("provider_order_id", payment.order_id).maybeSingle();
+          if (error) throw new Error(`Order lookup failed: ${error.message}`);
+          if (data) return data;
+        }
+        const noteId = payment?.notes?.payment_order_id ?? event.payload?.order?.entity?.notes?.payment_order_id;
+        if (!noteId) return null;
+        const { data, error } = await db.from("payment_orders").select(columns).eq("id", noteId).maybeSingle();
+        if (error) throw new Error(`Order notes lookup failed: ${error.message}`);
+        return data;
+      };
       switch (eventType) {
         case "payment.captured":
         case "order.paid": {
-          const notes =
-            event.payload?.payment?.entity?.notes ??
-            event.payload?.order?.entity?.notes ??
-            {};
-
-          const paymentOrderId = notes.payment_order_id as string | undefined;
-          const paymentId =
-            (event.payload?.payment?.entity?.id as string | undefined) ?? null;
-
-          if (paymentOrderId) {
-            await grantAccessForPaidOrder({
-              paymentOrderId,
-              paymentId,
-            });
+          const order = await resolveOrder();
+          if (!order) throw new Error("Payment order not found");
+          if (!payment?.id || payment.status !== "captured" || !paymentMatchesOrder(payment, order)) {
+            throw new Error("Captured payment order, amount or currency mismatch");
+          }
+          try {
+            await grantAccessForPaidOrder({ paymentOrderId: order.id, paymentId: payment.id });
             finalStatus = "PROCESSED";
-          } else {
-            console.warn("[razorpay webhook] missing payment_order_id in notes", {
-              eventId,
-              eventType,
-            });
+          } catch (grantErr) {
+            // A deliberate refusal (refunded order, no time left to add) will not change on retry: log it for a
+            // manual refund instead of letting Razorpay redeliver the event forever.
+            if (!(grantErr instanceof AccessGrantError)) throw grantErr;
+            console.error("[razorpay webhook] access not granted; manual follow-up needed", { eventId, orderId: order.id, reason: grantErr.reason });
             finalStatus = "IGNORED";
+            finalError = grantErr.message;
           }
           break;
         }
 
         case "payment.failed": {
-          const notes = event.payload?.payment?.entity?.notes ?? {};
-          const paymentOrderId = notes.payment_order_id as string | undefined;
-
-          if (paymentOrderId) {
-            await supabaseAdmin
-              .schema("gate")
-              .from("payment_orders")
-              .update({
-                status: "FAILED",
-                updated_at: processedAt,
-              })
-              .eq("id", paymentOrderId);
-
+          const order = await resolveOrder();
+          if (order) {
+            const { error } = await supabaseAdmin.schema("gate").from("payment_orders")
+              .update({ status: "FAILED", updated_at: processedAt })
+              .eq("id", order.id)
+              .in("status", ["CREATED", "AUTHORIZED"]);
+            if (error) throw new Error(`Failed order update failed: ${error.message}`);
             finalStatus = "PROCESSED";
-          } else {
-            finalStatus = "IGNORED";
           }
           break;
         }
 
         case "refund.processed": {
           // Only a full refund removes access (our policy refunds the whole amount).
-          const payment = event.payload?.payment?.entity ?? {};
-          const paymentOrderId = (payment.notes ?? {}).payment_order_id as string | undefined;
-          const fullyRefunded = Number(payment.amount_refunded ?? 0) >= Number(payment.amount ?? Infinity);
+          const order = await resolveOrder();
+          const paymentOrderId = order?.id;
+          const fullyRefunded = payment && Number(payment.amount_refunded ?? 0) >= Number(payment.amount ?? Infinity);
           if (paymentOrderId && fullyRefunded) {
             await revokeAccessForRefundedOrder(paymentOrderId);
             finalStatus = "PROCESSED";

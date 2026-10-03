@@ -93,3 +93,41 @@ export function verifyCheckoutSignature(args: {
   if (a.length !== b.length) return false;
   return crypto.timingSafeEqual(a, b);
 }
+
+export interface RazorpayPayment {
+  id: string;
+  order_id: string;
+  amount: number;
+  currency: string;
+  status: string;
+}
+
+/** Shared by checkout and signed webhook payloads; amounts must match exactly. */
+export function paymentMatchesOrder(
+  payment: Pick<RazorpayPayment, "order_id" | "amount" | "currency">,
+  order: { provider_order_id: string | null; amount_inr: number; currency: string },
+): boolean {
+  return Boolean(order.provider_order_id) && payment.order_id === order.provider_order_id
+    && payment.amount === order.amount_inr * 100
+    && payment.currency === "INR" && order.currency === "INR";
+}
+
+export async function fetchRazorpayPayment(paymentId: string): Promise<RazorpayPayment> {
+  const res = await fetch(`${BASE}/payments/${encodeURIComponent(paymentId)}`, {
+    headers: { Authorization: authHeader() },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Razorpay payment lookup failed: ${res.status}`);
+  return await res.json() as RazorpayPayment;
+}
+
+export async function captureRazorpayPayment(paymentId: string, amount: number): Promise<RazorpayPayment> {
+  const res = await fetch(`${BASE}/payments/${encodeURIComponent(paymentId)}/capture`, {
+    method: "POST",
+    headers: { Authorization: authHeader(), "Content-Type": "application/json" },
+    body: JSON.stringify({ amount, currency: "INR" }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Razorpay payment capture failed: ${res.status}`);
+  return await res.json() as RazorpayPayment;
+}

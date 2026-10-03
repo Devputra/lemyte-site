@@ -4,8 +4,8 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { verifyCheckoutSignature } from "@/lib/gate/razorpay";
-import { grantAccessForPaidOrder } from "@/lib/gate/access";
+import { verifyCheckoutSignature, fetchRazorpayPayment, captureRazorpayPayment, paymentMatchesOrder } from "@/lib/gate/razorpay";
+import { grantAccessForPaidOrder, AccessGrantError } from "@/lib/gate/access";
 import { handleRouteError } from "@/lib/gate/errors";
 
 export const runtime = "nodejs";
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const { data: ord, error: ordErr } = await supabaseAdmin
       .schema("gate")
       .from("payment_orders")
-      .select("id, user_id, provider_order_id")
+      .select("id, user_id, provider_order_id, amount_inr, currency, status")
       .eq("id", input.paymentOrderId)
       .maybeSingle();
 
@@ -63,6 +63,34 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Order id mismatch" }, { status: 400 });
     }
 
+    // FAILED is not final: the buyer may have retried successfully on the same Razorpay order.
+    if (ord.status === "REFUNDED") {
+      return Response.json({ error: `Order is ${ord.status}` }, { status: 409 });
+    }
+
+    let payment;
+    try {
+      payment = await fetchRazorpayPayment(input.razorpayPaymentId);
+      if (payment.id !== input.razorpayPaymentId || !paymentMatchesOrder(payment, ord)) {
+        return Response.json({ error: "Payment order, amount or currency mismatch" }, { status: 400 });
+      }
+      if (payment.status === "authorized") {
+        try {
+          payment = await captureRazorpayPayment(payment.id, ord.amount_inr * 100);
+        } catch (captureErr) {
+          // Auto-capture or the webhook may have captured it a moment earlier: re-read before giving up.
+          payment = await fetchRazorpayPayment(payment.id);
+          if (payment.status !== "captured") throw captureErr;
+        }
+      }
+    } catch (err) {
+      console.error("[gate/checkout/verify] payment confirmation failed", err);
+      return Response.json({ error: "Unable to confirm or capture payment. Please retry verification." }, { status: 502 });
+    }
+    if (payment.id !== input.razorpayPaymentId || !paymentMatchesOrder(payment, ord) || payment.status !== "captured") {
+      return Response.json({ error: "Payment has not been captured with the expected amount and currency" }, { status: 409 });
+    }
+
     const accessPass = await grantAccessForPaidOrder({
       paymentOrderId: input.paymentOrderId,
       paymentId: input.razorpayPaymentId,
@@ -77,6 +105,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err: unknown) {
+    if (err instanceof AccessGrantError) {
+      return Response.json({ error: err.message, reason: err.reason }, { status: 409 });
+    }
     return handleRouteError(err, "gate/checkout/verify");
   }
 }

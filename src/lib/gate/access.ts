@@ -73,179 +73,33 @@ export async function grantAccessForPaidOrder(args: {
   paymentOrderId: string;
   paymentId?: string | null;
 }): Promise<AccessPassRecord> {
-  const existing = await supabaseAdmin
-    .schema("gate")
-    .from("access_passes")
-    .select("id, user_id, plan_id, payment_order_id, status, starts_at, ends_at")
-    .eq("payment_order_id", args.paymentOrderId)
-    .maybeSingle();
-
-  if (existing.error) {
-    throw new Error(
-      `[gate/access] existing access_pass lookup failed: ${existing.error.message}`
-    );
-  }
-
-  if (existing.data) {
-    // Make sure payment order is also marked CAPTURED if this was a webhook/verify race.
-    await supabaseAdmin
-      .schema("gate")
-      .from("payment_orders")
-      .update({
-        status: "CAPTURED",
-        provider_payment_id: args.paymentId ?? undefined,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", args.paymentOrderId);
-
-    return toAccessPass(existing.data);
-  }
-
-  const ordRes = await supabaseAdmin
-    .schema("gate")
-    .from("payment_orders")
-    .select("id, user_id, plan_id, status")
-    .eq("id", args.paymentOrderId)
-    .maybeSingle();
-
-  if (ordRes.error) {
-    throw new Error(
-      `[gate/access] payment_order lookup failed: ${ordRes.error.message}`
-    );
-  }
-  if (!ordRes.data) {
-    throw new Error("[gate/access] payment_order not found");
-  }
-
-  const order = ordRes.data;
-
-  const planRes = await supabaseAdmin
-    .schema("gate")
-    .from("plans")
-    .select("id, duration_months, ends_at")
-    .eq("id", order.plan_id)
-    .single();
-
-  if (planRes.error || !planRes.data) {
-    throw new Error(
-      `[gate/access] plan lookup failed: ${planRes.error?.message ?? "missing plan"}`
-    );
-  }
-
-  const now = new Date();
-
-  // Extend from existing active pass if present.
-  const currentEnd = await latestActiveEnd(order.user_id, now);
-  const startsAt = currentEnd && currentEnd > now ? currentEnd : now;
-  const endsAt = planEnd(planRes.data, startsAt);
-
-  const markOrder = await supabaseAdmin
-    .schema("gate")
-    .from("payment_orders")
-    .update({
-      status: "CAPTURED",
-      provider_payment_id: args.paymentId ?? undefined,
-      updated_at: now.toISOString(),
-    })
-    .eq("id", order.id);
-
-  if (markOrder.error) {
-    throw new Error(
-      `[gate/access] payment_order update failed: ${markOrder.error.message}`
-    );
-  }
-
-  const insertRes = await supabaseAdmin
-    .schema("gate")
-    .from("access_passes")
-    .insert({
-      user_id: order.user_id,
-      plan_id: order.plan_id,
-      payment_order_id: order.id,
-      status: "ACTIVE",
-      starts_at: startsAt.toISOString(),
-      ends_at: endsAt.toISOString(),
-      updated_at: now.toISOString(),
-    })
-    .select("id, user_id, plan_id, payment_order_id, status, starts_at, ends_at")
-    .single();
-
-  if (!insertRes.error && insertRes.data) {
-    return toAccessPass(insertRes.data);
-  }
-
-  // Handle duplicate insert from verify/webhook race.
-  if (insertRes.error?.code === "23505") {
-    const raceWinner = await supabaseAdmin
-      .schema("gate")
-      .from("access_passes")
-      .select("id, user_id, plan_id, payment_order_id, status, starts_at, ends_at")
-      .eq("payment_order_id", order.id)
-      .single();
-
-    if (raceWinner.error || !raceWinner.data) {
-      throw new Error(
-        `[gate/access] unique race recovery failed: ${raceWinner.error?.message ?? "missing"}`
-      );
+  const { data, error } = await supabaseAdmin.schema("gate").rpc("grant_access_for_order", {
+    p_order_id: args.paymentOrderId,
+    p_provider_payment_id: args.paymentId ?? null,
+  });
+  if (error) throw new Error(`[gate/access] grant failed: ${error.message}`);
+  if (!data?.granted) {
+    const reason = data?.reason ?? "UNKNOWN";
+    if (reason === "NO_TIME_TO_ADD") {
+      console.error("[gate/access] NO_TIME_TO_ADD: captured payment needs a manual refund", args.paymentOrderId);
     }
-
-    return toAccessPass(raceWinner.data);
+    throw new AccessGrantError(reason);
   }
-
-  throw new Error(
-    `[gate/access] access_pass insert failed: ${insertRes.error?.message ?? "unknown"}`
-  );
+  return toAccessPass(data.pass);
 }
 
-/**
- * A fully refunded order loses its access: the order is marked REFUNDED and its pass ends now.
- * A pass that was stacked to start in the future also gets its start pulled back (the table requires
- * ends_at > starts_at), and any passes stacked after it move earlier by the refunded time, so the
- * student doesn't lose days they still paid for.
- */
-export async function revokeAccessForRefundedOrder(paymentOrderId: string): Promise<void> {
-  const now = new Date();
-  const db = supabaseAdmin.schema("gate");
-  const ord = await db.from("payment_orders").update({ status: "REFUNDED", updated_at: now.toISOString() }).eq("id", paymentOrderId);
-  if (ord.error) throw new Error(`[gate/access] refund order update failed: ${ord.error.message}`);
-
-  const { data: passes, error } = await db
-    .from("access_passes")
-    .select("id, user_id, starts_at, ends_at")
-    .eq("payment_order_id", paymentOrderId);
-  if (error) throw new Error(`[gate/access] refund pass lookup failed: ${error.message}`);
-
-  for (const p of passes ?? []) {
-    const start = new Date(p.starts_at);
-    const end = new Date(p.ends_at);
-    if (end <= now) continue; // already over
-    const removedMs = end.getTime() - Math.max(start.getTime(), now.getTime());
-    const patch = {
-      starts_at: new Date(Math.min(start.getTime(), now.getTime() - 1000)).toISOString(),
-      ends_at: now.toISOString(),
-      updated_at: now.toISOString(),
-    };
-    let upd = await db.from("access_passes").update({ ...patch, status: "REFUNDED" }).eq("id", p.id);
-    if (upd.error) upd = await db.from("access_passes").update(patch).eq("id", p.id); // status value not allowed: ending it is enough
-    if (upd.error) throw new Error(`[gate/access] refund pass update failed: ${upd.error.message}`);
-
-    // Close the gap: passes stacked after this one start earlier by the refunded time.
-    const { data: later } = await db
-      .from("access_passes")
-      .select("id, starts_at, ends_at")
-      .eq("user_id", p.user_id)
-      .eq("status", "ACTIVE")
-      .gte("starts_at", end.toISOString())
-      .order("starts_at");
-    for (const l of later ?? []) {
-      await db
-        .from("access_passes")
-        .update({
-          starts_at: new Date(new Date(l.starts_at).getTime() - removedMs).toISOString(),
-          ends_at: new Date(new Date(l.ends_at).getTime() - removedMs).toISOString(),
-          updated_at: now.toISOString(),
-        })
-        .eq("id", l.id);
-    }
+export class AccessGrantError extends Error {
+  constructor(public readonly reason: string) {
+    super(reason === "NO_TIME_TO_ADD"
+      ? "This payment adds no access time. A manual refund is required; please contact support."
+      : `Access cannot be granted: ${reason}`);
   }
+}
+
+/** Refund and close gaps between stacked passes in one transaction. */
+export async function revokeAccessForRefundedOrder(paymentOrderId: string): Promise<void> {
+  const { error } = await supabaseAdmin.schema("gate").rpc("revoke_access_for_order", {
+    p_order_id: paymentOrderId,
+  });
+  if (error) throw new Error(`[gate/access] refund failed: ${error.message}`);
 }

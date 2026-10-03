@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { currentTier, istDate, priceOn } from "../plan-price";
+import { addMonthsClamped, currentTier, istDate, priceOn } from "../plan-price";
 
 const SCHEDULE = [
   { until: "2026-10-31", price: 999 },
@@ -34,5 +34,17 @@ describe("priceOn", () => {
   it("reports the tier in force", () => {
     expect(currentTier(SCHEDULE, ist("2026-11-10T10:00:00"))).toEqual({ until: "2026-11-30", price: 799 });
     expect(currentTier(null)).toBeNull();
+  });
+});
+
+describe("addMonthsClamped (matches Postgres timestamptz + interval 'N months')", () => {
+  it("clamps to the last day of a shorter month", () => {
+    expect(addMonthsClamped(new Date(2027, 0, 31, 10), 1).getDate()).toBe(28); // 31 Jan -> 28 Feb 2027
+    expect(addMonthsClamped(new Date(2028, 0, 31, 10), 1).getDate()).toBe(29); // leap year
+    expect(addMonthsClamped(new Date(2026, 7, 31, 10), 6).getMonth()).toBe(1); // 31 Aug -> 28 Feb, not 3 Mar
+  });
+  it("keeps the day when it exists", () => {
+    const d = addMonthsClamped(new Date(2026, 9, 3, 10), 3);
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([2027, 0, 3]);
   });
 });
