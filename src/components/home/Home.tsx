@@ -150,7 +150,7 @@ function ReportPreview() {
       <div className="rounded-2xl border border-zinc-200 bg-white/95 p-5 shadow-[0_30px_70px_-30px_rgba(25,59,200,0.45)] backdrop-blur">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-zinc-500">GATE CS · Practice test · Your result</p>
-          <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-500">Example</span>
+          <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">Example</span>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-3 border-y border-zinc-100 py-4">
           {[
@@ -314,12 +314,12 @@ function Step({ index, step, onActive, active }: { index: number; step: (typeof 
     <li ref={ref} className="relative pl-14">
       <span
         className={`absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full border text-sm font-medium tabular-nums transition-colors duration-500 ${
-          active ? "border-brand bg-brand text-white" : "border-zinc-200 bg-white text-zinc-400"
+          active ? "border-brand bg-brand text-white" : "border-zinc-200 bg-white text-zinc-500"
         }`}
       >
         0{index + 1}
       </span>
-      <div className={`transition-opacity duration-500 ${active ? "opacity-100" : "opacity-60"}`}>
+      <div className={`transition-opacity duration-500 ${active ? "opacity-100" : "opacity-80"}`}>
         <step.icon className="h-5 w-5 text-brand" strokeWidth={1.75} />
         <h3 className="mt-3 text-xl font-semibold tracking-[-0.01em] text-ink">{step.title}</h3>
         <p className="mt-2 max-w-md text-[15px] leading-relaxed text-zinc-600">{step.text}</p>
@@ -356,7 +356,7 @@ function VisPick() {
       {["GATE 2026 · Mechanical", "GATE 2025 · Mechanical", "Topic · Heat Transfer (10 Q)"].map((t, i) => (
         <div key={t} className={`flex items-center justify-between rounded-xl border bg-white px-4 py-3 text-sm ${i === 0 ? "border-brand ring-2 ring-brand/15" : "border-zinc-200"}`}>
           <span className="font-medium text-ink">{t}</span>
-          <span className={`rounded-md px-2 py-1 text-xs ${i === 0 ? "bg-brand text-white" : "bg-zinc-100 text-zinc-500"}`}>Start</span>
+          <span className={`rounded-md px-2 py-1 text-xs ${i === 0 ? "bg-brand text-white" : "bg-zinc-100 text-zinc-600"}`}>Start</span>
         </div>
       ))}
     </div>

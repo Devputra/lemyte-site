@@ -117,7 +117,7 @@ export default function InstructionsPage() {
     <div className="flex h-screen flex-col bg-white text-ink">
       {/* Top bar */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 px-4 sm:px-6">
-        <Link href="/gate" aria-label="Lemyte">
+        <Link href="/gate" aria-label="Lemyte" className="flex min-h-11 items-center">
           <Image src="/lemyte-logo.svg" alt="Lemyte" width={1346} height={430} unoptimized className="h-5 w-auto" />
         </Link>
         <p className="truncate pl-4 text-sm font-medium text-zinc-600">{info?.title ?? ""}</p>
@@ -129,7 +129,7 @@ export default function InstructionsPage() {
       <div className="flex min-h-0 flex-1">
         {/* Instructions panel */}
         <main className="flex min-w-0 flex-1 flex-col border-r border-zinc-200">
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-8 sm:px-10">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-8 sm:px-10" tabIndex={0} role="region" aria-label="Instructions">
             <div className="mx-auto max-w-3xl text-[15px] leading-7 text-zinc-700">
               {error && <p className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
               {step === 1 ? <General minutes={minutes} /> : <PaperSpecific info={info} mode={params?.mode ?? "PRACTICE"} />}

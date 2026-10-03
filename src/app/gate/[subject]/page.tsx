@@ -123,7 +123,7 @@ export default async function SubjectPage({ params }: Props) {
             keys. Where a year had two sets, the sets are averaged. On average, {s.topics[0].name} carried the most marks (
             {s.topics[0].average} per paper){swing && swing.max - swing.min >= 4 ? `; ${swing.name} varied the most, from ${swing.min} to ${swing.max} marks` : ""}.
           </p>
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-200">
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-200" tabIndex={0} role="region" aria-label="Topic-wise marks table">
             <table className="w-full text-left text-sm">
               <thead className="bg-zinc-50 text-zinc-500">
                 <tr>

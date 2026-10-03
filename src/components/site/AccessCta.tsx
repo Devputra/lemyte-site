@@ -72,7 +72,7 @@ export function HeaderActions() {
           My dashboard
         </Link>
       ) : (
-        <Link href="/gate/auth/sign-in" className="hidden px-3 text-sm font-medium text-zinc-600 hover:text-ink sm:inline">
+        <Link href="/gate/auth/sign-in" className="hidden min-h-11 items-center px-3 text-sm font-medium text-zinc-600 hover:text-ink sm:inline-flex">
           Sign in
         </Link>
       )}

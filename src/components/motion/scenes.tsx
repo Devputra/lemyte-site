@@ -274,7 +274,7 @@ export function RecallScene({ className }: { className?: string }) {
       <p className="text-xs font-semibold text-white">
         How much you remember, over time
       </p>
-      <p className="text-[11px] text-zinc-500">
+      <p className="text-[11px] text-zinc-400">
         A sketch of the testing effect, not measured data
       </p>
       <svg viewBox="0 0 400 280" className="mt-5 w-full">
@@ -596,7 +596,7 @@ export function PaperStackScene({ className }: { className?: string }) {
                 <span key={j} className="block h-1.5 rounded bg-zinc-100" style={{ width: `${w}%` }} />
               ))}
             </div>
-            <div className="mt-5 flex gap-2 text-[10px] font-medium text-zinc-500">
+            <div className="mt-5 flex gap-2 text-[10px] font-medium text-zinc-600">
               <span className="rounded-full bg-zinc-100 px-2 py-0.5">65 questions</span>
               <span className="rounded-full bg-zinc-100 px-2 py-0.5">100 marks</span>
               <span className="rounded-full bg-zinc-100 px-2 py-0.5">3 hours</span>

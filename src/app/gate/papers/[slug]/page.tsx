@@ -226,7 +226,9 @@ export default async function PaperPage({ params }: Props) {
                     <SyllabusBadge note={q.syllabusNote} />
                   </p>
                 )}
-                <GateMarkdown content={q.markdown} className="mt-3 overflow-x-auto text-[15px] leading-relaxed text-zinc-800" />
+                <div className="mt-3 overflow-x-auto" tabIndex={0} role="region" aria-label={`Question ${q.n}`}>
+                  <GateMarkdown content={q.markdown} className="text-[15px] leading-relaxed text-zinc-800" />
+                </div>
                 {q.options.length > 0 && (
                   <ul className="mt-4 grid gap-2">
                     {q.options.map((o) => (
@@ -246,7 +248,9 @@ export default async function PaperPage({ params }: Props) {
                 </p>
                 <div className="mt-4 border-t border-zinc-100 pt-4">
                   <p className="text-sm font-semibold text-ink">Solution</p>
-                  <GateMarkdown content={q.explanation} className="mt-2 overflow-x-auto text-[15px] leading-relaxed text-zinc-700" />
+                  <div className="mt-2 overflow-x-auto" tabIndex={0} role="region" aria-label={`Solution to Q${q.n}`}>
+                    <GateMarkdown content={q.explanation} className="text-[15px] leading-relaxed text-zinc-700" />
+                  </div>
                 </div>
               </article>
             ))}
@@ -261,7 +265,7 @@ export default async function PaperPage({ params }: Props) {
             All {paper.questions} answers from the official key. Numerical answers are ranges; “or” means the key accepts either
             answer.
           </p>
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-200">
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-200" tabIndex={0} role="region" aria-label="Answer key table">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead className="bg-zinc-50 text-zinc-500">
                 <tr>

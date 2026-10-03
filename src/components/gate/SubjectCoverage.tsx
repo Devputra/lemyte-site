@@ -56,7 +56,7 @@ function CoverageMap({ subjects, papers, active, onActive }: {
         ))}
         <span />
         {years.map((y, i) => (
-          <span key={y} className="text-center text-[9px] tabular-nums text-zinc-400 sm:text-[10px]">
+          <span key={y} className="text-center text-[9px] tabular-nums text-zinc-500 sm:text-[10px]">
             {i % 2 === 0 || i === years.length - 1 ? `'${String(y).slice(2)}` : ""}
           </span>
         ))}
@@ -99,7 +99,7 @@ export function SubjectCoverage({ intro, subjects, papers }: { intro: ReactNode 
               >
                 <td className="px-4 py-3">
                   <span className="font-medium text-ink">{s.name}</span>
-                  <span className="ml-2 text-xs text-zinc-400">{s.code}</span>
+                  <span className="ml-2 text-xs text-zinc-500">{s.code}</span>
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums text-zinc-600">{s.papers}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-zinc-600">

@@ -204,7 +204,7 @@ export default function TopicPracticePage() {
                     }`}
                   >
                     <span className="block">{s.name}</span>
-                    <span className="mt-1 block text-xs opacity-70">
+                    <span className="mt-1 block text-xs opacity-80">
                       {s.code}
                     </span>
                   </button>

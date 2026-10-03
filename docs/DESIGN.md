@@ -51,3 +51,14 @@ Motion explains or guides; it never decorates for its own sake. One primitive pe
 - No slogans built from negations ("No X. No Y. No Z.") and no dramatic metaphors ("marks leaking").
 - Address the student as "you". Short paragraphs. British/Indian spelling ("practise" verb, "practice" noun).
 - Every claim must be true today: if a feature or number isn't live, don't write it.
+
+## Accessibility (checked with axe-core, WCAG 2.1 AA: 0 violations on public pages, Oct 2026)
+- **Text contrast ≥ 4.5:1.** On white or zinc-50 use `text-zinc-500` or darker for any text; `text-zinc-400` only on
+  dark (`bg-ink`) sections or for decorative icons. On `bg-zinc-100` use `text-zinc-600`. Dimmed states: opacity ≥ 0.8.
+- **Touch targets:** standalone controls ≥ 44 px tall (`min-h-11`); FAQ rows put the padding on `<summary>`, not on
+  `<details>`. Links inside sentences are exempt.
+- **Scrolling areas** (wide tables, long formulas, the instructions panel) get `tabIndex={0} role="region" aria-label`,
+  so keyboard users can scroll them.
+- **Animated headlines** (`SplitWords`): the real text is in an `sr-only` span; the animated words are `aria-hidden`.
+- Keep a visible focus style on everything clickable (never `outline-none` without a replacement).
+- Re-run: `node <scratch>/a11y.mjs axe.min.js /path …` against `next start` (desktop + 390 px).

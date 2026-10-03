@@ -109,7 +109,7 @@ export function SiteFooter() {
         ))}
       </Container>
       <div className="border-t border-zinc-100">
-        <Container className="flex flex-col gap-2 py-6 text-xs leading-5 text-zinc-400 sm:flex-row sm:justify-between">
+        <Container className="flex flex-col gap-2 py-6 text-xs leading-5 text-zinc-500 sm:flex-row sm:justify-between">
           <p>
             © {new Date().getFullYear()} {LEGAL.brand} · {LEGAL.company}, Chennai.
           </p>
