@@ -4,6 +4,7 @@
 import "server-only";
 import Redis from "ioredis";
 import type { AttemptSession, AttemptEvent } from "./contracts";
+import { casUpdate, RATE_SCRIPT } from "./redis-cas";
 
 // Singleton Redis client
 let redisClient: Redis | null = null;
@@ -80,70 +81,33 @@ export async function getAttemptSession(
 }
 
 /**
- * Optimistically update an attempt session with WATCH/MULTI.
- *
- * This is not as strong as a Lua script, but it is materially safer than
- * plain GET -> SET and good enough for MVP traffic.
- *
- * Returns:
- * - updated session on success
- * - null if session does not exist
- *
- * Throws if repeated write conflicts occur.
+ * Atomically update an attempt session (compare-and-swap in a Lua script; see redis-cas.ts).
+ * The updater may run more than once if another request changed the session meanwhile, so it must only
+ * modify the session it is given. Returns the updated session, or null if the session does not exist.
  */
 export async function atomicUpdateSession(
   attemptId: string,
   updater: (session: AttemptSession) => AttemptSession
 ): Promise<AttemptSession | null> {
-  const redis = getRedis();
-  const key = attemptKey(attemptId);
-  const MAX_RETRIES = 5;
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    await redis.watch(key);
-
-    const raw = await redis.get(key);
-    if (!raw) {
-      await redis.unwatch();
-      return null;
-    }
-
-    let session: AttemptSession;
-    try {
-      session = JSON.parse(raw) as AttemptSession;
-    } catch (err) {
-      await redis.unwatch();
-      console.error("[gate/redis] Failed to parse session during atomic update", {
-        attemptId,
-        err,
-      });
-      throw new Error("Corrupted attempt session in Redis");
-    }
-
+  return casUpdate<AttemptSession>(getRedis(), attemptKey(attemptId), (session) => {
     const updated = updater(session);
     updated.versionCounter = (updated.versionCounter ?? 0) + 1;
+    return updated;
+  });
+}
 
-    const ttl = await redis.ttl(key);
-    const nextTtl = ttl > 0 ? ttl : 7 * 3600;
-
-    const multi = redis.multi();
-    multi.set(key, JSON.stringify(updated), "EX", nextTtl);
-
-    const execResult = await multi.exec();
-
-    // execResult === null means watched key changed before commit
-    if (execResult !== null) {
-      return updated;
-    }
-
-    // Conflict: retry
-    console.warn("[gate/redis] atomicUpdateSession retry due to concurrent modification", {
-      attemptId,
-      retry: attempt,
-    });
+/**
+ * Fixed-window rate limit. Returns true if this hit is allowed (at most `limit` hits per `windowSeconds`
+ * for `bucket` + `id`). Fails open: if Redis is unreachable, the request is allowed.
+ */
+export async function rateLimit(bucket: string, id: string, limit: number, windowSeconds: number): Promise<boolean> {
+  try {
+    const n = Number(await getRedis().eval(RATE_SCRIPT, 1, `lm:rl:${bucket}:${id}`, String(windowSeconds)));
+    return n <= limit;
+  } catch (err) {
+    console.error("[gate/redis] rate limit check failed; allowing", { bucket, err });
+    return true;
   }
-
-  throw new Error("Failed to update attempt session after concurrent retries");
 }
 
 /**

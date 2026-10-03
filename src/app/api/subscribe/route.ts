@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 
+import { rateLimit } from "@/lib/gate/redis";
+
+const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
+
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (!(await rateLimit("subscribe", ip, 5, 3600))) {
+      return NextResponse.json({ ok: false, error: "Too many requests. Please try again later." }, { status: 429 });
+    }
+
     const { email } = await req.json();
 
-    if (!email || typeof email !== "string") {
+    if (!email || typeof email !== "string" || email.length > 254 || !EMAIL.test(email)) {
       return NextResponse.json({ ok: false, error: "Invalid email" }, { status: 400 });
     }
 
@@ -29,8 +38,8 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         email_address: email,
-        status_if_new: "subscribed",
-        status: "subscribed",
+        // Double opt-in: Mailchimp emails a confirmation link, so nobody can subscribe someone else's address.
+        status: "pending",
       }),
       cache: "no-store",
     });

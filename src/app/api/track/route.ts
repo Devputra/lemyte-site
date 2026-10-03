@@ -6,6 +6,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
+import { rateLimit } from "@/lib/gate/redis";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -44,6 +45,12 @@ export async function POST(req: NextRequest) {
     body = Body.parse(JSON.parse(await req.text()));
   } catch {
     return new Response(null, { status: 400 });
+  }
+
+  // Generous limits (a college network can share one IP); over the limit, events are quietly dropped.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!(await rateLimit("track-ip", ip, 1200, 60)) || !(await rateLimit("track-visitor", body.v, 120, 60))) {
+    return new Response(null, { status: 204 });
   }
 
   let userId: string | null = null;

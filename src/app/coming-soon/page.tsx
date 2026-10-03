@@ -24,7 +24,7 @@ export default function ComingSoon() {
       });
       const data = await res.json();
       if (data.ok) {
-        setMsg("Thanks. We'll email you when it's ready.");
+        setMsg("Almost done: check your inbox and confirm your email.");
         setEmail("");
       } else {
         setMsg(data.error || "Something went wrong.");

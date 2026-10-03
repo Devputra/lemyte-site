@@ -13,11 +13,11 @@ comments and blank lines stripped, in 7 batches of ~3k tokens (~23k input tokens
 | `checkout/verify` grants on signature without confirming capture | Codex | Plausible | **Fixed** 3 Oct: payment fetched, amount/currency/order checked, captured if only authorized |
 | Refund-before-grant / concurrent grants / fixed-date double orders race (`access.ts`) | Codex | Plausible | **Fixed** 3 Oct: `gate.grant_access_for_order` / `revoke_access_for_order`, per-user lock, one transaction |
 | Refund webhook with empty notes ignored | Codex | Plausible | **Fixed** 3 Oct: webhook finds the order by Razorpay order id |
-| Redis WATCH shared across requests (`redis.ts`) | Codex | Plausible | Open — per-transaction connection or Lua |
+| Redis WATCH shared across requests (`redis.ts`) | Codex | Confirmed (WATCH is per connection; one shared connection) | **Fixed** 3 Oct: compare-and-swap Lua script (`redis-cas.ts`), tested with 40 concurrent writers on real Redis |
 | Students can read solutions via direct Supabase queries if RLS policies are deployed | Codex | To check (depends on deployed grants) | Open |
 | gate-worker uses `.from("gate.attempts")` | Codex | Worker is a separate Docker service, not on Vercel | Check whether it runs at all |
 | Media route lets any signed-in user fetch any question image | Codex + Groq | Confirmed by design (images, not answers) | Low priority |
-| No rate limits on subscribe / track / create-order | Codex + Groq | Confirmed | create-order **fixed** (10/hour/user); subscribe and track still open |
+| No rate limits on subscribe / track / create-order | Codex + Groq | Confirmed | **Fixed** 3 Oct: create-order 10/hour/user; track 120/min/visitor + 1,200/min/IP; subscribe 5/hour/IP + double opt-in |
 | Start route has no entitlement check | Groq | **False** (`checkEntitlement` at start/route.ts:115) | — |
 | Verify replay grants multiple passes | Groq | **False** (grant is idempotent per payment order) | — |
 | Submit accepted after time expiry | Groq | **False as a bug** (answers stop at `endsAt`; auto-submit at time-up is intended) | — |
