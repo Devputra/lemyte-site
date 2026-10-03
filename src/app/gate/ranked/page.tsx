@@ -1,6 +1,7 @@
 // src/app/gate/ranked/page.tsx
 "use client";
 
+import { fetchJson } from "@/lib/fetch-helpers";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -42,30 +43,28 @@ function fmtDate(value?: string | null): string | null {
 export default function GateRankedPage() {
   const router = useRouter();
   const [tests, setTests] = useState<CatalogTest[]>([]);
+  const [loadError, setLoadError] = useState(false);
+  const [loadVersion, setLoadVersion] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/gate/tests?kind=RANKED", { cache: "no-store" })
-      .then((r) => r.json())
+    setLoading(true);
+    setLoadError(false);
+    fetchJson("/api/gate/tests?kind=RANKED", { cache: "no-store" })
       .then((j) => {
         if (cancelled) return;
         if (j.error) throw new Error(j.error);
         setTests(j.tests ?? []);
       })
-      .catch(
-        (e) =>
-          !cancelled &&
-          setError(e?.message ?? "Couldn't load ranked tests. Please refresh."),
-      )
+      .catch(() => { if (!cancelled) setLoadError(true); })
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadVersion]);
 
   async function startRanked(testId: string) {
     setConfirmId(null);
@@ -101,13 +100,11 @@ export default function GateRankedPage() {
           </h2>
         </div>
 
-        {error ? (
-          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {error}
+        {loadError ? (
+          <div role="alert" className="rounded-xl border border-zinc-200 p-5 text-sm">
+            Couldn&apos;t load. <button onClick={() => setLoadVersion((n) => n + 1)} className="min-h-11 px-3 text-brand underline">Retry</button>
           </div>
-        ) : null}
-
-        {loading ? (
+        ) : loading ? (
           <LoadingScene
             label="Loading ranked tests…"
             className="rounded-2xl border border-zinc-200 bg-white"

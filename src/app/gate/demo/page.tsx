@@ -10,7 +10,6 @@ import {
   Constellation,
   Magnetic,
   Reveal,
-  SplitWords,
 } from "@/components/motion";
 import { AnswerSheetScene } from "@/components/motion/scenes";
 import { buttonClass, Container, Eyebrow, type } from "@/components/site/ui";
@@ -45,20 +44,20 @@ export default function GateDemoPage() {
       />
       <Container className="relative grid gap-14 py-14 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div>
-          <Reveal>
+          <div>
             <Eyebrow>Free demo</Eyebrow>
-          </Reveal>
+          </div>
           <h1 className={`${type.display} mt-4`}>
-            <SplitWords text="Try a short GATE test, free." />
+            Try a short GATE test, free.
           </h1>
-          <Reveal delay={0.25}>
+          <div>
             <p className={`${type.lead} mt-6 max-w-xl`}>
               Ten General Aptitude questions from real GATE papers, on the same
               screen you&apos;ll use for full tests. When you submit, you get
               your score and a full report.
             </p>
-          </Reveal>
-          <Reveal delay={0.4} className="mt-8 flex flex-wrap gap-3">
+          </div>
+          <div className="mt-8 flex flex-wrap gap-3">
             <Magnetic>
               <button
                 onClick={startDemo}
@@ -75,7 +74,7 @@ export default function GateDemoPage() {
             >
               See plans
             </Link>
-          </Reveal>
+          </div>
           {error && (
             <p className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}

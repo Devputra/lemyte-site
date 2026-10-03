@@ -167,7 +167,7 @@ export function Calculator({
     ..."123".split("").map((d) => ({ label: d, insert: d })),
     { label: "0", insert: "0" },
   ];
-  const base = "rounded-md border border-zinc-200 px-1 py-1.5 font-mono text-[13px] transition-colors active:scale-[0.97]";
+  const base = "min-h-11 lg:min-h-0 rounded-md border border-zinc-200 px-1 py-1.5 font-mono text-[13px] transition-colors active:scale-[0.97]";
   const press = (k: Key) => (k.act ? k.act() : type(k.insert!));
 
   return (
@@ -175,12 +175,13 @@ export function Calculator({
       ref={box}
       role="dialog"
       aria-label="Scientific calculator"
-      className="fixed z-50 w-[320px] select-none rounded-xl border border-zinc-300 bg-white shadow-2xl"
+      className="fixed max-lg:!left-0 max-lg:!right-0 max-lg:!top-auto max-lg:bottom-0 max-lg:max-h-[90dvh] max-lg:w-full max-lg:overflow-y-auto z-50 w-[320px] select-none rounded-xl border border-zinc-300 bg-white shadow-2xl"
       style={pos ? { left: pos.x, top: pos.y } : { right: 24, top: 96 }}
     >
       <div
         className="flex cursor-move items-center justify-between rounded-t-xl border-b border-zinc-200 bg-zinc-50 px-3 py-2"
         onPointerDown={(e) => {
+          if (window.innerWidth < 1024) return;
           const r = box.current!.getBoundingClientRect();
           drag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
         }}
@@ -195,13 +196,13 @@ export function Calculator({
                   setAngle(a);
                   setResult(null);
                 }}
-                className={`px-2 py-0.5 ${angle === a ? "bg-brand text-white" : "bg-white text-zinc-600 hover:bg-zinc-100"}`}
+                className={`min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 px-2 py-0.5 ${angle === a ? "bg-brand text-white" : "bg-white text-zinc-600 hover:bg-zinc-100"}`}
               >
                 {a === "deg" ? "Deg" : "Rad"}
               </button>
             ))}
           </div>
-          <button onClick={onClose} onPointerDown={(e) => e.stopPropagation()} aria-label="Close calculator" className="text-zinc-400 hover:text-zinc-700">
+          <button onClick={onClose} onPointerDown={(e) => e.stopPropagation()} aria-label="Close calculator" className="flex min-h-11 min-w-11 items-center justify-center text-zinc-500 hover:text-zinc-700 lg:min-h-0 lg:min-w-0">
             <X className="h-4 w-4" />
           </button>
         </div>

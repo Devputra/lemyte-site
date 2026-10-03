@@ -197,7 +197,7 @@ export default function GateDashboardPage() {
             <CheckCircle2 className="mt-0.5 h-5 w-5" />
             <div>
               <p className="font-semibold">Plan active.</p>
-              <p>You can start practice and ranked mocks now.</p>
+              <p>You can start practice now and take ranked tests when they are scheduled.</p>
             </div>
           </div>
         )}

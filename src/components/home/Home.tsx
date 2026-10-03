@@ -25,7 +25,6 @@ import {
   Marquee,
   Reveal,
   ScrollProgress,
-  SplitWords,
   useSectionProgress,
 } from "@/components/motion";
 import { AnswerSheetScene, PlanScene, RecallScene } from "@/components/motion/scenes";
@@ -92,19 +91,19 @@ function Hero() {
       <Constellation className="opacity-70 [mask-image:radial-gradient(ellipse_at_30%_40%,#000_30%,transparent_75%)]" />
       <Container className="relative grid items-center gap-14 py-16 sm:py-24 lg:grid-cols-[1.05fr_0.95fr]">
         <div>
-          <Reveal>
+          <div>
             <Eyebrow>Assessments for competitive exams</Eyebrow>
-          </Reveal>
+          </div>
           <h1 className={`${type.display} mt-4`}>
-            <SplitWords text="Practice tests that show you what to study next." />
+            Practice tests that show you what to study next.
           </h1>
-          <Reveal delay={0.35}>
+          <div>
             <p className={`${type.lead} mt-6 max-w-xl`}>
               {fmtInt(totals.questions)} questions from {totals.papers} official GATE papers, marked the way GATE marks
               them. Every test ends with a list of what to work on next.
             </p>
-          </Reveal>
-          <Reveal delay={0.5}>
+          </div>
+          <div>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Magnetic>
                 <TrialButton size="lg" arrow paidLabel="Start a PYQ paper" paidHref="/gate/practice" />
@@ -113,7 +112,7 @@ function Hero() {
                 How it works
               </ButtonLink>
             </div>
-          </Reveal>
+          </div>
         </div>
 
         <div className="relative mx-auto w-full max-w-md sm:pb-[200px] lg:max-w-none">
@@ -176,7 +175,7 @@ function ReportPreview() {
           ))}
         </ul>
         <p className="mt-4 flex items-center justify-between rounded-xl bg-brand-50 px-3 py-2 text-xs text-ink">
-          Next: <span className="font-medium">10 questions on Computer Networks</span>
+          Practise one topic
           <ArrowRight className="h-3.5 w-3.5 text-brand" />
         </p>
       </div>
@@ -502,7 +501,7 @@ function SampleReport() {
               href="/gate/practice/topics"
               className="mt-6 flex min-h-11 items-center justify-between rounded-xl bg-brand-50 px-4 py-3 text-sm font-medium text-brand hover:bg-brand-100"
             >
-              Next: 10 questions on Computer Networks <ArrowRight className="h-4 w-4" />
+              Practise one topic <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 

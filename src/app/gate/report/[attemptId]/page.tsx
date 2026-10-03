@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 
 import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
+import { attemptedAccuracy } from "@/lib/gate/report-topics";
 import { LEGAL } from "@/lib/legal";
 import { SyllabusBadge } from "@/components/gate/SyllabusBadge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,6 @@ interface AttemptReport {
     score: number;
     max_score: number;
     percent: number;
-    passed: boolean;
     source?: string;
   } | null;
   summary?: {
@@ -60,6 +60,7 @@ interface AttemptReport {
     question_order_hash: string | null;
     questionOrderSource?: string | null;
   } | null;
+  weakestTopics?: Array<{ id: string; name: string; attempted: number; correct: number }>;
   sectionSummary?: Array<{
     section: string;
     totalQuestions: number;
@@ -216,7 +217,6 @@ function optionCardClasses(params: {
 }
 
 function buildInsight(params: {
-  passed: boolean;
   attemptedCount: number;
   totalQuestions: number;
   accuracyPercent: number;
@@ -225,7 +225,6 @@ function buildInsight(params: {
   unansweredCount: number;
 }) {
   const {
-    passed,
     attemptedCount,
     totalQuestions,
     accuracyPercent,
@@ -233,12 +232,6 @@ function buildInsight(params: {
     wrongCount,
     unansweredCount,
   } = params;
-
-  if (passed) {
-    return `You passed, with ${formatPercent(
-      accuracyPercent
-    )} accuracy on the questions you answered. To push your score higher, work on the 2-mark questions you got wrong.`;
-  }
 
   if (wrongCount > 0 && negativeMarksLost > 0) {
     return `You answered ${attemptedCount} of ${totalQuestions} questions with ${formatPercent(
@@ -346,7 +339,6 @@ export default function GateReportPage() {
         score: safeNumber(report.results.score),
         maxScore: safeNumber(report.results.max_score),
         percent: safeNumber(report.results.percent),
-        passed: Boolean(report.results.passed),
       };
     }
 
@@ -357,8 +349,7 @@ export default function GateReportPage() {
     const unansweredCount = allQuestions.filter(
       (q) => q.resultStatus === "UNANSWERED"
     ).length;
-    const accuracyPercent =
-      attemptedCount > 0 ? (correctCount / attemptedCount) * 100 : 0;
+    const accuracyPercent = attemptedAccuracy(allQuestions);
     const negativeMarksLost = allQuestions
       .filter((q) => q.earnedMarks < 0)
       .reduce((sum, q) => sum + Math.abs(q.earnedMarks), 0);
@@ -375,7 +366,6 @@ export default function GateReportPage() {
       score: safeNumber(report?.results?.score),
       maxScore: safeNumber(report?.results?.max_score),
       percent: safeNumber(report?.results?.percent),
-      passed: Boolean(report?.results?.passed),
     };
   }, [allQuestions, report]);
 
@@ -431,7 +421,6 @@ export default function GateReportPage() {
 
   const insight = useMemo(() => {
     return buildInsight({
-      passed: derivedSummary.passed,
       attemptedCount: derivedSummary.attemptedCount,
       totalQuestions: derivedSummary.totalQuestions,
       accuracyPercent: derivedSummary.accuracyPercent,
@@ -567,39 +556,8 @@ export default function GateReportPage() {
           </div>
         </section>
 
-        {/* After the free demo: the honest next step is a full paper in the student's own subject. */}
-        {isDemo && (
-          <section className="rounded-2xl border border-brand/30 bg-brand-50/50 p-5 sm:p-6">
-            <h2 className="text-lg font-semibold text-gray-900">That was a 10-question sample</h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-600">
-              General Aptitude is 15 of GATE&apos;s 100 marks. To see where you stand, take a full 3-hour paper in your
-              subject: the same screen, marking and report, with every question solved. Pick your subject:
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {DEMO_SUBJECTS.map(([code, name]) => (
-                <Link
-                  key={code}
-                  href={`/gate/${code.toLowerCase()}`}
-                  title={name}
-                  className="inline-flex min-h-11 items-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 hover:border-brand hover:text-brand"
-                >
-                  {code}
-                </Link>
-              ))}
-            </div>
-            <p className="mt-4 text-sm text-gray-600">
-              Full papers need a plan.{" "}
-              <Link href="/gate/pricing" className="font-medium text-brand underline underline-offset-2">
-                See plans
-              </Link>{" "}
-              · full refund within {LEGAL.refundWindowDays} days if you have started no more than{" "}
-              {LEGAL.refundMaxAttempts} tests.
-            </p>
-          </section>
-        )}
-
         {/* Summary cards */}
-        <Reveal as="section" className="grid grid-cols-2 gap-4 xl:grid-cols-6">
+        <Reveal as="section" className="grid grid-cols-2 gap-4 xl:grid-cols-5">
           <Card>
             <CardContent className="flex h-full flex-col justify-center gap-1 py-6">
               <div className="text-sm text-gray-500">Score</div>
@@ -608,22 +566,6 @@ export default function GateReportPage() {
               </div>
               <div className="text-sm text-gray-500">
                 / {formatCompactNumber(derivedSummary.maxScore)} marks
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex h-full flex-col justify-center gap-1 py-6">
-              <div className="text-sm text-gray-500">Result</div>
-              <div
-                className={`text-2xl font-bold ${
-                  derivedSummary.passed ? "text-[#00A86B]" : "text-red-600"
-                }`}
-              >
-                {derivedSummary.passed ? "Passed" : "Not Passed"}
-              </div>
-              <div className="text-sm text-gray-500">
-                {formatPercent(derivedSummary.percent)}
               </div>
             </CardContent>
           </Card>
@@ -668,6 +610,17 @@ export default function GateReportPage() {
             </CardContent>
           </Card>
         </Reveal>
+
+        {(report.weakestTopics?.length ?? 0) > 0 && (
+          <section className="rounded-xl border border-gray-200 p-5">
+            <h2 className="font-semibold">Topics to review</h2>
+            <ul className="mt-3 space-y-2 text-sm text-gray-700">
+              {report.weakestTopics!.map((topic) => (
+                <li key={topic.id}>{topic.name}: {topic.correct} correct out of {topic.attempted} attempted</li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Insight + section performance */}
         <Reveal as="section" className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
@@ -1303,6 +1256,37 @@ export default function GateReportPage() {
             </CardContent>
           </Card>
         </section>
+
+        {/* After the free demo: the honest next step is a full paper in the student's own subject. */}
+        {isDemo && (
+          <section className="rounded-2xl border border-brand/30 bg-brand-50/50 p-5 sm:p-6">
+            <h2 className="text-lg font-semibold text-gray-900">That was a 10-question sample</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-600">
+              General Aptitude is 15 of GATE&apos;s 100 marks. To see where you stand, take a full 3-hour paper in your
+              subject: the same screen, marking and report, with every question solved. Pick your subject:
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {DEMO_SUBJECTS.map(([code, name]) => (
+                <Link
+                  key={code}
+                  href={`/gate/practice?subject=${code}`}
+                  title={name}
+                  className="inline-flex min-h-11 items-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 hover:border-brand hover:text-brand"
+                >
+                  {code}
+                </Link>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-gray-600">
+              Full papers need a plan.{" "}
+              <Link href="/gate/pricing" className="font-medium text-brand underline underline-offset-2">
+                See plans
+              </Link>{" "}
+              · full refund within {LEGAL.refundWindowDays} days if you have started no more than{" "}
+              {LEGAL.refundMaxAttempts} tests.
+            </p>
+          </section>
+        )}
 
         {/* Bottom CTA */}
         <section className="flex flex-wrap gap-3">

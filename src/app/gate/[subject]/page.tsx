@@ -108,7 +108,7 @@ export default async function SubjectPage({ params }: Props) {
             {s.years.at(-1)}, what changed for GATE 2027, and every paper with its official answer key.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <ButtonLink href="/gate/practice" size="lg">Take a {s.code} paper as a timed test</ButtonLink>
+            <ButtonLink href="/gate/practice" size="lg">Take a timed {s.code} paper</ButtonLink>
             <ButtonLink href="/gate/2027" variant="secondary" size="lg">GATE 2027 dates and changes</ButtonLink>
           </div>
         </Container>

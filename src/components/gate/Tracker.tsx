@@ -240,7 +240,7 @@ export function MasteryCard({
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-4xl font-semibold tracking-tight text-ink">{points}</span>
-            <span className="text-sm font-semibold text-zinc-500">mastery points</span>
+            <span className="text-sm font-semibold text-zinc-500">activity points</span>
           </div>
           <p className="mt-1 text-xs font-semibold text-zinc-500">
             <b className="text-zinc-800">{coverage}%</b> coverage · <b className="text-zinc-800">{accuracy}%</b> accuracy ·{" "}

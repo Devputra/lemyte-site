@@ -1,4 +1,5 @@
 // src/app/api/gate/attempts/[attemptId]/report/route.ts
+import { attemptedAccuracy, weakestTopics } from "@/lib/gate/report-topics";
 
 import { signMedia } from "@/lib/gate/media";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -282,7 +283,7 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
     .schema("gate")
     .from("question_versions")
     .select(
-      "id, type, marks, markdown_content, options_array, explanation_markdown, syllabus_note",
+      "id, type, marks, markdown_content, options_array, explanation_markdown, syllabus_note, topic_id",
     )
     .in("id", idsForQuestionLoad);
 
@@ -296,6 +297,12 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
       { status: 500 },
     );
   }
+
+  const topicIds = [...new Set((versions ?? []).map((v) => v.topic_id as string).filter(Boolean))];
+  const { data: topics, error: topicsError } = topicIds.length
+    ? await supabaseAdmin.schema("gate").from("topics").select("id, name").in("id", topicIds)
+    : { data: [], error: null };
+  if (topicsError) return Response.json({ error: "Failed to load topics" }, { status: 500 });
 
   const versionsById = new Map((versions ?? []).map((v) => [String(v.id), v]));
 
@@ -341,6 +348,7 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
           ? index + 1
           : (baseOrderByQuestionId.get(questionVersionId) ?? index + 1),
       questionVersionId,
+      topicId: (v?.topic_id as string | null) ?? null,
       type,
       section,
       marks: safeNumber(v?.marks, 0),
@@ -376,8 +384,7 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
   ).length;
   const attemptedCount = reviewQuestions.filter((q) => q.answered).length;
   const totalQuestions = reviewQuestions.length;
-  const accuracyPercent =
-    attemptedCount > 0 ? round2((correctCount / attemptedCount) * 100) : 0;
+  const accuracyPercent = attemptedAccuracy(reviewQuestions);
   const negativeMarksLost = round2(
     reviewQuestions
       .filter((q) => q.earnedMarks < 0)
@@ -424,10 +431,7 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
 
   const sectionSummary = [...sectionSummaryMap.values()].map((s) => ({
     ...s,
-    accuracyPercent:
-      s.attemptedCount > 0
-        ? round2((s.correctCount / s.attemptedCount) * 100)
-        : 0,
+    accuracyPercent: attemptedAccuracy(reviewQuestions.filter((q) => q.section === s.section)),
   }));
 
   const results = resultsRes.data
@@ -454,7 +458,8 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
       title: testVersion.title,
       passPercent,
     },
-    results,
+    results: results ? { score: results.score, max_score: results.max_score, percent: results.percent } : null,
+    weakestTopics: weakestTopics(reviewQuestions, new Map((topics ?? []).map((t) => [String(t.id), String(t.name)]))),
     summary: {
       totalQuestions,
       attemptedCount,

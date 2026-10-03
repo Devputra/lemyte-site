@@ -54,11 +54,39 @@ export function AuthPage({ mode }: { mode: keyof typeof COPY }) {
   const [next, setNext] = useState(HOME);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [recover, setRecover] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok?: boolean } | null>(null);
 
   // Read ?next= without useSearchParams (which would force a client-side rendering bailout).
-  useEffect(() => setNext(safeNext(new URLSearchParams(window.location.search).get("next"))), []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setNext(safeNext(params.get("next")));
+    setRecover(mode === "sign-in" && params.get("recover") === "1");
+  }, [mode]);
+
+  useEffect(() => {
+    if (!cooldown) return;
+    const timer = window.setTimeout(() => setCooldown((n) => Math.max(0, n - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [cooldown]);
+
+  async function resend() {
+    if (!confirmationEmail || cooldown || busy) return;
+    setBusy(true);
+    setCooldown(60);
+    try {
+      await supabaseBrowser().auth.resend({
+        type: "signup", email: confirmationEmail,
+        options: { emailRedirectTo: `${SITE_URL}/gate/auth/callback?next=${encodeURIComponent(next)}` },
+      });
+    } finally {
+      setMsg({ ok: true, text: "If an account exists for that email, we've sent a link." });
+      setBusy(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,9 +95,23 @@ export function AuthPage({ mode }: { mode: keyof typeof COPY }) {
     try {
       const auth = supabaseBrowser().auth;
       const creds = { email: email.trim().toLowerCase(), password };
+      if (recover) {
+        const destination = `/gate/auth/reset-password?next=${encodeURIComponent(next)}`;
+        try {
+          await auth.resetPasswordForEmail(creds.email, {
+            redirectTo: `${SITE_URL}/gate/auth/callback?next=${encodeURIComponent(destination)}`,
+          });
+        } finally {
+          setMsg({ ok: true, text: "If an account exists for that email, we've sent a link." });
+        }
+        return;
+      }
       if (mode === "sign-in") {
         const { error } = await auth.signInWithPassword(creds);
-        if (error) return setMsg({ text: error.message });
+        if (error) {
+          if (error.message.toLowerCase().includes("email not confirmed")) setConfirmationEmail(creds.email);
+          return setMsg({ text: error.message });
+        }
       } else {
         const base = SITE_URL;
         const { data, error } = await auth.signUp({
@@ -78,13 +120,16 @@ export function AuthPage({ mode }: { mode: keyof typeof COPY }) {
         });
         if (error) return setMsg({ text: error.message });
         // With email confirmation on, there is no session until the link is opened.
-        if (!data.session)
+        if (!data.session) {
+          setConfirmationEmail(creds.email);
+          setCooldown(60);
           return setMsg({ ok: true, text: "Almost done. We've sent a confirmation link to your email. Open it, then sign in." });
+        }
       }
       router.replace(next);
       router.refresh();
     } catch (err: unknown) {
-      setMsg({ text: err instanceof Error ? err.message : c.fail });
+      if (!recover) setMsg({ text: err instanceof Error ? err.message : c.fail });
     } finally {
       setBusy(false);
     }
@@ -112,15 +157,15 @@ export function AuthPage({ mode }: { mode: keyof typeof COPY }) {
 
         <section className="rounded-2xl border border-neutral-200 bg-white/95 p-6 shadow-xl shadow-brand/5 backdrop-blur sm:p-8">
           <div className="mb-6 lg:hidden">{back}</div>
-          <h2 className="text-2xl font-semibold tracking-[-0.02em]">{c.heading}</h2>
-          <p className="mt-2 text-sm leading-6 text-neutral-600">{c.sub}</p>
+          <h2 className="text-2xl font-semibold tracking-[-0.02em]">{recover ? "Reset your password" : c.heading}</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">{recover ? "Enter your email to get a password reset link." : c.sub}</p>
 
           <form className="mt-6 space-y-4" onSubmit={submit}>
             <label className="block text-sm font-bold">
               Email
               <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@example.com" className={INPUT} />
             </label>
-            <label className="block text-sm font-bold">
+            {!recover && <label className="block text-sm font-bold">
               Password
               <input
                 type="password"
@@ -132,7 +177,12 @@ export function AuthPage({ mode }: { mode: keyof typeof COPY }) {
                 placeholder={mode === "sign-up" ? "Minimum 6 characters" : "Enter password"}
                 className={INPUT}
               />
-            </label>
+            </label>}
+            {mode === "sign-in" && (
+              <button type="button" className="min-h-11 text-sm text-brand underline" onClick={() => { setRecover(!recover); setMsg(null); }}>
+                {recover ? "Back to sign in" : "Forgot password?"}
+              </button>
+            )}
 
             {msg && (
               <div className={`rounded-xl border px-4 py-3 text-sm ${msg.ok ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"}`}>
@@ -146,8 +196,14 @@ export function AuthPage({ mode }: { mode: keyof typeof COPY }) {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              {busy ? c.busy : c.button}
+              {busy ? (recover ? "Sending…" : c.busy) : recover ? "Send reset link" : c.button}
             </button>
+
+            {confirmationEmail && !recover && (
+              <button type="button" disabled={busy || cooldown > 0} onClick={() => void resend().catch(() => {})} className="min-h-11 text-sm text-brand underline disabled:text-neutral-500">
+                Resend confirmation email{cooldown > 0 ? ` (${cooldown}s)` : ""}
+              </button>
+            )}
 
             {mode === "sign-up" && (
               <p className="text-center text-xs leading-5 text-neutral-500">

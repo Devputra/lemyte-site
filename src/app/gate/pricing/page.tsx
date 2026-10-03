@@ -34,7 +34,7 @@ export default async function PricingPage() {
     })
     .join("; ");
   const faqs: Faq[] = [
-    { q: "How much does Lemyte cost?", a: `${planList}. Every plan includes everything; only the length of access differs.` },
+    { q: "How much does Lemyte cost?", a: `${planList}. Every paid plan includes PYQ tests, topic practice, reports and a progress tracker; only the length of access differs.` },
     {
       q: "What do I get with a plan?",
       a: `All ${totals.papers} official GATE papers across ${totals.subjects} subjects as timed tests, topic practice on any topic, ${rankedTests > 0 ? "ranked tests" : "ranked tests once they are scheduled (none yet)"}, and a full report with worked solutions after every test.`,

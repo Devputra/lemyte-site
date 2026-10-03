@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAccess } from "@/components/site/AccessCta";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Layers3, Search } from "lucide-react";
-import { safeJson } from "@/lib/fetch-helpers";
+import { fetchJson, safeJson } from "@/lib/fetch-helpers";
 import { CountUp, LoadingScene } from "@/components/motion";
 import { TopicRingScene } from "@/components/motion/scenes";
 import { PageHero } from "@/components/site/PageHero";
@@ -53,6 +53,8 @@ function clearPick() {
 
 export default function TopicPracticePage() {
   const router = useRouter();
+  const [loadError, setLoadError] = useState(false);
+  const [loadVersion, setLoadVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -62,14 +64,16 @@ export default function TopicPracticePage() {
   );
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [count, setCount] = useState(10);
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
   const access = useAccess();
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/gate/topics", { cache: "no-store" })
-      .then((r) => r.json())
+    setLoading(true);
+    setLoadError(false);
+    fetchJson("/api/gate/topics", { cache: "no-store" })
       .then((j) => {
         if (cancelled) return;
         if (j.error) throw new Error(j.error);
@@ -88,16 +92,12 @@ export default function TopicPracticePage() {
           if (COUNT_OPTIONS.includes(saved.count)) setCount(saved.count);
         }
       })
-      .catch(
-        (e) =>
-          !cancelled &&
-          setError(e?.message ?? "Couldn't load topics. Please refresh."),
-      )
+      .catch(() => { if (!cancelled) setLoadError(true); })
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadVersion]);
 
   const selectedSubject =
     subjects.find((s) => s.id === selectedSubjectId) ?? null;
@@ -163,6 +163,28 @@ export default function TopicPracticePage() {
     }
   }
 
+  async function startMistakeReview() {
+    setBusy(true);
+    setError(null);
+    setReviewMessage(null);
+    try {
+      const res = await fetch("/api/gate/practice/topic", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewMistakes: true }),
+      });
+      if (res.status === 401) { router.push(`/gate/auth/sign-in?next=${encodeURIComponent("/gate/practice/topics")}`); return; }
+      if (res.status === 403) { router.push("/gate/pricing"); return; }
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error("Couldn't prepare your review. Please try again.");
+      if (data.empty) setReviewMessage("This fills up as you practise. There are no questions to retry yet.");
+      else router.push(`/gate/instructions?test=${data.testVersionId}&mode=PRACTICE`);
+    } catch {
+      setError("Couldn't prepare your review. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="bg-white">
       <PageHero
@@ -193,13 +215,25 @@ export default function TopicPracticePage() {
       </PageHero>
 
       <section className="mx-auto max-w-7xl px-4 py-12">
+        {access?.signedIn && access.hasPlan && (
+          <div className="mb-6 rounded-2xl border border-zinc-200 p-5">
+            <h2 className="font-semibold">Retry questions you got wrong</h2>
+            <p className="mt-2 text-sm text-zinc-600">Up to 10 questions from earlier tests, starting with those last seen at least two days ago.</p>
+            <button disabled={busy} onClick={() => void startMistakeReview()} className="mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-medium text-white disabled:opacity-60">{busy ? "Preparing…" : "Start review"}</button>
+            {reviewMessage && <p role="status" className="mt-3 text-sm text-zinc-600">{reviewMessage}</p>}
+          </div>
+        )}
         {error ? (
           <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
 
-        {loading ? (
+        {loadError ? (
+          <div role="alert" className="rounded-xl border border-zinc-200 p-5 text-sm">
+            Couldn&apos;t load. <button onClick={() => setLoadVersion((n) => n + 1)} className="min-h-11 px-3 text-brand underline">Retry</button>
+          </div>
+        ) : loading ? (
           <LoadingScene
             label="Loading topics…"
             className="rounded-2xl border border-zinc-200 bg-white"

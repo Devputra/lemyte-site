@@ -318,7 +318,7 @@ export default async function GateOverviewPage() {
             center
             eyebrow="Plans"
             title="One payment, no subscription"
-            lead="Every plan includes everything. No auto-renewal."
+            lead="Every paid plan includes PYQ tests, topic practice, reports and a progress tracker. Plans do not renew."
           />
           <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
             {plans.map(({ name: d, priceInr }, i) => (

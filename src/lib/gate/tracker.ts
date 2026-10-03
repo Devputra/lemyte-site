@@ -22,11 +22,11 @@ export type ScoreRow = { attempt_id: string; question_version_id: string; correc
 export type QuestionMeta = { subjectId: string | null; topicId: string | null; marks: number };
 
 export const LEVELS = [
-  { name: "Starter", min: 0 },
-  { name: "Learner", min: 200 },
-  { name: "Achiever", min: 600 },
-  { name: "Expert", min: 1500 },
-  { name: "Topper", min: 3000 },
+  { name: "Started", min: 0 },
+  { name: "Regular", min: 200 },
+  { name: "Committed", min: 600 },
+  { name: "Consistent", min: 1500 },
+  { name: "Dedicated", min: 3000 },
 ] as const;
 
 export type Stats = {

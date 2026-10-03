@@ -1,6 +1,7 @@
 // src/app/gate/practice/page.tsx — PYQ: full official GATE papers as practice tests, in collapsible subject groups.
 "use client";
 
+import { fetchJson } from "@/lib/fetch-helpers";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -33,8 +34,9 @@ function fmtDuration(secs: number | null): string {
 export default function GatePracticePage() {
   const router = useRouter();
   const [tests, setTests] = useState<CatalogTest[]>([]);
+  const [loadError, setLoadError] = useState(false);
+  const [loadVersion, setLoadVersion] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState("ALL");
@@ -42,23 +44,23 @@ export default function GatePracticePage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/gate/tests?kind=PRACTICE", { cache: "no-store" })
-      .then((r) => r.json())
+    setLoading(true);
+    setLoadError(false);
+    fetchJson("/api/gate/tests?kind=PRACTICE", { cache: "no-store" })
       .then((j) => {
         if (cancelled) return;
         if (j.error) throw new Error(j.error);
         setTests(j.tests ?? []);
+        const code = new URLSearchParams(window.location.search).get("subject");
+        const match = (j.tests as CatalogTest[] | undefined)?.find((t) => t.subject?.code === code)?.subject;
+        if (match) { setSubject(match.name); setOpen(new Set([match.name])); }
       })
-      .catch(
-        (e) =>
-          !cancelled &&
-          setError(e?.message ?? "Couldn't load the papers. Please refresh."),
-      )
+      .catch(() => { if (!cancelled) setLoadError(true); })
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadVersion]);
 
   const subjects = useMemo(
     () =>
@@ -154,13 +156,11 @@ export default function GatePracticePage() {
           </select>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {error}
+        {loadError ? (
+          <div role="alert" className="rounded-xl border border-zinc-200 p-5 text-sm">
+            Couldn&apos;t load. <button onClick={() => setLoadVersion((n) => n + 1)} className="min-h-11 px-3 text-brand underline">Retry</button>
           </div>
-        )}
-
-        {loading ? (
+        ) : loading ? (
           <LoadingScene label="Loading papers…" />
         ) : tests.length === 0 ? (
           <p className="py-16 text-center text-sm text-zinc-500">

@@ -4,13 +4,14 @@
 
 import Script from "next/script";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ShieldCheck } from "lucide-react";
 
 import { useAccess } from "@/components/site/AccessCta";
-import { safeJson } from "@/lib/fetch-helpers";
-import { Constellation, Reveal } from "@/components/motion";
+import { fetchJson, safeJson } from "@/lib/fetch-helpers";
+import { accessArrived, recoverPayment } from "@/lib/gate/payment-recovery";
+import { Constellation } from "@/components/motion";
 import { LEGAL } from "@/lib/legal";
 import { rankedLine } from "@/lib/gate/catalog";
 import { buttonClass } from "@/components/site/ui";
@@ -30,6 +31,8 @@ export interface Plan {
 }
 
 const DAY = 86_400_000;
+const PAYMENT_KEY = "lm_pending_payment";
+const pendingPaymentMessage = (id: string) => `Your payment went through, but your access isn't active yet. It usually fixes itself within a few minutes. If not, email team@lemyte.com with this reference: ${id}`;
 
 declare global {
   interface Window {
@@ -46,6 +49,7 @@ function fmtDate(iso: string | null | undefined): string {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Asia/Kolkata",
   });
 }
 
@@ -56,13 +60,6 @@ const included = (subjects: number, papers: number, rankedTests: number) => [
   "A full report after every test, with worked solutions",
   "Your progress tracker, streak and weak-topic list",
 ];
-
-const FIT: Record<number, string> = {
-  1: "Good for a final revision month before the exam.",
-  3: "Enough time to work through several papers and fix weak topics.",
-  6: "Covers a full preparation cycle, at the lowest monthly price.",
-  12: "For a long preparation window or a second attempt.",
-};
 
 export function PricingClient({
   initialPlans,
@@ -84,7 +81,28 @@ export function PricingClient({
     : null;
   const plans = initialPlans;
   const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
+  const receivedRef = useRef(false);
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paymentRestored, setPaymentRestored] = useState(false);
+
+  useEffect(() => {
+    let pending: { id: string; previousUntil: string | null } | null = null;
+    try {
+      const raw = sessionStorage.getItem(PAYMENT_KEY);
+      if (raw) pending = JSON.parse(raw);
+    } catch { /* In-memory protection still applies if storage is unavailable. */ }
+    if (!pending?.id) return setPaymentRestored(true);
+    receivedRef.current = true;
+    setPaymentNotice(pendingPaymentMessage(pending.id));
+    setPaymentRestored(true);
+    // The webhook may have granted access since: if so, clear the notice and go to the dashboard.
+    void accessArrived(pending.previousUntil).then((ok) => {
+      if (!ok) return;
+      try { sessionStorage.removeItem(PAYMENT_KEY); } catch {}
+      router.push("/gate/dashboard?welcome=1");
+    });
+  }, [router]);
 
 
   const sortedPlans = useMemo(
@@ -112,9 +130,13 @@ export function PricingClient({
   };
 
   async function startCheckout(plan: Plan) {
+    if (!paymentRestored || receivedRef.current || busyPlanId) return;
     setError(null);
     setBusyPlanId(plan.id);
     try {
+      // Last day of access before paying, to tell later whether this payment added access.
+      const beforePayment = await fetchJson("/api/gate/me/access", { cache: "no-store" });
+      const previousUntil: string | null = beforePayment.accessUntil ?? null;
       const res = await fetch("/api/gate/checkout/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -154,33 +176,28 @@ export function PricingClient({
         notes: { payment_order_id: data.paymentOrderId },
         theme: { color: "#193bc8" },
         handler: async (response: Record<string, string>) => {
-          try {
-            const verify = await fetch("/api/gate/checkout/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                paymentOrderId: data.paymentOrderId,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-              }),
-            });
-            const vjson = await safeJson(verify);
-            if (!verify.ok) {
-              throw new Error(vjson.error ?? "Verification failed");
-            }
+          receivedRef.current = true;
+          try { sessionStorage.setItem(PAYMENT_KEY, JSON.stringify({ id: response.razorpay_payment_id, previousUntil })); } catch {}
+          setError(null);
+          setPaymentNotice("Payment received. Setting up your access…");
+          const active = await recoverPayment({
+            paymentOrderId: data.paymentOrderId,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          }, previousUntil);
+          if (active) {
+            try { sessionStorage.removeItem(PAYMENT_KEY); } catch {}
             router.push("/gate/dashboard?welcome=1");
-          } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : "Verification failed");
-            setBusyPlanId(null);
-          }
+          } else setPaymentNotice(pendingPaymentMessage(response.razorpay_payment_id));
         },
         modal: {
-          ondismiss: () => setBusyPlanId(null),
+          ondismiss: () => { if (!receivedRef.current) setBusyPlanId(null); },
         },
       });
 
       rzp.on("payment.failed", (resp: Record<string, unknown>) => {
+        if (receivedRef.current) return;
         const errObj = resp?.error as Record<string, unknown> | undefined;
         setError((errObj?.description as string) ?? "Payment failed");
         setBusyPlanId(null);
@@ -188,6 +205,7 @@ export function PricingClient({
 
       rzp.open();
     } catch (e: unknown) {
+      if (receivedRef.current) return;
       setError(e instanceof Error ? e.message : "Checkout failed");
       setBusyPlanId(null);
     }
@@ -206,7 +224,7 @@ export function PricingClient({
             className="opacity-60 [mask-image:radial-gradient(ellipse_at_50%_40%,#000_25%,transparent_70%)]"
             density={0.00007}
           />
-          <Reveal className="relative mx-auto max-w-6xl px-5 py-12 text-center sm:px-6 sm:py-16">
+          <div className="relative mx-auto max-w-6xl px-5 py-12 text-center sm:px-6 sm:py-16">
             {current ? (
               <>
                 <p className="text-sm font-medium text-brand">Your plan</p>
@@ -243,14 +261,15 @@ export function PricingClient({
                   Simple plans, paid once
                 </h1>
                 <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
-                  Every plan unlocks everything. Plans don&apos;t renew.
+                  Every paid plan includes PYQ tests, topic practice, reports and a progress tracker. Plans don&apos;t renew.
                 </p>
               </>
             )}
-          </Reveal>
+          </div>
         </section>
 
         <section className="mx-auto max-w-6xl px-5 py-12 sm:px-6">
+          {paymentNotice && <div role="status" className="mx-auto mb-6 max-w-3xl rounded-xl border border-brand bg-brand-50 px-4 py-3 text-sm text-ink">{paymentNotice}</div>}
           {error ? (
             <div className="mx-auto mb-6 max-w-3xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}
@@ -274,8 +293,8 @@ export function PricingClient({
                 <button onClick={clearChosen} className={buttonClass({ variant: "secondary" })}>
                   Change plan
                 </button>
-                <button onClick={() => startCheckout(chosen)} disabled={busyPlanId !== null} className={buttonClass({})}>
-                  {busyPlanId === chosen.id ? "Opening checkout…" : `Pay ₹${chosen.priceInr.toLocaleString("en-IN")}`}
+                <button onClick={() => startCheckout(chosen)} disabled={paymentNotice !== null || busyPlanId !== null} className={buttonClass({})}>
+                  {busyPlanId === chosen.id ? paymentNotice ? "Payment received" : "Opening checkout…" : `Pay ₹${chosen.priceInr.toLocaleString("en-IN")}`}
                 </button>
               </div>
             </div>
@@ -319,6 +338,7 @@ export function PricingClient({
                           );
                         })}
                       </ol>
+                      <p className="mt-2 text-xs leading-5 text-zinc-600">Every Until-GATE plan ends on {fmtDate(plan.endsAt)}, so buying later gives fewer days.</p>
                     </div>
                   )}
                 </div>
@@ -327,10 +347,10 @@ export function PricingClient({
                   {!covered && <p className="mt-1 text-sm text-zinc-500">{tier?.until ? `this price till ${shortDay(tier.until)}` : "paid once"}</p>}
                   <button
                     onClick={() => startCheckout(plan)}
-                    disabled={busyPlanId !== null || covered}
+                    disabled={paymentNotice !== null || busyPlanId !== null || covered}
                     className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-brand px-6 text-[15px] font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50 md:w-auto"
                   >
-                    {busyPlanId === plan.id ? "Opening checkout…" : covered ? "Already covered" : current ? `Extend to ${fmtDate(plan.endsAt)}` : "Buy until GATE 2027"}
+                    {busyPlanId === plan.id ? paymentNotice ? "Payment received" : "Opening checkout…" : covered ? "Already covered" : current ? `Extend to ${fmtDate(plan.endsAt)}` : "Buy until GATE 2027"}
                   </button>
                 </div>
               </div>
@@ -400,27 +420,26 @@ export function PricingClient({
                       {plan.name}
                     </h2>
                     <p className="mt-4 text-4xl font-semibold tracking-tight tabular-nums">
-                      ₹{plan.priceInr.toLocaleString("en-IN")}
+                      ₹{plan.priceInr.toLocaleString("en-IN")} once
                     </p>
                     <p className="mt-1 text-sm text-zinc-500">
                       {plan.durationMonths === 1
                         ? "One-time payment"
-                        : `₹${perMonth.toLocaleString("en-IN")} a month, paid once`}
+                        : `About ₹${perMonth.toLocaleString("en-IN")} a month`}
                     </p>
                     <p className="mt-1 text-sm font-medium text-zinc-700">Access until {fmtDate(monthlyEnd(plan))}</p>
                     <p className="mt-5 flex-1 text-sm leading-6 text-zinc-600">
                       {current
                         ? `Adds ${plan.name.toLowerCase()} after ${fmtDate(current.endsAt)}.`
-                        : (FIT[plan.durationMonths] ??
-                          `${plan.durationMonths} months of full access.`)}
+                        : `${plan.durationMonths} month${plan.durationMonths === 1 ? "" : "s"} of access.`}
                     </p>
                     <button
                       onClick={() => startCheckout(plan)}
-                      disabled={busyPlanId !== null}
+                      disabled={paymentNotice !== null || busyPlanId !== null}
                       className="mt-6 inline-flex h-11 items-center justify-center rounded-[10px] bg-ink text-[15px] font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
                     >
                       {busyPlanId === plan.id
-                        ? "Opening checkout…"
+                        ? paymentNotice ? "Payment received" : "Opening checkout…"
                         : current
                           ? `Extend by ${plan.name.toLowerCase()}`
                           : `Buy ${plan.name.toLowerCase()}`}
@@ -433,7 +452,7 @@ export function PricingClient({
 
           <div className="mt-12 grid gap-8 rounded-2xl border border-zinc-200 p-6 sm:p-8 lg:grid-cols-2">
             <div>
-              <h2 className="font-semibold text-ink">Every plan includes</h2>
+              <h2 className="font-semibold text-ink">Every paid plan includes</h2>
               <ul className="mt-4 space-y-3">
                 {included(totals.subjects, totals.papers, rankedTests).map((f) => (
                   <li key={f} className="flex gap-3 text-[15px] text-zinc-600">
@@ -455,7 +474,7 @@ export function PricingClient({
                 <h2 className="font-semibold text-ink">Payments and refunds</h2>
               </div>
               <p className="mt-4 text-[15px] leading-relaxed text-zinc-600">
-                Paid through Razorpay (UPI, cards, net banking, wallets); access starts within a minute. Full
+                Paid through Razorpay (UPI, cards, net banking, wallets); access starts after payment confirmation. Full
                 refund within {LEGAL.refundWindowDays} days if you have started no more than{" "}
                 {LEGAL.refundMaxAttempts} tests.
               </p>

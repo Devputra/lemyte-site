@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
 import { PaletteState } from "@/lib/gate/contracts";
@@ -125,7 +125,7 @@ function NATKeypad({
               key={i}
               onClick={() => press(ch)}
               disabled={disabled}
-              className="rounded border bg-white px-3 py-2 font-mono text-sm hover:bg-gray-50 disabled:opacity-40"
+              className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border bg-white px-3 py-2 font-mono text-sm hover:bg-gray-50 disabled:opacity-40"
             >
               {ch}
             </button>
@@ -134,7 +134,7 @@ function NATKeypad({
               key={i}
               onClick={backspace}
               disabled={disabled}
-              className="rounded border bg-gray-100 px-3 py-2 text-sm hover:bg-gray-200 disabled:opacity-40"
+              className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border bg-gray-100 px-3 py-2 text-sm hover:bg-gray-200 disabled:opacity-40"
             >
               ⌫
             </button>
@@ -143,14 +143,14 @@ function NATKeypad({
         <button
           onClick={() => press("0")}
           disabled={disabled}
-          className="col-span-2 rounded border bg-white px-3 py-2 font-mono text-sm hover:bg-gray-50 disabled:opacity-40"
+          className="col-span-2 min-h-11 lg:min-h-0 rounded border bg-white px-3 py-2 font-mono text-sm hover:bg-gray-50 disabled:opacity-40"
         >
           0
         </button>
         <button
           onClick={clear}
           disabled={disabled}
-          className="col-span-2 rounded border bg-red-50 px-3 py-2 text-sm text-red-600 hover:bg-red-100 disabled:opacity-40"
+          className="col-span-2 min-h-11 lg:min-h-0 rounded border bg-red-50 px-3 py-2 text-sm text-red-600 hover:bg-red-100 disabled:opacity-40"
         >
           Clear
         </button>
@@ -217,14 +217,14 @@ function SubmitModal({
           <button
             onClick={onCancel}
             disabled={busy}
-            className="rounded border px-4 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
+            className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border px-4 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
           >
             Go Back
           </button>
           <button
             onClick={onConfirm}
             disabled={busy}
-            className="rounded bg-[#00A86B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#009060] disabled:opacity-50"
+            className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded bg-[#00A86B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#009060] disabled:opacity-50"
           >
             {busy ? "Submitting…" : "Yes, Submit"}
           </button>
@@ -259,14 +259,15 @@ function QuestionPaperModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[80vh] w-full max-w-3xl overflow-y-auto rounded-xl border bg-white p-6 shadow-xl"
+        className="max-h-[80vh] w-full max-w-3xl overflow-y-auto rounded-xl border bg-white p-4 shadow-xl lg:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Question Paper</h2>
           <button
             onClick={onClose}
-            className="text-xl text-gray-400 hover:text-gray-700"
+            aria-label="Close question paper"
+            className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 text-xl text-gray-500 hover:text-gray-700"
           >
             &times;
           </button>
@@ -282,7 +283,7 @@ function QuestionPaperModal({
                   onNavigate(qvId);
                   onClose();
                 }}
-                className="relative flex h-10 w-10 items-center justify-center rounded border text-xs font-bold transition-transform hover:scale-110"
+                className="relative flex h-11 w-11 lg:h-10 lg:w-10 items-center justify-center rounded border text-xs font-bold transition-transform hover:scale-110"
                 style={{
                   backgroundColor: PALETTE_COLORS[st],
                   color:
@@ -379,11 +380,20 @@ export default function GateAttemptPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failedAction, setFailedAction] = useState<(() => Promise<void>) | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const actionRunning = useRef(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [session, setSession] = useState<SessionState | null>(null);
   const integrity = useExamIntegrity(session?.status === "IN_PROGRESS");
   const [currentQvId, setCurrentQvId] = useState("");
   const [palette, setPalette] = useState<Record<string, PaletteState>>({});
   const [drafts, setDrafts] = useState<Record<string, DraftAnswer>>({});
+  // Latest drafts for Retry: the student may change the answer after a failed save.
+  const draftsRef = useRef(drafts);
+  useEffect(() => {
+    draftsRef.current = drafts;
+  }, [drafts]);
   const [committed, setCommitted] = useState<Record<string, DraftAnswer>>({});
   const [questions, setQuestions] = useState<Record<string, QuestionData>>({});
   const [calcMemory, setCalcMemory] = useState(0);
@@ -393,6 +403,9 @@ export default function GateAttemptPage() {
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
   const [questionPaperOpen, setQuestionPaperOpen] = useState(false);
   const [submitBusy, setSubmitBusy] = useState(false);
+  const [submitFailure, setSubmitFailure] = useState(false);
+  const submitRunning = useRef(false);
+  const palettePanel = useRef<HTMLDivElement>(null);
 
   const [remainingMs, setRemainingMs] = useState(0);
   const endsAtRef = useRef<number>(0);
@@ -402,6 +415,54 @@ export default function GateAttemptPage() {
   const [offlineCountdown, setOfflineCountdown] = useState(180);
   const offlineStartRef = useRef<number | null>(null);
   const cachedPayloadRef = useRef<Record<string, unknown> | null>(null);
+
+  const doSubmit = useCallback(async (isAuto = false) => {
+    if (submitRunning.current) return;
+    submitRunning.current = true;
+    setSubmitBusy(true);
+    setSubmitFailure(false);
+
+    try {
+      const res = await fetch(`/api/gate/attempts/${attemptId}/submit`, {
+        method: "POST",
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        throw new Error(
+          `${isAuto ? "Auto-submit" : "Submit"} failed: ${data.error ?? res.status}`
+        );
+      }
+
+      router.replace(`/gate/report/${attemptId}`);
+    } catch {
+      setSubmitFailure(true);
+    } finally {
+      submitRunning.current = false;
+      setSubmitBusy(false);
+      setSubmitModalOpen(false);
+    }
+  }, [attemptId, router]);
+
+  useEffect(() => {
+    if (!paletteOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const panel = palettePanel.current;
+    const controls = () => Array.from(panel?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []);
+    controls()[0]?.focus();
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPaletteOpen(false);
+      if (event.key !== "Tab") return;
+      const buttons = controls();
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    window.addEventListener("keydown", keydown);
+    return () => { window.removeEventListener("keydown", keydown); previous?.focus(); };
+  }, [paletteOpen]);
 
   // ── Load attempt
   useEffect(() => {
@@ -474,7 +535,7 @@ export default function GateAttemptPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [session]);
+  }, [session, doSubmit]);
 
   // ── Heartbeat every 15s
   useEffect(() => {
@@ -635,134 +696,84 @@ export default function GateAttemptPage() {
     }
   }
 
-  async function commitAnswer(qvId: string) {
-    const draft = drafts[qvId];
-    if (!draft) return;
-
-    const res = await fetch(`/api/gate/attempts/${attemptId}/answer`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        questionId: qvId,
-        type: draft.type,
-        selectedOptionIds: draft.selectedOptionIds,
-        natRaw: draft.natRaw,
-      }),
-    });
-
-    const data = await res.json();
-    console.log("ATTEMPT API DATA", data);
-
-    if (!res.ok) {
-      throw new Error(data.error ?? `Answer save failed (${res.status})`);
-    }
-
-    if (data.paletteState) {
-      setPalette((p) => ({ ...p, [qvId]: data.paletteState }));
-      setCommitted((c) => ({ ...c, [qvId]: draft }));
+  async function sendAction(
+    action: "answer" | "mark" | "clear",
+    qvId: string,
+    draft?: DraftAnswer,
+    nextQvId?: string,
+  ) {
+    if (actionRunning.current || isLocked) return;
+    actionRunning.current = true;
+    setActionBusy(true);
+    try {
+      const res = await fetch(`/api/gate/attempts/${attemptId}/${action}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionId: qvId,
+          ...(action === "answer" && draft ? {
+            type: draft.type,
+            selectedOptionIds: draft.selectedOptionIds,
+            natRaw: draft.natRaw,
+          } : {}),
+        }),
+      });
+      const data = await safeJson(res);
+      if (res.status === 409 && data.error === "ATTEMPT_SUBMITTED") {
+        setFailedAction(null);
+        router.replace(`/gate/report/${attemptId}`);
+        return;
+      }
+      if (res.status === 409 && data.error === "ATTEMPT_ENDED") {
+        setFailedAction(null);
+        endsAtRef.current = 0;
+        autoSubmitRef.current = true;
+        setRemainingMs(0);
+        void doSubmit(true);
+        return;
+      }
+      if (!res.ok) throw new Error("Action failed");
+      if (data.paletteState) {
+        setPalette((p) => ({ ...p, [qvId]: data.paletteState as PaletteState }));
+      }
+      if (action === "answer" && draft) {
+        setCommitted((c) => ({ ...c, [qvId]: draft }));
+      }
+      if (action === "clear") {
+        setDrafts((d) => { const next = { ...d }; delete next[qvId]; return next; });
+        setCommitted((c) => { const next = { ...c }; delete next[qvId]; return next; });
+      }
+      setFailedAction(null);
+      if (nextQvId) setCurrentQvId(nextQvId);
+    } catch {
+      setFailedAction(() => () =>
+        sendAction(action, qvId, action === "answer" ? (draftsRef.current[qvId] ?? draft) : draft, nextQvId),
+      );
+    } finally {
+      actionRunning.current = false;
+      setActionBusy(false);
     }
   }
 
   async function handleSaveAndNext() {
-    if (isLocked) return;
-
-    try {
-      await commitAnswer(currentQvId);
-      if (currentIdx < questionOrder.length - 1) {
-        setCurrentQvId(questionOrder[currentIdx + 1]);
-      }
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Your answer wasn't saved. Check your connection and try again.");
-    }
+    if (isLocked || actionBusy) return;
+    const next = questionOrder[currentIdx + 1];
+    const draft = drafts[currentQvId];
+    if (draft) await sendAction("answer", currentQvId, draft, next);
+    else if (next) setCurrentQvId(next);
   }
 
   async function handleMarkToggle() {
-    if (isLocked) return;
-
-    try {
-      const res = await fetch(`/api/gate/attempts/${attemptId}/mark`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questionId: currentQvId }),
-      });
-
-      const data = await res.json();
-      console.log("ATTEMPT API DATA", data);
-
-      if (!res.ok) {
-        throw new Error(data.error ?? `Mark failed (${res.status})`);
-      }
-
-      if (data.paletteState) {
-        setPalette((p) => ({ ...p, [currentQvId]: data.paletteState }));
-      }
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Couldn't mark this question. Please try again.");
-    }
+    await sendAction("mark", currentQvId);
   }
 
   async function handleClear() {
-    if (isLocked) return;
-
-    try {
-      const res = await fetch(`/api/gate/attempts/${attemptId}/clear`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questionId: currentQvId }),
-      });
-
-      const data = await res.json();
-      console.log("ATTEMPT API DATA", data);
-
-      if (!res.ok) {
-        throw new Error(data.error ?? `Clear failed (${res.status})`);
-      }
-
-      if (data.paletteState) {
-        setPalette((p) => ({ ...p, [currentQvId]: data.paletteState }));
-        setDrafts((d) => {
-          const next = { ...d };
-          delete next[currentQvId];
-          return next;
-        });
-        setCommitted((c) => {
-          const next = { ...c };
-          delete next[currentQvId];
-          return next;
-        });
-      }
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Couldn't clear the answer. Please try again.");
-    }
-  }
-
-  async function doSubmit(isAuto = false) {
-    setSubmitBusy(true);
-
-    try {
-      const res = await fetch(`/api/gate/attempts/${attemptId}/submit`, {
-        method: "POST",
-      });
-
-      const data = await safeJson(res);
-
-      if (!res.ok) {
-        throw new Error(
-          `${isAuto ? "Auto-submit" : "Submit"} failed: ${data.error ?? res.status}`
-        );
-      }
-
-      router.replace(`/gate/report/${attemptId}`);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Submit failed");
-    } finally {
-      setSubmitBusy(false);
-      setSubmitModalOpen(false);
-    }
+    await sendAction("clear", currentQvId);
   }
 
   function navigateToQuestion(qvId: string) {
     setCurrentQvId(qvId);
+    setPaletteOpen(false);
   }
 
   if (loading) {
@@ -791,8 +802,48 @@ export default function GateAttemptPage() {
     );
   }
 
+  const answerActions = (
+    <div className="flex shrink-0 flex-wrap gap-2 border-t bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:mt-6 lg:border-0 lg:p-0">
+      {submitFailure && !isLocked && (
+        <div role="alert" className="flex w-full items-center gap-3 text-sm text-rose-700">
+          Couldn&apos;t submit. Check your connection.
+          <button className="min-h-11 px-3 underline" disabled={submitBusy} onClick={() => void doSubmit()}>Retry submission</button>
+        </div>
+      )}
+      {failedAction && (
+        <div role="alert" className="flex w-full items-center gap-3 text-sm text-rose-700">
+          Not saved. Check your connection.
+          <button className="min-h-11 min-w-11 underline" disabled={actionBusy || isLocked} onClick={() => void failedAction()}>Retry</button>
+        </div>
+      )}
+      <button
+        onClick={() => void handleSaveAndNext()}
+        disabled={isLocked || actionBusy || submitBusy}
+        className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded bg-[#00A86B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#009060] disabled:opacity-50"
+      >
+        Save &amp; Next
+      </button>
+
+      <button
+        onClick={() => void handleMarkToggle()}
+        disabled={isLocked || actionBusy || submitBusy}
+        className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border border-[#9932CC] px-4 py-2 text-sm font-semibold text-[#9932CC] hover:bg-[#9932CC]/5 disabled:opacity-50"
+      >
+        Mark for Review
+      </button>
+
+      <button
+        onClick={() => void handleClear()}
+        disabled={isLocked || actionBusy || submitBusy}
+        className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+      >
+        Clear Response
+      </button>
+    </div>
+  );
+
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden">
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden">
       {!isOnline && <OfflineBanner countdown={offlineCountdown} />}
 
       {integrity.warning && (
@@ -806,11 +857,11 @@ export default function GateAttemptPage() {
           </span>
           <span className="flex shrink-0 gap-2">
             {integrity.fullscreenSupported && !integrity.fullscreen && (
-              <button onClick={integrity.toggleFullscreen} className="rounded bg-amber-900 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-950">
+              <button onClick={integrity.toggleFullscreen} className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded bg-amber-900 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-950">
                 Back to full screen
               </button>
             )}
-            <button onClick={integrity.dismissWarning} className="rounded border border-amber-400 px-3 py-1 text-xs font-semibold hover:bg-amber-100">
+            <button onClick={integrity.dismissWarning} className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border border-amber-400 px-3 py-1 text-xs font-semibold hover:bg-amber-100">
               OK
             </button>
           </span>
@@ -820,14 +871,15 @@ export default function GateAttemptPage() {
       {isLocked && !submitBusy && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/80">
           <div className="text-center text-white">
-            <div className="text-2xl font-bold">Time&apos;s Up!</div>
-            <p className="mt-2 text-gray-300">Submitting final responses…</p>
+            <div className="text-2xl font-bold">Time is up</div>
+            <p className="mt-2 text-gray-300">{submitFailure ? "Couldn't submit. Check your connection." : "Submitting final responses…"}</p>
+            {submitFailure && <button onClick={() => void doSubmit(true)} className="mt-4 min-h-11 rounded border px-4">Retry submission</button>}
           </div>
         </div>
       )}
 
-      <div className="flex h-12 shrink-0 items-center justify-between border-b bg-gray-50 px-4">
-        <div className="flex items-center gap-4 text-sm">
+      <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-gray-50 px-4 py-2 lg:h-12 lg:flex-nowrap lg:py-0">
+        <div className="flex flex-wrap items-center gap-2 lg:gap-4 text-sm">
           <span className="font-semibold">{session?.testTitle ?? "GATE test"}</span>
           <span className="text-gray-500">
             Q {currentIdx + 1} of {questionOrder.length}
@@ -839,22 +891,25 @@ export default function GateAttemptPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 lg:gap-4">
           {integrity.fullscreenSupported && (
-            <button onClick={integrity.toggleFullscreen} className="rounded border px-2 py-1 text-xs hover:bg-gray-100">
+            <button onClick={integrity.toggleFullscreen} className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border px-2 py-1 text-xs hover:bg-gray-100">
               {integrity.fullscreen ? "Exit full screen" : "Full screen"}
             </button>
           )}
+          <button onClick={() => setPaletteOpen(true)} className="min-h-11 rounded border px-2 text-xs lg:hidden">
+            Questions ({Object.values(palette).filter((s) => s === PaletteState.Answered || s === PaletteState.Answered_And_Marked).length}/{questionOrder.length} answered)
+          </button>
           <button
             onClick={() => setCalcOpen(true)}
-            className="rounded border px-2 py-1 text-xs hover:bg-gray-100"
+            className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border px-2 py-1 text-xs hover:bg-gray-100"
           >
             Calculator
           </button>
 
           <button
             onClick={() => setQuestionPaperOpen(true)}
-            className="rounded border px-2 py-1 text-xs hover:bg-gray-100"
+            className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border px-2 py-1 text-xs hover:bg-gray-100"
           >
             Question Paper
           </button>
@@ -874,7 +929,7 @@ export default function GateAttemptPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left pane */}
         <div
-          className="flex-[7] overflow-y-auto border-r p-6"
+          className="min-w-0 flex-1 overflow-y-auto p-4 lg:flex-[7] lg:border-r lg:p-6"
           style={{ fontSize: `${zoom}%` }}
         >
           {currentQ ? (
@@ -910,7 +965,7 @@ export default function GateAttemptPage() {
                           type={currentQ.type === "MCQ" ? "radio" : "checkbox"}
                           name={`q-${currentQvId}`}
                           checked={selected}
-                          disabled={isLocked}
+                          disabled={isLocked || actionBusy || submitBusy}
                           onChange={() => {
                             if (isLocked) return;
 
@@ -951,35 +1006,11 @@ export default function GateAttemptPage() {
                       updatedAt: new Date().toISOString(),
                     })
                   }
-                  disabled={isLocked}
+                  disabled={isLocked || actionBusy || submitBusy}
                 />
               )}
 
-              <div className="mt-6 flex flex-wrap gap-2">
-                <button
-                  onClick={() => void handleSaveAndNext()}
-                  disabled={isLocked}
-                  className="rounded bg-[#00A86B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#009060] disabled:opacity-50"
-                >
-                  Save &amp; Next
-                </button>
-
-                <button
-                  onClick={() => void handleMarkToggle()}
-                  disabled={isLocked}
-                  className="rounded border border-[#9932CC] px-4 py-2 text-sm font-semibold text-[#9932CC] hover:bg-[#9932CC]/5 disabled:opacity-50"
-                >
-                  Mark for Review
-                </button>
-
-                <button
-                  onClick={() => void handleClear()}
-                  disabled={isLocked}
-                  className="rounded border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-                >
-                  Clear Response
-                </button>
-              </div>
+              <div className="hidden lg:block">{answerActions}</div>
 
               <div className="mt-4 flex gap-2">
                 <button
@@ -987,7 +1018,7 @@ export default function GateAttemptPage() {
                     currentIdx > 0 && setCurrentQvId(questionOrder[currentIdx - 1])
                   }
                   disabled={currentIdx === 0}
-                  className="rounded border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-30"
+                  className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-30"
                 >
                   ← Previous
                 </button>
@@ -998,7 +1029,7 @@ export default function GateAttemptPage() {
                     setCurrentQvId(questionOrder[currentIdx + 1])
                   }
                   disabled={currentIdx === questionOrder.length - 1}
-                  className="rounded border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-30"
+                  className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-30"
                 >
                   Next →
                 </button>
@@ -1015,8 +1046,10 @@ export default function GateAttemptPage() {
           )}
         </div>
 
+        {paletteOpen && <button tabIndex={-1} aria-label="Close questions" onClick={() => setPaletteOpen(false)} className="fixed inset-0 z-30 bg-black/40 lg:hidden" />}
         {/* Right pane */}
-        <div className="flex flex-[3] flex-col overflow-y-auto bg-gray-50 p-4">
+        <div ref={palettePanel} role={paletteOpen ? "dialog" : undefined} aria-modal={paletteOpen || undefined} aria-label="Questions" className={`${paletteOpen ? "fixed inset-x-0 bottom-0 z-40 flex max-h-[80dvh] rounded-t-2xl border-t shadow-xl" : "hidden"} flex-col overflow-y-auto bg-gray-50 p-4 lg:static lg:flex lg:max-h-none lg:flex-[3] lg:rounded-none lg:border-0 lg:shadow-none`}>
+          <button onClick={() => setPaletteOpen(false)} className="mb-2 min-h-11 self-end px-3 text-sm underline lg:hidden">Close questions</button>
           <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
             Question Palette
           </div>
@@ -1030,7 +1063,7 @@ export default function GateAttemptPage() {
                 <button
                   key={qvId}
                   onClick={() => navigateToQuestion(qvId)}
-                  className={`relative flex h-8 w-8 items-center justify-center rounded text-xs font-bold transition-all ${
+                  className={`relative flex h-11 w-11 items-center lg:h-8 lg:w-8 justify-center rounded text-xs font-bold transition-all ${
                     isCurrent ? "ring-2 ring-green-500 ring-offset-1" : ""
                   }`}
                   style={{
@@ -1078,7 +1111,7 @@ export default function GateAttemptPage() {
           <div className="mt-auto pt-4">
             <button
               onClick={() => setSubmitModalOpen(true)}
-              disabled={isLocked}
+              disabled={isLocked || actionBusy || submitBusy}
               className="w-full rounded-lg bg-[#00A86B] py-3 text-sm font-bold text-white hover:bg-[#009060] disabled:opacity-50"
             >
               Submit Test
@@ -1086,6 +1119,8 @@ export default function GateAttemptPage() {
           </div>
         </div>
       </div>
+
+      {currentQ && <div className="shrink-0 lg:hidden">{answerActions}</div>}
 
       <Calculator
         open={calcOpen}

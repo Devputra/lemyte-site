@@ -23,13 +23,14 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { checkEntitlement } from "@/lib/gate/entitlements";
 import { handleRouteError } from "@/lib/gate/errors";
+import { loadMistakeQuestions } from "@/lib/gate/mistake-review.server";
 
 export const runtime = "nodejs";
 
-const Body = z.object({
-  topicId: z.string().uuid(),
-  count: z.number().int().min(5).max(30).optional(),
-});
+const Body = z.union([
+  z.object({ topicId: z.string().uuid(), count: z.number().int().min(5).max(30).optional() }),
+  z.object({ reviewMistakes: z.literal(true) }),
+]);
 
 const ADHOC_PREFIX = "[adhoc-topic-practice]";
 
@@ -80,62 +81,70 @@ export async function POST(req: NextRequest) {
     }
 
     const input = Body.parse(await req.json());
-    const targetCount = input.count ?? 10;
-
-    // Load topic + subject for the title
-    const { data: topic, error: topErr } = await supabaseAdmin
-      .schema("gate")
-      .from("topics")
-      .select("id, name, subject_id, section_kind")
-      .eq("id", input.topicId)
-      .maybeSingle();
-
-    if (topErr) {
-      console.error("[gate/practice/topic] topic lookup failed", topErr);
-      return Response.json({ error: "Failed to load topic" }, { status: 500 });
-    }
-    if (!topic) {
-      return Response.json({ error: "Topic not found" }, { status: 404 });
-    }
-
+    const reviewing = "reviewMistakes" in input;
+    const targetCount = "count" in input ? input.count ?? 10 : 10;
+    let topic: { name: string; subject_id: string | null; section_kind: string } = { name: "Questions to review", subject_id: null, section_kind: "CORE" };
     let subjectName = "";
-    if (topic.subject_id) {
-      const { data: subj } = await supabaseAdmin
+    let chosen: { id: string; marks: number; section_kind?: string }[];
+    if (reviewing) {
+      chosen = await loadMistakeQuestions(userId, targetCount);
+      if (!chosen.length) return Response.json({ empty: true });
+    } else {
+      // Load topic + subject for the title
+      const { data: loadedTopic, error: topErr } = await supabaseAdmin
         .schema("gate")
-        .from("subjects")
-        .select("name")
-        .eq("id", topic.subject_id)
+        .from("topics")
+        .select("id, name, subject_id, section_kind")
+        .eq("id", input.topicId)
         .maybeSingle();
-      subjectName = (subj?.name as string | undefined) ?? "";
-    }
 
-    // Pull all eligible PYQs in this topic.
-    const { data: questions, error: qErr } = await supabaseAdmin
-      .schema("gate")
-      .from("question_versions")
-      .select("id, marks")
-      .eq("topic_id", input.topicId)
-      .eq("source_kind", "PYQ")
-      .eq("status", "PUBLISHED");
+      if (topErr) {
+        console.error("[gate/practice/topic] topic lookup failed", topErr);
+        return Response.json({ error: "Failed to load topic" }, { status: 500 });
+      }
+      if (!loadedTopic) {
+        return Response.json({ error: "Topic not found" }, { status: 404 });
+      }
 
-    if (qErr) {
-      console.error("[gate/practice/topic] question query failed", qErr);
-      return Response.json({ error: "Failed to load questions" }, { status: 500 });
-    }
-    if (!questions || questions.length === 0) {
-      return Response.json(
-        { error: "No PYQs available for this topic yet" },
-        { status: 422 }
-      );
-    }
+      topic = loadedTopic;
+      if (topic.subject_id) {
+        const { data: subj } = await supabaseAdmin
+          .schema("gate")
+          .from("subjects")
+          .select("name")
+          .eq("id", topic.subject_id)
+          .maybeSingle();
+        subjectName = (subj?.name as string | undefined) ?? "";
+      }
 
-    // Random pick. Fisher-Yates, take first N.
-    const pool = [...questions];
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
+      // Pull all eligible PYQs in this topic.
+      const { data: questions, error: qErr } = await supabaseAdmin
+        .schema("gate")
+        .from("question_versions")
+        .select("id, marks")
+        .eq("topic_id", input.topicId)
+        .eq("source_kind", "PYQ")
+        .eq("status", "PUBLISHED");
+
+      if (qErr) {
+        console.error("[gate/practice/topic] question query failed", qErr);
+        return Response.json({ error: "Failed to load questions" }, { status: 500 });
+      }
+      if (!questions || questions.length === 0) {
+        return Response.json(
+          { error: "No PYQs available for this topic yet" },
+          { status: 422 }
+        );
+      }
+
+      // Random pick. Fisher-Yates, take first N.
+      const pool = [...questions];
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      chosen = pool.slice(0, Math.min(targetCount, pool.length));
     }
-    const chosen = pool.slice(0, Math.min(targetCount, pool.length));
 
     // Duration heuristic: 2 minutes per question, cap 60 min, floor 10 min.
     const durationSeconds = Math.min(
@@ -152,7 +161,7 @@ export async function POST(req: NextRequest) {
     }
 
     const titleSubject = subjectName ? `${subjectName} · ` : "";
-    const title = `Topic Practice — ${titleSubject}${topic.name}`;
+    const title = reviewing ? "Practice — questions to review" : `Topic Practice — ${titleSubject}${topic.name}`;
 
     // Insert the ad-hoc test_version. is_active=false hides it from catalogs.
     const { data: tv, error: tvErr } = await supabaseAdmin
@@ -161,7 +170,7 @@ export async function POST(req: NextRequest) {
       .insert({
         blueprint_profile_id: blueprintId,
         title,
-        description: `${ADHOC_PREFIX} user=${userId} topic=${input.topicId}`,
+        description: `${ADHOC_PREFIX} user=${userId} topic=${"topicId" in input ? input.topicId : "mistakes"}`,
         is_demo: false,
         is_active: true, // must be active for the start route; hidden from
                          // catalogs via description-prefix filter instead
@@ -186,7 +195,7 @@ export async function POST(req: NextRequest) {
       question_version_id: q.id as string,
       // section uses GA/CORE/FOUNDATION depending on the question's
       // section_kind; we keep it simple here and inherit topic's section.
-      section: (topic.section_kind as string) === "GA" ? "GA" : "CORE",
+      section: (q.section_kind ?? topic.section_kind) === "GA" ? "GA" : "CORE",
       question_order: idx + 1,
     }));
 

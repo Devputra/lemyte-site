@@ -61,9 +61,9 @@ describe("computeStats", () => {
 
 describe("levels and streaks", () => {
   it("maps points to levels with progress", () => {
-    expect(levelFor(0).name).toBe("Starter");
-    expect(levelFor(400)).toMatchObject({ name: "Learner", progress: 50 });
-    expect(levelFor(5000)).toMatchObject({ name: "Topper", next: null, progress: 100 });
+    expect(levelFor(0).name).toBe("Started");
+    expect(levelFor(400)).toMatchObject({ name: "Regular", progress: 50 });
+    expect(levelFor(5000)).toMatchObject({ name: "Dedicated", next: null, progress: 100 });
   });
   it("converts timestamps to Indian calendar days", () => {
     expect(istDay("2026-09-28T19:00:00Z")).toBe("2026-09-29");
