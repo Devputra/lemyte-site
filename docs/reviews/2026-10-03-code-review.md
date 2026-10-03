@@ -10,14 +10,14 @@ comments and blank lines stripped, in 7 batches of ~3k tokens (~23k input tokens
 |---|---|---|---|
 | Queued second plan locks the student out ("plan has not started yet") — `entitlements.ts` | Codex | **Confirmed** (1 account: the owner's) | **Fixed** 3 Oct (only started passes count) |
 | Answers can be changed and regraded after submitting early (solutions visible) — `attempt-route.ts` | Codex | **Confirmed** | **Fixed** 3 Oct (`ATTEMPT_SUBMITTED` 409 on answer/clear/mark/heartbeat) |
-| `checkout/verify` grants on signature without confirming capture | Codex | Plausible (depends on Razorpay auto-capture) | Open — fetch payment status before granting |
-| Refund-before-grant / concurrent grants / fixed-date double orders race (`access.ts`) | Codex | Plausible (no transaction/lock) | Open — move grant/refund into a DB function with a lock |
-| Refund webhook with empty notes ignored | Codex | Plausible | Open — resolve by stored provider payment/order id |
+| `checkout/verify` grants on signature without confirming capture | Codex | Plausible | **Fixed** 3 Oct: payment fetched, amount/currency/order checked, captured if only authorized |
+| Refund-before-grant / concurrent grants / fixed-date double orders race (`access.ts`) | Codex | Plausible | **Fixed** 3 Oct: `gate.grant_access_for_order` / `revoke_access_for_order`, per-user lock, one transaction |
+| Refund webhook with empty notes ignored | Codex | Plausible | **Fixed** 3 Oct: webhook finds the order by Razorpay order id |
 | Redis WATCH shared across requests (`redis.ts`) | Codex | Plausible | Open — per-transaction connection or Lua |
 | Students can read solutions via direct Supabase queries if RLS policies are deployed | Codex | To check (depends on deployed grants) | Open |
 | gate-worker uses `.from("gate.attempts")` | Codex | Worker is a separate Docker service, not on Vercel | Check whether it runs at all |
 | Media route lets any signed-in user fetch any question image | Codex + Groq | Confirmed by design (images, not answers) | Low priority |
-| No rate limits on subscribe / track / create-order | Codex + Groq | Confirmed | Open |
+| No rate limits on subscribe / track / create-order | Codex + Groq | Confirmed | create-order **fixed** (10/hour/user); subscribe and track still open |
 | Start route has no entitlement check | Groq | **False** (`checkEntitlement` at start/route.ts:115) | — |
 | Verify replay grants multiple passes | Groq | **False** (grant is idempotent per payment order) | — |
 | Submit accepted after time expiry | Groq | **False as a bug** (answers stop at `endsAt`; auto-submit at time-up is intended) | — |
@@ -139,3 +139,10 @@ If none of the above applied, the answer would be “No serious issues found.”
 | **Low** | `src/app/api/gate/attempts/[attemptId]/report/route.ts` – line 30 (`if (!allowed) { … }`) | The `isAuthorizedActor` check is performed **before** the demo‑mode entitlement check. If `isAuthorizedActor` mistakenly grants access (e.g., a malformed `demoCookie`), a user could view a demo attempt report without proper demo credentials. | Ensure `isAuthorizedActor` validates the `demoCookie` strictly (constant‑time compare, proper signature verification). Add an extra guard after the demo‑mode block: ```ts if (attempt.mode === "DEMO" && !demoCookieIsValid) { return Response.json({ error: "FORBIDDEN" }, { status: 403 }); }``` |
 | **Low** | `src/app/api/gate/attempts/[attemptId]/report/route.ts` – line 85 (`if (attempt.status !== "SUBMITTED") { … }`) | The generic 400 error for unsupported statuses could leak internal state (`attempt.status`) to a client that may not be authorized to see it. | Return a generic message without echoing the
 
+
+## Payment fixes (3 Oct 2026)
+Implemented by Codex in a separate worktree, reviewed by Claude. Review caught and fixed three problems in Codex's version
+before merge: FAILED orders were made terminal (would have blocked a successful retry on the same Razorpay order — a
+paying student would get no access); a refund shortened the fixed "Until GATE 2027" end date; a concurrent capture
+returned an error although the money was captured. Also aligned month-end dates on /gate/pricing with Postgres.
+Database functions were tested against the live database in rolled-back blocks (8 scenarios, all passed).
