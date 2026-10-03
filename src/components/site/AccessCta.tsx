@@ -58,19 +58,30 @@ export function TrialButton({
 export function HeaderActions() {
   const access = useAccess();
   if (!access) return <span className="h-9 w-40" aria-hidden />;
+  const profile = (
+    <Link href="/gate/profile" className="hidden min-h-11 items-center px-3 text-sm font-medium text-zinc-600 hover:text-ink sm:inline-flex">
+      Profile
+    </Link>
+  );
   if (access.hasPlan) {
     return (
-      <Link href="/gate/dashboard" className={buttonClass({ size: "sm" })}>
-        My dashboard
-      </Link>
+      <>
+        {profile}
+        <Link href="/gate/dashboard" className={buttonClass({ size: "sm" })}>
+          My dashboard
+        </Link>
+      </>
     );
   }
   return (
     <>
       {access.signedIn ? (
-        <Link href="/gate/dashboard" className={buttonClass({ variant: "secondary", size: "sm" })}>
-          My dashboard
-        </Link>
+        <>
+          {profile}
+          <Link href="/gate/dashboard" className={buttonClass({ variant: "secondary", size: "sm" })}>
+            My dashboard
+          </Link>
+        </>
       ) : (
         <Link href="/gate/auth/sign-in" className="hidden min-h-11 items-center px-3 text-sm font-medium text-zinc-600 hover:text-ink sm:inline-flex">
           Sign in

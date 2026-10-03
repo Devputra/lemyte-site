@@ -172,8 +172,9 @@ export async function GET(req: Request) {
     const meta = new Map<string, QuestionMeta>();
     await loadMeta([...new Set(answers.map((a) => a.question_version_id))], meta);
 
-    // Paper: ?subject=CODE, else the paper the student answered most, else the first paper.
-    const wanted = new URL(req.url).searchParams.get("subject")?.toUpperCase();
+    // Paper: ?subject=CODE, else the paper saved on the profile page, else the one answered most, else the first.
+    const saved = (user.user_metadata as Record<string, unknown> | undefined)?.gate_subject;
+    const wanted = (new URL(req.url).searchParams.get("subject") ?? (typeof saved === "string" ? saved : undefined))?.toUpperCase();
     const perSubject = new Map<string, number>();
     for (const a of answers) {
       const s = meta.get(a.question_version_id)?.subjectId;

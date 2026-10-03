@@ -223,6 +223,9 @@ export default function GateDashboardPage() {
               <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                 {loading && <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />}
                 {dash?.planPasses && dash.planPasses.length > 0 && <PlanTime passes={dash.planPasses} />}
+                <Link href="/gate/profile" className="inline-flex min-h-10 items-center rounded-xl border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-800 hover:border-brand hover:text-brand">
+                  Profile
+                </Link>
                 <select
                   value={data.subject.code}
                   onChange={(e) => changeSubject(e.target.value)}

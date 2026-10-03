@@ -11,6 +11,7 @@ const PRIVATE = [
   "/gate/attempt/",
   "/gate/report/",
   "/gate/dashboard",
+  "/gate/profile",
   "/gate/auth/",
   "/verify/",
   "/coming-soon",
