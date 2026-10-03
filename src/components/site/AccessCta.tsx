@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
+import { supabaseBrowser } from "@/lib/supabase/client";
+
 import { buttonClass, type ButtonStyle } from "./ui";
 
 export type Access = {
@@ -16,7 +18,13 @@ export type Access = {
   plan?: { id: string; name: string; endsAt: string | null } | null;
 };
 
+// One request per page load, shared by every header/CTA on the page. The site switches pages without a full
+// reload, so the shared answer is dropped and fetched again whenever the student signs in or out; otherwise
+// the header kept showing "Sign in" after signing in.
 let cached: Promise<Access> | null = null;
+const listeners = new Set<() => void>();
+let watching = false;
+
 function loadAccess(): Promise<Access> {
   cached ??= fetch("/api/gate/me/access", { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : { signedIn: false, hasPlan: false, name: null }))
@@ -24,13 +32,28 @@ function loadAccess(): Promise<Access> {
   return cached;
 }
 
+function watchAuth() {
+  if (watching) return;
+  watching = true;
+  supabaseBrowser().auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+      cached = null;
+      listeners.forEach((fn) => fn());
+    }
+  });
+}
+
 export function useAccess(): Access | null {
   const [a, setA] = useState<Access | null>(null);
   useEffect(() => {
     let live = true;
-    loadAccess().then((v) => live && setA(v));
+    const refresh = () => loadAccess().then((v) => live && setA(v));
+    watchAuth();
+    listeners.add(refresh);
+    refresh();
     return () => {
       live = false;
+      listeners.delete(refresh);
     };
   }, []);
   return a;
