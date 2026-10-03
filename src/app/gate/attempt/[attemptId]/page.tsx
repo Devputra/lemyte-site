@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Calculator as CalculatorIcon, FileText, LayoutGrid, Maximize2, Minimize2 } from "lucide-react";
 import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
 import { PaletteState } from "@/lib/gate/contracts";
 import type { DraftAnswer } from "@/lib/gate/contracts";
@@ -12,6 +13,8 @@ import { Calculator } from "@/components/gate/Calculator";
 import { LoadingScene } from "@/components/motion";
 import { useExamIntegrity } from "@/lib/gate/exam-integrity";
 import { usePreloadImages } from "@/lib/gate/preload-images";
+
+const MOBILE_TOOL = "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded border bg-white text-gray-700";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -802,16 +805,20 @@ export default function GateAttemptPage() {
     );
   }
 
+  const answeredCount = Object.values(palette).filter(
+    (s) => s === PaletteState.Answered || s === PaletteState.Answered_And_Marked,
+  ).length;
+
   const answerActions = (
-    <div className="flex shrink-0 flex-wrap gap-2 border-t bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:mt-6 lg:border-0 lg:p-0">
+    <div className="grid shrink-0 grid-cols-3 gap-2 border-t bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:mt-6 lg:flex lg:flex-wrap lg:border-0 lg:p-0">
       {submitFailure && !isLocked && (
-        <div role="alert" className="flex w-full items-center gap-3 text-sm text-rose-700">
+        <div role="alert" className="col-span-3 flex w-full items-center gap-3 text-sm text-rose-700">
           Couldn&apos;t submit. Check your connection.
           <button className="min-h-11 px-3 underline" disabled={submitBusy} onClick={() => void doSubmit()}>Retry submission</button>
         </div>
       )}
       {failedAction && (
-        <div role="alert" className="flex w-full items-center gap-3 text-sm text-rose-700">
+        <div role="alert" className="col-span-3 flex w-full items-center gap-3 text-sm text-rose-700">
           Not saved. Check your connection.
           <button className="min-h-11 min-w-11 underline" disabled={actionBusy || isLocked} onClick={() => void failedAction()}>Retry</button>
         </div>
@@ -819,7 +826,7 @@ export default function GateAttemptPage() {
       <button
         onClick={() => void handleSaveAndNext()}
         disabled={isLocked || actionBusy || submitBusy}
-        className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded bg-[#00A86B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#009060] disabled:opacity-50"
+        className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded bg-[#00A86B] px-1.5 py-2 text-[13px] leading-tight lg:px-4 lg:text-sm font-semibold text-white hover:bg-[#009060] disabled:opacity-50"
       >
         Save &amp; Next
       </button>
@@ -827,7 +834,7 @@ export default function GateAttemptPage() {
       <button
         onClick={() => void handleMarkToggle()}
         disabled={isLocked || actionBusy || submitBusy}
-        className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border border-[#9932CC] px-4 py-2 text-sm font-semibold text-[#9932CC] hover:bg-[#9932CC]/5 disabled:opacity-50"
+        className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border border-[#9932CC] px-1.5 py-2 text-[13px] leading-tight lg:px-4 lg:text-sm font-semibold text-[#9932CC] hover:bg-[#9932CC]/5 disabled:opacity-50"
       >
         Mark for Review
       </button>
@@ -835,7 +842,7 @@ export default function GateAttemptPage() {
       <button
         onClick={() => void handleClear()}
         disabled={isLocked || actionBusy || submitBusy}
-        className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+        className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border border-red-300 px-1.5 py-2 text-[13px] leading-tight lg:px-4 lg:text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
       >
         Clear Response
       </button>
@@ -878,8 +885,45 @@ export default function GateAttemptPage() {
         </div>
       )}
 
-      <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-gray-50 px-4 py-2 lg:h-12 lg:flex-nowrap lg:py-0">
-        <div className="flex flex-wrap items-center gap-2 lg:gap-4 text-sm">
+      {/* Phone bar: one row. Question count opens the palette; tools are icons; the timer stays visible. */}
+      <div className="flex h-14 shrink-0 items-center gap-1.5 border-b bg-gray-50 px-3 lg:hidden">
+        <button
+          onClick={() => setPaletteOpen(true)}
+          aria-label={`Questions: ${answeredCount} of ${questionOrder.length} answered`}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded border bg-white px-2.5 text-sm font-semibold"
+        >
+          <LayoutGrid className="h-4 w-4" aria-hidden />
+          {answeredCount}/{questionOrder.length}
+        </button>
+        <button onClick={() => setCalcOpen(true)} aria-label="Calculator" className={MOBILE_TOOL}>
+          <CalculatorIcon className="h-5 w-5" aria-hidden />
+        </button>
+        <button onClick={() => setQuestionPaperOpen(true)} aria-label="Question paper" className={MOBILE_TOOL}>
+          <FileText className="h-5 w-5" aria-hidden />
+        </button>
+        {integrity.fullscreenSupported && (
+          <button
+            onClick={integrity.toggleFullscreen}
+            aria-label={integrity.fullscreen ? "Exit full screen" : "Full screen"}
+            className={MOBILE_TOOL}
+          >
+            {integrity.fullscreen ? <Minimize2 className="h-5 w-5" aria-hidden /> : <Maximize2 className="h-5 w-5" aria-hidden />}
+          </button>
+        )}
+        <div
+          role="timer"
+          aria-label="Time left"
+          className={`ml-auto rounded px-2.5 py-1.5 font-mono text-sm font-bold ${
+            remainingMs < 60000 ? "bg-red-600 text-white animate-pulse" : "bg-gray-800 text-green-400"
+          }`}
+        >
+          {fmtTime}
+        </div>
+      </div>
+
+      {/* Desktop bar: mirrors the real GATE screen. */}
+      <div className="hidden h-12 shrink-0 items-center justify-between gap-2 border-b bg-gray-50 px-4 lg:flex">
+        <div className="flex items-center gap-4 text-sm">
           <span className="font-semibold">{session?.testTitle ?? "GATE test"}</span>
           <span className="text-gray-500">
             Q {currentIdx + 1} of {questionOrder.length}
@@ -891,25 +935,22 @@ export default function GateAttemptPage() {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 lg:gap-4">
+        <div className="flex items-center gap-4">
           {integrity.fullscreenSupported && (
-            <button onClick={integrity.toggleFullscreen} className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border px-2 py-1 text-xs hover:bg-gray-100">
+            <button onClick={integrity.toggleFullscreen} className="rounded border px-2 py-1 text-xs hover:bg-gray-100">
               {integrity.fullscreen ? "Exit full screen" : "Full screen"}
             </button>
           )}
-          <button onClick={() => setPaletteOpen(true)} className="min-h-11 rounded border px-2 text-xs lg:hidden">
-            Questions ({Object.values(palette).filter((s) => s === PaletteState.Answered || s === PaletteState.Answered_And_Marked).length}/{questionOrder.length} answered)
-          </button>
           <button
             onClick={() => setCalcOpen(true)}
-            className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border px-2 py-1 text-xs hover:bg-gray-100"
+            className="rounded border px-2 py-1 text-xs hover:bg-gray-100"
           >
             Calculator
           </button>
 
           <button
             onClick={() => setQuestionPaperOpen(true)}
-            className="min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded border px-2 py-1 text-xs hover:bg-gray-100"
+            className="rounded border px-2 py-1 text-xs hover:bg-gray-100"
           >
             Question Paper
           </button>
