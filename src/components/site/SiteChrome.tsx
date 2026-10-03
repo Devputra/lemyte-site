@@ -5,20 +5,35 @@ import Link from "next/link";
 import { LEGAL } from "@/lib/legal";
 
 import { HeaderActions } from "./AccessCta";
-import { MainNav, MobileNav, type NavItem as MenuItem } from "./MainNav";
+import { FooterLink, MainNav, MobileNav, type NavItem as MenuItem, type NavLink } from "./MainNav";
 import { Container } from "./ui";
 
 export type NavItem = MenuItem;
 
-// Lemyte is an assessment platform; GATE is the first product. Add new exams to `products`.
+// Lemyte is an assessment platform; GATE is the first product. Add new exams to the Products menu.
 const PLATFORM_NAV: NavItem[] = [
-  {
-    label: "Products",
-    products: [{ name: "GATE", href: "/gate" }],
-  },
+  { label: "Products", items: [{ href: "/gate", label: "GATE", match: "prefix" }] },
   { href: "/about", label: "About" },
   { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },
+];
+
+// Inside the GATE product. Tests groups every way of taking a test; PYQs is reading papers and answer keys.
+export const GATE_NAV: NavItem[] = [
+  { href: "/gate", label: "Overview" },
+  { href: "/gate/2027", label: "GATE 2027" },
+  // Subject pages (/gate/ee …) list a subject's PYQs, so they count as the PYQs section.
+  { href: "/gate/papers", label: "PYQs", match: "prefix", also: "^/gate/(ae|ce|cs|da|ec|ee|me)$" },
+  {
+    label: "Tests",
+    items: [
+      { href: "/gate/practice", label: "Full papers", note: "Complete PYQ papers, 3 hours" },
+      { href: "/gate/practice/topics", label: "Topic practice", note: "5 to 30 questions from one topic" },
+      { href: "/gate/ranked", label: "Ranked tests", note: "One counted attempt, ranked" },
+      { href: "/gate/demo", label: "Free demo", note: "10 questions, no card needed", visitorsOnly: true },
+    ],
+  },
+  { href: "/gate/pricing", label: "Pricing" },
 ];
 
 export function SiteHeader({ nav = PLATFORM_NAV }: { nav?: NavItem[] }) {
@@ -42,16 +57,17 @@ export function SiteHeader({ nav = PLATFORM_NAV }: { nav?: NavItem[] }) {
   );
 }
 
-const FOOTER = [
+const FOOTER: { heading: string; links: NavLink[] }[] = [
   {
     heading: "GATE",
     links: [
       { href: "/gate", label: "Overview" },
       { href: "/gate/2027", label: "GATE 2027 dates & syllabus" },
-      { href: "/gate/papers", label: "PYQs & answer keys" },
-      { href: "/gate/practice", label: "PYQ tests" },
+      { href: "/gate/papers", label: "PYQs & answer keys", match: "prefix", also: "^/gate/(ae|ce|cs|da|ec|ee|me)$" },
+      { href: "/gate/practice", label: "Full PYQ tests" },
       { href: "/gate/practice/topics", label: "Topic practice" },
-      { href: "/gate/demo", label: "Free test" },
+      { href: "/gate/ranked", label: "Ranked tests" },
+      { href: "/gate/demo", label: "Free test", visitorsOnly: true },
       { href: "/gate/pricing", label: "Pricing" },
     ],
   },
@@ -89,11 +105,7 @@ export function SiteFooter() {
             <p className="text-sm font-semibold text-ink">{col.heading}</p>
             <ul className="mt-3 space-y-2">
               {col.links.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="text-sm text-zinc-500 transition-colors hover:text-ink">
-                    {l.label}
-                  </Link>
-                </li>
+                <FooterLink key={l.href} link={l} />
               ))}
             </ul>
           </div>

@@ -3,7 +3,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { ArrowRight, Layers3, Search } from "lucide-react";
 import { safeJson } from "@/lib/fetch-helpers";
 import { CountUp, LoadingScene } from "@/components/motion";
@@ -130,18 +129,7 @@ export default function TopicPracticePage() {
   return (
     <div className="bg-white">
       <PageHero
-        eyebrow={
-          <span className="flex items-center gap-2">
-            <Link
-              href="/gate/practice"
-              className="text-zinc-500 hover:text-ink"
-            >
-              PYQ
-            </Link>
-            <span className="text-zinc-300">/</span>
-            <span>Topic practice</span>
-          </span>
-        }
+        eyebrow="Tests · Topic practice"
         title="Practise one topic at a time"
         lead="Pick a subject and a topic, choose how many questions you want, and get a short timed test made of past GATE questions from that topic."
         art={<TopicRingScene />}

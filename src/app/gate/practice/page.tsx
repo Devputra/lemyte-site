@@ -103,7 +103,7 @@ export default function GatePracticePage() {
   return (
     <div className="bg-white">
       <PageHero
-        eyebrow="PYQ"
+        eyebrow="Tests · Full papers"
         title="Full GATE PYQ papers"
         lead="Each test is the complete official paper: 65 questions, 100 marks and 3 hours, marked with the official answer key. You can retake any paper as often as you like."
         art={<PaperStackScene className="lg:ml-auto" />}
