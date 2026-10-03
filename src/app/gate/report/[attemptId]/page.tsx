@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 
 import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
+import { LEGAL } from "@/lib/legal";
 import { SyllabusBadge } from "@/components/gate/SyllabusBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -155,6 +156,17 @@ function formatDurationSeconds(totalSeconds: number | null | undefined): string 
   if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
   return `${minutes}m ${seconds}s`;
 }
+
+// Subjects with full papers, for the demo's next step (codes match /gate/[subject] pages).
+const DEMO_SUBJECTS: [string, string][] = [
+  ["CS", "Computer Science & IT"],
+  ["EE", "Electrical"],
+  ["EC", "Electronics & Communication"],
+  ["ME", "Mechanical"],
+  ["CE", "Civil"],
+  ["DA", "Data Science & AI"],
+  ["AE", "Aerospace"],
+];
 
 function modeLabel(mode: string | null | undefined): string {
   const normalized = String(mode ?? "").toUpperCase();
@@ -496,6 +508,8 @@ export default function GateReportPage() {
     );
   }
 
+  const isDemo = String(report.attempt.mode ?? "").toUpperCase() === "DEMO";
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 lg:px-8">
       <div className="space-y-8">
@@ -509,11 +523,6 @@ export default function GateReportPage() {
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
                 {report.attempt.status}
               </span>
-              {report.metadata?.questionOrderSource ? (
-                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                  Order: {report.metadata.questionOrderSource}
-                </span>
-              ) : null}
             </div>
 
             <div>
@@ -531,9 +540,11 @@ export default function GateReportPage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" asChild>
-              <Link href="/gate/dashboard">Back to dashboard</Link>
-            </Button>
+            {!isDemo && (
+              <Button variant="outline" asChild>
+                <Link href="/gate/dashboard">Back to dashboard</Link>
+              </Button>
+            )}
             <Button
               onClick={() => {
                 if (!activeQuestion && filteredQuestions.length > 0) {
@@ -544,11 +555,48 @@ export default function GateReportPage() {
             >
               Review Answers
             </Button>
-            <Button asChild>
-              <Link href="/gate/practice">Take another test</Link>
-            </Button>
+            {isDemo ? (
+              <Button asChild>
+                <Link href="/gate/pricing">See plans</Link>
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link href="/gate/practice">Take another test</Link>
+              </Button>
+            )}
           </div>
         </section>
+
+        {/* After the free demo: the honest next step is a full paper in the student's own subject. */}
+        {isDemo && (
+          <section className="rounded-2xl border border-brand/30 bg-brand-50/50 p-5 sm:p-6">
+            <h2 className="text-lg font-semibold text-gray-900">That was a 10-question sample</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-600">
+              General Aptitude is 15 of GATE&apos;s 100 marks. To see where you stand, take a full 3-hour paper in your
+              subject: the same screen, marking and report, with every question solved. Pick your subject:
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {DEMO_SUBJECTS.map(([code, name]) => (
+                <Link
+                  key={code}
+                  href={`/gate/${code.toLowerCase()}`}
+                  title={name}
+                  className="inline-flex min-h-11 items-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 hover:border-brand hover:text-brand"
+                >
+                  {code}
+                </Link>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-gray-600">
+              Full papers need a plan.{" "}
+              <Link href="/gate/pricing" className="font-medium text-brand underline underline-offset-2">
+                See plans
+              </Link>{" "}
+              · full refund within {LEGAL.refundWindowDays} days if you have started no more than{" "}
+              {LEGAL.refundMaxAttempts} tests.
+            </p>
+          </section>
+        )}
 
         {/* Summary cards */}
         <Reveal as="section" className="grid grid-cols-2 gap-4 xl:grid-cols-6">

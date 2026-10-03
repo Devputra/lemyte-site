@@ -17,7 +17,7 @@ import { buttonClass, Container, Eyebrow, type } from "@/components/site/ui";
 
 const FACTS = [
   ["10", "General Aptitude questions"],
-  ["30", "minutes on the clock"],
+  ["30", "minutes at most; submit any time"],
   ["₹0", "no account or card needed"],
 ];
 
@@ -82,8 +82,8 @@ export default function GateDemoPage() {
             </p>
           )}
           <p className="mt-5 text-sm text-zinc-500">
-            You can take the demo once every 24 hours. It works best on a laptop
-            or desktop.
+            One demo every 24 hours. It works on a phone; a laptop is closest to the
+            real exam screen.
           </p>
         </div>
 

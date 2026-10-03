@@ -15,22 +15,19 @@ const rand = (i: number) => {
 };
 
 /* ---------- Hero: a 65-question answer sheet that marks itself in a wave ---------- */
-type Cell = "correct" | "wrong" | "review" | "skip";
+type Cell = "answered" | "unanswered" | "review" | "unvisited";
+// The answer sheet shows a test in progress, so it uses the exam palette's states and colours
+// (src/app/gate/attempt: answered green, not answered red, marked purple, not visited white) — never
+// correct/wrong, which a student only sees in the report after submitting.
 const CELL_CLASS: Record<Cell, string> = {
-  correct: "bg-brand text-white",
-  wrong: "bg-rose-500 text-white",
-  review: "bg-amber-400 text-ink",
-  skip: "bg-zinc-300 text-zinc-600",
+  answered: "bg-[#00A86B] text-white",
+  unanswered: "bg-[#FF0000] text-white",
+  review: "bg-[#9932CC] text-white",
+  unvisited: "bg-white text-zinc-500",
 };
 const SHEET: Cell[] = Array.from({ length: 65 }, (_, i) => {
   const r = rand(i + 3);
-  return r < 0.62
-    ? "correct"
-    : r < 0.8
-      ? "wrong"
-      : r < 0.88
-        ? "review"
-        : "skip";
+  return r < 0.6 ? "answered" : r < 0.72 ? "unanswered" : r < 0.82 ? "review" : "unvisited";
 });
 
 function useCountdown(from: number) {
@@ -102,14 +99,14 @@ export function AnswerSheetScene({
       <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-zinc-500">
         {(
           [
-            ["correct", "Correct"],
-            ["wrong", "Wrong"],
+            ["answered", "Answered"],
+            ["unanswered", "Not answered"],
             ["review", "Marked for review"],
-            ["skip", "Not answered"],
+            ["unvisited", "Not visited"],
           ] as const
         ).map(([k, l]) => (
           <span key={k} className="flex items-center gap-1.5">
-            <span className={`h-2.5 w-2.5 rounded-[3px] ${CELL_CLASS[k]}`} />{" "}
+            <span className={`h-2.5 w-2.5 rounded-[3px] ring-1 ring-inset ring-zinc-300 ${CELL_CLASS[k]}`} />{" "}
             {l}
           </span>
         ))}

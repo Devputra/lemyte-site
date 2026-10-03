@@ -4,7 +4,7 @@
 
 import Script from "next/script";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ShieldCheck } from "lucide-react";
 
@@ -12,6 +12,8 @@ import { useAccess } from "@/components/site/AccessCta";
 import { safeJson } from "@/lib/fetch-helpers";
 import { Constellation, Reveal } from "@/components/motion";
 import { LEGAL } from "@/lib/legal";
+import { rankedLine } from "@/lib/gate/catalog";
+import { buttonClass } from "@/components/site/ui";
 import { currentTier, type PriceTier } from "@/lib/gate/plan-price";
 
 const shortDay = (iso: string) => new Date(`${iso}T00:00:00+05:30`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
@@ -47,10 +49,10 @@ function fmtDate(iso: string | null | undefined): string {
   });
 }
 
-const included = (subjects: number, papers: number) => [
+const included = (subjects: number, papers: number, rankedTests: number) => [
   `All ${subjects} GATE subjects and all ${papers} official PYQ papers`,
   "Topic practice on any topic, as often as you like",
-  "Ranked tests when they are open",
+  rankedLine(rankedTests),
   "A full report after every test, with worked solutions",
   "Your progress tracker, streak and weak-topic list",
 ];
@@ -65,9 +67,11 @@ const FIT: Record<number, string> = {
 export function PricingClient({
   initialPlans,
   totals,
+  rankedTests,
 }: {
   initialPlans: Plan[];
   totals: { subjects: number; papers: number };
+  rankedTests: number;
 }) {
   const router = useRouter();
   const access = useAccess();
@@ -89,6 +93,25 @@ export function PricingClient({
   );
   const examPlans = useMemo(() => plans.filter((p) => p.endsAt), [plans]);
 
+  // When a monthly plan bought now would end: same rule as planEnd() in src/lib/gate/access.ts
+  // (calendar months, stacked after the current plan if one is active).
+  const monthlyEnd = (plan: Plan) => {
+    const start = current?.endsAt && new Date(current.endsAt) > new Date() ? new Date(current.endsAt) : new Date();
+    start.setMonth(start.getMonth() + plan.durationMonths);
+    return start.toISOString();
+  };
+
+  // ?plan=<code>: the plan a student picked before being asked to sign in.
+  const [chosenCode, setChosenCode] = useState<string | null>(null);
+  useEffect(() => setChosenCode(new URLSearchParams(window.location.search).get("plan")), []);
+  const chosen = plans.find((p) => p.code === chosenCode) ?? null;
+  const clearChosen = () => {
+    setChosenCode(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("plan");
+    history.replaceState(null, "", url);
+  };
+
   async function startCheckout(plan: Plan) {
     setError(null);
     setBusyPlanId(plan.id);
@@ -100,7 +123,8 @@ export function PricingClient({
       });
 
       if (res.status === 401) {
-        router.push("/gate/auth/sign-in?next=/gate/pricing");
+        // Come back to this plan after signing in (it is shown for confirmation, never charged automatically).
+        router.push(`/gate/auth/sign-in?next=${encodeURIComponent(`/gate/pricing?plan=${plan.code}`)}`);
         return;
       }
 
@@ -234,6 +258,30 @@ export function PricingClient({
             </div>
           ) : null}
 
+          {chosen && access?.signedIn && (
+            <div className="mx-auto mb-8 flex max-w-4xl flex-col gap-4 rounded-2xl border border-brand bg-brand-50/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-ink">You chose {chosen.name}</p>
+                <p className="mt-1 text-sm text-zinc-600">
+                  ₹{chosen.priceInr.toLocaleString("en-IN")}, paid once ·{" "}
+                  {chosen.endsAt
+                    ? `access until ${fmtDate(chosen.endsAt)}`
+                    : `access until ${fmtDate(monthlyEnd(chosen))}`}
+                  {current?.endsAt ? `, added after your current plan` : ""}. Full refund within{" "}
+                  {LEGAL.refundWindowDays} days if you have started no more than {LEGAL.refundMaxAttempts} tests.
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button onClick={clearChosen} className={buttonClass({ variant: "secondary" })}>
+                  Change plan
+                </button>
+                <button onClick={() => startCheckout(chosen)} disabled={busyPlanId !== null} className={buttonClass({})}>
+                  {busyPlanId === chosen.id ? "Opening checkout…" : `Pay ₹${chosen.priceInr.toLocaleString("en-IN")}`}
+                </button>
+              </div>
+            </div>
+          )}
+
           {examPlans.map((plan) => {
             const end = new Date(plan.endsAt!);
             const from = current?.endsAt && new Date(current.endsAt) > new Date() ? new Date(current.endsAt) : new Date();
@@ -241,7 +289,7 @@ export function PricingClient({
             const covered = days === 0;
             const tier = currentTier(plan.schedule);
             return (
-              <Reveal
+              <div
                 key={plan.id}
                 className="relative mb-8 grid gap-6 overflow-hidden rounded-2xl border border-brand bg-gradient-to-br from-brand-50 via-white to-white p-6 ring-1 ring-brand sm:p-8 md:grid-cols-[1fr_auto] md:items-center"
               >
@@ -286,7 +334,7 @@ export function PricingClient({
                     {busyPlanId === plan.id ? "Opening checkout…" : covered ? "Already covered" : current ? `Extend to ${fmtDate(plan.endsAt)}` : "Buy until GATE 2027"}
                   </button>
                 </div>
-              </Reveal>
+              </div>
             );
           })}
 
@@ -294,7 +342,7 @@ export function PricingClient({
             className={`grid grid-cols-1 gap-5 md:grid-cols-2 ${access?.hasPlan ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}
           >
             {!access?.hasPlan && (
-              <Reveal className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-brand/5">
+              <div className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-brand/5">
                 <h2 className="text-lg font-semibold text-ink">Free demo</h2>
                 <p className="mt-4 text-4xl font-semibold tracking-tight tabular-nums">
                   ₹0
@@ -312,7 +360,7 @@ export function PricingClient({
                 >
                   Take the demo
                 </Link>
-              </Reveal>
+              </div>
             )}
 
             {sortedPlans.length === 0 ? (
@@ -320,7 +368,7 @@ export function PricingClient({
                 Plans aren&apos;t available right now. Please try again later.
               </div>
             ) : (
-              sortedPlans.map((plan, i) => {
+              sortedPlans.map((plan) => {
                 const perMonth = Math.round(
                   plan.priceInr / plan.durationMonths,
                 );
@@ -334,10 +382,9 @@ export function PricingClient({
                       ),
                     );
                 return (
-                  <Reveal
+                  <div
                     key={plan.id}
-                    delay={0.08 * (i + 1)}
-                    className={`relative flex h-full flex-col rounded-2xl border bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand/10 ${best ? "border-brand ring-1 ring-brand" : "border-zinc-200"}`}
+                    className="relative flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6 transition-shadow duration-300 hover:shadow-lg hover:shadow-brand/5"
                   >
                     {isCurrent ? (
                       <span className="absolute -top-3 left-6 rounded-full bg-ink px-2.5 py-0.5 text-xs font-medium text-white">
@@ -345,8 +392,8 @@ export function PricingClient({
                       </span>
                     ) : (
                       best && (
-                        <span className="absolute -top-3 left-6 rounded-full bg-brand px-2.5 py-0.5 text-xs font-medium text-white">
-                          Best value
+                        <span className="absolute -top-3 left-6 rounded-full border border-zinc-200 bg-white px-2.5 py-0.5 text-xs font-medium text-zinc-700">
+                          Lowest monthly cost
                         </span>
                       )
                     )}
@@ -361,6 +408,7 @@ export function PricingClient({
                         ? "One-time payment"
                         : `₹${perMonth.toLocaleString("en-IN")} a month, paid once`}
                     </p>
+                    <p className="mt-1 text-sm font-medium text-zinc-700">Access until {fmtDate(monthlyEnd(plan))}</p>
                     <p className="mt-5 flex-1 text-sm leading-6 text-zinc-600">
                       {current
                         ? `Adds ${plan.name.toLowerCase()} after ${fmtDate(current.endsAt)}.`
@@ -370,7 +418,7 @@ export function PricingClient({
                     <button
                       onClick={() => startCheckout(plan)}
                       disabled={busyPlanId !== null}
-                      className={`mt-6 inline-flex h-11 items-center justify-center rounded-[10px] text-[15px] font-medium transition-colors disabled:opacity-60 ${best ? "bg-brand text-white hover:bg-brand-700" : "bg-ink text-white hover:bg-zinc-800"}`}
+                      className="mt-6 inline-flex h-11 items-center justify-center rounded-[10px] bg-ink text-[15px] font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
                     >
                       {busyPlanId === plan.id
                         ? "Opening checkout…"
@@ -378,7 +426,7 @@ export function PricingClient({
                           ? `Extend by ${plan.name.toLowerCase()}`
                           : `Buy ${plan.name.toLowerCase()}`}
                     </button>
-                  </Reveal>
+                  </div>
                 );
               })
             )}
@@ -388,7 +436,7 @@ export function PricingClient({
             <div>
               <h2 className="font-semibold text-ink">Every plan includes</h2>
               <ul className="mt-4 space-y-3">
-                {included(totals.subjects, totals.papers).map((f) => (
+                {included(totals.subjects, totals.papers, rankedTests).map((f) => (
                   <li key={f} className="flex gap-3 text-[15px] text-zinc-600">
                     <Check
                       className="mt-0.5 h-5 w-5 shrink-0 text-brand"

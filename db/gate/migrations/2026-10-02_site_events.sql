@@ -71,11 +71,13 @@ select jsonb_build_object(
              count(*) as sessions, sum(pageviews) as pageviews, count(*) filter (where engaged) as engaged
       from sess2 group by 1) d),
   'pages', (select coalesce(jsonb_agg(p order by p.views desc), '[]') from (
-      select path, count(*) filter (where type = 'pageview') as views,
+      select e.path, count(*) filter (where type = 'pageview') as views,
              count(distinct visitor_id) filter (where type = 'pageview') as visitors,
              round(coalesce(sum(engaged_ms) filter (where type = 'engage'), 0) / 1000.0
-                   / greatest(count(distinct session_id) filter (where type = 'pageview'), 1)) as avg_engaged_s
-      from ev group by path having count(*) filter (where type = 'pageview') > 0
+                   / greatest(count(distinct session_id) filter (where type = 'pageview'), 1)) as avg_engaged_s,
+             (select round(avg(m)) from (select max(scroll_pct) m from ev x where x.path = e.path and x.scroll_pct is not null group by x.session_id) d) as avg_scroll,
+             (select round(100.0 * count(*) filter (where m >= 75) / nullif(count(*), 0)) from (select max(scroll_pct) m from ev x where x.path = e.path and x.scroll_pct is not null group by x.session_id) d) as reach_75
+      from ev e group by e.path having count(*) filter (where type = 'pageview') > 0
       order by views desc limit 40) p),
   'clicks', (select coalesce(jsonb_agg(c order by c.clicks desc), '[]') from (
       select label, path, max(target) as target, count(*) as clicks, count(distinct visitor_id) as visitors

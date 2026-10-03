@@ -8,13 +8,10 @@ import { motion, useInView, useReducedMotion, useScroll, useTransform } from "fr
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
-  BarChart3,
-  BookOpenCheck,
   CheckCircle2,
   ClipboardList,
   LineChart,
   ListChecks,
-  Medal,
   Timer,
 } from "lucide-react";
 
@@ -32,7 +29,7 @@ import {
   useSectionProgress,
 } from "@/components/motion";
 import { AnswerSheetScene, PlanScene, RecallScene } from "@/components/motion/scenes";
-import { type Catalog, fmtInr, fmtInt } from "@/lib/gate/catalog";
+import { type Catalog, fmtInr, fmtInt, rankedLine } from "@/lib/gate/catalog";
 import { LEGAL } from "@/lib/legal";
 
 const WHY = [
@@ -46,13 +43,6 @@ const STEPS = [
   { icon: Timer, title: "Take it like the real exam", text: "Timer, question palette, mark for review and the on-screen calculator." },
   { icon: ListChecks, title: "Get marked the GATE way", text: "Official answer key and negative marking, including marks-to-all questions." },
   { icon: LineChart, title: "Review, then practise", text: "Worked solutions for every question. Your weakest topics move to the top of your practice list." },
-];
-
-const GETS = [
-  { icon: BarChart3, title: "Know what to revise", text: "Accuracy by topic shows which topics cost you marks." },
-  { icon: BookOpenCheck, title: "Learn from every mistake", text: "A step-by-step solution for every question." },
-  { icon: Medal, title: "See where you stand", text: "Ranked tests compare you with everyone who took the same paper." },
-  { icon: LineChart, title: "Watch yourself improve", text: "Coverage, accuracy and a daily streak for each paper." },
 ];
 
 const PLAN = [
@@ -77,10 +67,10 @@ export default function Home({ catalog }: { catalog: Catalog }) {
       <ScrollProgress />
       <Hero />
       <ProofStrip />
-      <WhySection />
-      <HowItWorks />
-      <Benefits />
+      <SampleReport />
       <GateProduct />
+      <HowItWorks />
+      <WhySection />
       <UseCase />
       <Faq />
       <AboutTeaser />
@@ -447,25 +437,108 @@ function ReportPreviewMini() {
 }
 
 /* ---------------- Benefits ---------------- */
-function Benefits() {
+/* ---------------- Sample report: what a student gets after a test ---------------- */
+// The question and its solution are real (GATE 2024 CS Set 2, Q37); the scores around it are an example.
+const SAMPLE_TOPICS: [string, number][] = [
+  ["Computer Networks", 38],
+  ["Databases", 52],
+  ["Algorithms", 74],
+  ["Theory of Computation", 81],
+];
+const SAMPLE_OPTIONS: [string, string][] = [
+  ["A", "10.12.2.0/23"],
+  ["B", "10.12.2.0/24"],
+  ["C", "10.12.0.0/22"],
+  ["D", "10.12.2.0/22"],
+];
+
+function SampleReport() {
   return (
-    <section id="what-you-get" className="border-t border-zinc-100 bg-zinc-50/70 py-20 sm:py-28">
+    <section id="sample-report" className="scroll-mt-20 py-20 sm:py-24">
       <Container>
         <Reveal>
-          <SectionHeader eyebrow="What you get" title="After every test" />
+          <SectionHeader
+            eyebrow="What you get after a test"
+            title="A report that tells you what to study next"
+            lead="This is how a Lemyte report reads. The scores are an example; the question and its worked solution are real, from GATE 2024 CS (Set 2), Q37."
+          />
         </Reveal>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {GETS.map((g, i) => (
-            <Reveal key={g.title} delay={(i % 3) * 0.08}>
-              <div className="group h-full rounded-2xl border border-zinc-200 bg-white p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_18px_40px_-24px_rgba(25,59,200,0.45)]">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 transition-colors group-hover:bg-brand">
-                  <g.icon className="h-5 w-5 text-brand transition-colors group-hover:text-white" strokeWidth={1.75} />
-                </span>
-                <h3 className="mt-5 font-semibold text-ink">{g.title}</h3>
-                <p className="mt-1.5 text-[15px] leading-relaxed text-zinc-600">{g.text}</p>
-              </div>
-            </Reveal>
-          ))}
+        <div className="mt-12 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-ink">GATE CS practice test · your result</p>
+              <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">Example</span>
+            </div>
+            <dl className="mt-5 grid grid-cols-2 gap-4 border-b border-zinc-100 pb-5 sm:grid-cols-4">
+              {(
+                [
+                  ["58.33", "score / 100"],
+                  ["71%", "accuracy"],
+                  ["−2.67", "lost to negative marks"],
+                  ["2h 41m", "time used"],
+                ] as const
+              ).map(([v, l]) => (
+                <div key={l}>
+                  <dt className="text-2xl font-semibold tabular-nums tracking-tight text-ink">{v}</dt>
+                  <dd className="mt-0.5 text-xs text-zinc-500">{l}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-5 text-sm font-medium text-ink">Accuracy by topic</p>
+            <ul className="mt-3 space-y-3">
+              {SAMPLE_TOPICS.map(([t, pct]) => (
+                <li key={t}>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-700">{t}</span>
+                    <span className="tabular-nums text-zinc-600">{pct}%</span>
+                  </div>
+                  <div className="mt-1.5 h-2 rounded-full bg-zinc-100">
+                    <div className={`h-2 rounded-full ${pct < 50 ? "bg-rose-500" : pct < 70 ? "bg-amber-400" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/gate/practice/topics"
+              className="mt-6 flex min-h-11 items-center justify-between rounded-xl bg-brand-50 px-4 py-3 text-sm font-medium text-brand hover:bg-brand-100"
+            >
+              Next: 10 questions on Computer Networks <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+            <p className="text-xs font-medium text-zinc-500">Question 37 · Computer Networks · MCQ · 2 marks</p>
+            <p className="mt-3 text-[15px] leading-relaxed text-zinc-800">
+              Which one of the following CIDR prefixes exactly represents the range of IP addresses 10.12.2.0 to 10.12.3.255?
+            </p>
+            <ul className="mt-4 grid gap-2">
+              {SAMPLE_OPTIONS.map(([id, text]) => {
+                const correct = id === "A";
+                const yours = id === "D";
+                return (
+                  <li
+                    key={id}
+                    className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm ${
+                      correct ? "border-emerald-300 bg-emerald-50/70" : yours ? "border-rose-300 bg-rose-50/70" : "border-zinc-200"
+                    }`}
+                  >
+                    <span>
+                      <span className="font-medium text-zinc-500">({id})</span> <span className="tabular-nums text-zinc-800">{text}</span>
+                    </span>
+                    {correct && <span className="text-xs font-semibold text-emerald-700">Correct answer</span>}
+                    {yours && <span className="text-xs font-semibold text-rose-700">Your answer · −0.67</span>}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-5 border-t border-zinc-100 pt-4">
+              <p className="text-sm font-semibold text-ink">Worked solution</p>
+              <p className="mt-2 text-[15px] leading-relaxed text-zinc-700">
+                The range 10.12.2.0 to 10.12.3.255 is exactly two consecutive /24 networks, 10.12.2.0/24 and 10.12.3.0/24. Two
+                consecutive /24 blocks combine into one /23 block, 10.12.2.0/23, so the answer is (A).
+              </p>
+            </div>
+          </div>
         </div>
       </Container>
     </section>
@@ -474,7 +547,7 @@ function Benefits() {
 
 /* ---------------- GATE product: interactive infographic ---------------- */
 function GateProduct() {
-  const { subjects, totals, fromInr } = useCatalog();
+  const { subjects, totals, fromInr, rankedTests } = useCatalog();
   const max = Math.max(...subjects.map((s) => s.questions));
   const [hover, setHover] = useState<string | null>(null);
   return (
@@ -487,7 +560,7 @@ function GateProduct() {
             Real PYQs on an exam-like screen, marked the official way.
           </p>
           <ul className="mt-8 space-y-3 text-[15px] text-zinc-300">
-            {["Full PYQ papers: 65 questions, 3 hours, official marking", "Topic practice: 5 to 30 questions from one topic", "Ranked tests with one counted attempt", "A free demo test, no card needed"].map((m) => (
+            {["Full PYQ papers: 65 questions, 3 hours, official marking", "Topic practice: 5 to 30 questions from one topic", rankedLine(rankedTests), "A free demo test, no card needed"].map((m) => (
               <li key={m} className="flex gap-3">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand-100" strokeWidth={1.75} />
                 {m}

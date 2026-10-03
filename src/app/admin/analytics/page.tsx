@@ -127,9 +127,16 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         <div className="grid gap-6 lg:grid-cols-2">
           <Card title="Pages" note="by views">
             <Table
-              head={["Page", "Views", "Visitors", "Avg time"]}
-              right={[1, 2, 3]}
-              rows={r.pages.map((p) => [<span key="p" className="break-all">{p.path}</span>, fmtInt(p.views), fmtInt(p.visitors), dur(p.avg_engaged_s)])}
+              head={["Page", "Views", "Visitors", "Avg time", "Scrolled", "Reached 75%"]}
+              right={[1, 2, 3, 4, 5]}
+              rows={r.pages.map((p) => [
+                <span key="p" className="break-all">{p.path}</span>,
+                fmtInt(p.views),
+                fmtInt(p.visitors),
+                dur(p.avg_engaged_s),
+                p.avg_scroll === null ? "–" : `${p.avg_scroll}%`,
+                p.reach_75 === null ? "–" : `${p.reach_75}%`,
+              ])}
             />
           </Card>
           <Card title="Where visitors came from" note="first touch of each session">

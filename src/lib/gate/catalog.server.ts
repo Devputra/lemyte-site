@@ -16,7 +16,7 @@ type PaperRow = {
 
 async function loadCatalog(): Promise<Catalog> {
   const db = supabaseAdmin.schema("gate");
-  const [papersRes, plansRes] = await Promise.all([
+  const [papersRes, plansRes, rankedRes] = await Promise.all([
     db
       .from("test_versions")
       .select("title, subjects(code, name), test_version_questions(count)")
@@ -31,6 +31,13 @@ async function loadCatalog(): Promise<Catalog> {
       .select("name, duration_months, price_inr, ends_at, price_schedule")
       .eq("is_active", true)
       .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`),
+    db
+      .from("test_versions")
+      .select("id", { count: "exact", head: true })
+      .eq("kind", "RANKED")
+      .eq("is_active", true)
+      .eq("is_demo", false)
+      .or(`available_until.is.null,available_until.gt.${new Date().toISOString()}`),
   ]);
   if (papersRes.error) throw papersRes.error;
   if (plansRes.error) throw plansRes.error;
@@ -69,8 +76,9 @@ async function loadCatalog(): Promise<Catalog> {
       subjects: subjects.length,
     },
     plans,
+    rankedTests: rankedRes.count ?? 0,
     fromInr: Math.min(...plans.map((p) => p.priceInr)),
   };
 }
 
-export const getCatalog = unstable_cache(loadCatalog, ["gate-catalog"], { revalidate: 3600 });
+export const getCatalog = unstable_cache(loadCatalog, ["gate-catalog-v2"], { revalidate: 3600 });

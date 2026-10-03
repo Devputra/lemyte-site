@@ -111,6 +111,8 @@ export default function InstructionsPage() {
   }
 
   const minutes = info ? Math.round(info.durationSeconds / 60) : null;
+  // The free demo is a sample: one short screen, no declaration. Paid papers keep GATE's full instructions.
+  const demo = params?.mode === "DEMO";
   const name = access?.name ?? (access ? "Guest" : "");
 
   return (
@@ -123,7 +125,7 @@ export default function InstructionsPage() {
         <p className="truncate pl-4 text-sm font-medium text-zinc-600">{info?.title ?? ""}</p>
       </header>
       <div className="flex h-11 shrink-0 items-center bg-brand-50 px-4 sm:px-6">
-        <h1 className="text-base font-semibold text-brand">{step === 1 ? "Instructions" : "Other important instructions"}</h1>
+        <h1 className="text-base font-semibold text-brand">{demo ? "Free demo" : step === 1 ? "Instructions" : "Other important instructions"}</h1>
       </div>
 
       <div className="flex min-h-0 flex-1">
@@ -132,13 +134,25 @@ export default function InstructionsPage() {
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-8 sm:px-10" tabIndex={0} role="region" aria-label="Instructions">
             <div className="mx-auto max-w-3xl text-[15px] leading-7 text-zinc-700">
               {error && <p className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
-              {step === 1 ? <General minutes={minutes} /> : <PaperSpecific info={info} mode={params?.mode ?? "PRACTICE"} />}
+              {demo ? (
+                <DemoIntro minutes={minutes} />
+              ) : step === 1 ? (
+                <General minutes={minutes} />
+              ) : (
+                <PaperSpecific info={info} mode={params?.mode ?? "PRACTICE"} />
+              )}
             </div>
           </div>
 
           {/* Action bar */}
           <div className="shrink-0 border-t border-zinc-200 px-5 py-4 sm:px-10">
-            {step === 1 ? (
+            {demo ? (
+              <div className="flex justify-end">
+                <button onClick={begin} disabled={!info || busy} className={buttonClass({ size: "lg" })}>
+                  {busy ? "Starting…" : "Start the demo"}
+                </button>
+              </div>
+            ) : step === 1 ? (
               <div className="flex justify-end">
                 <button onClick={() => setStep(2)} className={buttonClass({ variant: "secondary" })}>
                   Next <ChevronRight className="h-4 w-4" />
@@ -273,6 +287,31 @@ function General({ minutes }: { minutes: number | null }) {
           negative marking. To remove your answer, click <b>Clear Response</b>.
         </li>
       </ol>
+    </>
+  );
+}
+
+function DemoIntro({ minutes }: { minutes: number | null }) {
+  const points = [
+    "10 General Aptitude questions from real GATE papers, a new set every time.",
+    `Up to ${minutes ?? 30} minutes. You can submit whenever you are done.`,
+    "Marked like GATE: +1 or +2 for a right answer; a wrong MCQ loses one-third of its marks.",
+    "The question palette shows which questions you have answered; Mark for review flags one to come back to.",
+    "The on-screen calculator is in the top bar.",
+    "Your report, with the correct answers and worked solutions, opens as soon as you submit.",
+  ];
+  return (
+    <>
+      <h2 className="text-lg font-semibold text-ink">Before you start</h2>
+      <ul className="mt-5 space-y-3">
+        {points.map((p) => (
+          <li key={p} className="flex gap-3">
+            <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+            {p}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-6 text-sm text-zinc-500">Full papers show GATE&apos;s complete exam instructions before you start.</p>
     </>
   );
 }

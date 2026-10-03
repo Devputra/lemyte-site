@@ -62,7 +62,7 @@ const SCREEN = [
   },
 ];
 
-const modesFor = (papers: number) => [
+const modesFor = (papers: number, rankedTests: number) => [
   {
     name: "Free demo",
     href: "/gate/demo",
@@ -81,7 +81,9 @@ const modesFor = (papers: number) => [
   {
     name: "Ranked tests",
     href: "/gate/ranked",
-    text: "Scheduled tests with one counted attempt. Your score is ranked against everyone who took the same test.",
+    text: rankedTests > 0
+      ? "Scheduled tests with one counted attempt. Your score is ranked against everyone who took the same test."
+      : "Scheduled tests with one counted attempt, ranked against everyone who takes the same test. None is scheduled yet.",
   },
 ];
 
@@ -109,7 +111,7 @@ const CHECKS = [
 ];
 
 export default async function GateOverviewPage() {
-  const { subjects, papers, totals, plans } = await getCatalog();
+  const { subjects, papers, totals, plans, rankedTests } = await getCatalog();
   return (
     <div className="bg-white text-ink">
       {/* Hero */}
@@ -183,7 +185,7 @@ export default async function GateOverviewPage() {
             />
           </Reveal>
           <div className="mt-12 grid gap-5 sm:grid-cols-2">
-            {modesFor(totals.papers).map((m, i) => (
+            {modesFor(totals.papers, rankedTests).map((m, i) => (
               <Reveal key={m.name} delay={i * 0.07}>
                 <Link
                   href={m.href}

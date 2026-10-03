@@ -120,7 +120,8 @@ export default async function Gate2027Page() {
             <a href={GATE_2027.brochure} className="text-brand underline underline-offset-2" rel="noopener" target="_blank">
               GATE 2027 information brochure
             </a>{" "}
-            ({GATE_2027.organiser}, revised {GATE_2027.brochureRevised}). Dates can change; check{" "}
+            ({GATE_2027.organiser}, revised {GATE_2027.brochureRevised}; last checked by us on {fmtDay(GATE_2027.checked)}). Dates can
+            change; check{" "}
             <a href={GATE_2027.website} className="text-brand underline underline-offset-2" rel="noopener" target="_blank">
               gate2027.iitm.ac.in
             </a>{" "}

@@ -117,6 +117,12 @@ export default function GatePracticePage() {
             Practise a single topic instead →
           </Link>
         </p>
+        <p className="mt-2 text-sm text-zinc-500">
+          Only want the answer key and solutions?{" "}
+          <Link href="/gate/papers" className="font-medium text-brand hover:text-brand-700">
+            See PYQs →
+          </Link>
+        </p>
       </PageHero>
 
       <Container className="py-10">

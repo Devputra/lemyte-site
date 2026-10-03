@@ -151,6 +151,17 @@ export default async function PaperPage({ params }: Props) {
             <ButtonLink href="/gate/practice" size="lg">Take this paper as a timed test</ButtonLink>
             <TrialButton variant="secondary" size="lg" label="Try the free demo" />
           </div>
+          <nav aria-label="On this page" className="mt-6 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+            {[
+              ["#topics", "Topic-wise marks"],
+              ["#solved", `${paper.samples.length} solved questions`],
+              ["#key", "Answer key"],
+            ].map(([href, label]) => (
+              <a key={href} href={href} className="inline-flex min-h-11 items-center text-brand underline-offset-4 hover:underline">
+                {label}
+              </a>
+            ))}
+          </nav>
           <dl className="mt-10 grid max-w-3xl grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
             {[
               [`${s.ga.count} · ${s.ga.marks} marks`, "General Aptitude"],
@@ -255,6 +266,13 @@ export default async function PaperPage({ params }: Props) {
                 </div>
               </article>
             ))}
+          </div>
+          <div className="mt-8 flex flex-col gap-4 rounded-2xl bg-zinc-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <p className="text-[15px] text-zinc-700">
+              The other {paper.questions - paper.samples.length} questions are solved in your report when you take {paper.name} as a
+              3-hour test.
+            </p>
+            <ButtonLink href="/gate/practice" className="shrink-0">Take {paper.name} as a test</ButtonLink>
           </div>
         </section>
 

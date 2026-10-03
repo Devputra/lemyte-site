@@ -1,5 +1,7 @@
 // src/app/gate/papers/page.tsx — every official GATE paper we carry, grouped by subject. Each links to
 // its own page with the answer key, topic-wise marks and solved questions.
+import Link from "next/link";
+
 import { PaperFilter } from "@/components/gate/PaperFilter";
 import { FaqList } from "@/components/site/FaqList";
 import { TrialButton } from "@/components/site/AccessCta";
@@ -59,6 +61,13 @@ export default async function PapersPage() {
       </PageHero>
 
       <Container className="grid grid-cols-[minmax(0,1fr)] gap-12 py-14 sm:py-20">
+        <p className="text-sm text-zinc-600">
+          Each paper below has its answer key and solved questions. To take one as a timed 3-hour test, go to{" "}
+          <Link href="/gate/practice" className="font-medium text-brand underline underline-offset-2">
+            Test series › PYQ
+          </Link>
+          .
+        </p>
         <PaperFilter
           groups={subjects.map(([name, list]) => ({
             code: list[0].code,

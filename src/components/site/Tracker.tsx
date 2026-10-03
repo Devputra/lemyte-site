@@ -10,7 +10,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-type Ev = { t: "pageview" | "click" | "engage"; p: string; l?: string; h?: string; r?: string; us?: string; um?: string; uc?: string; ms?: number };
+type Ev = { t: "pageview" | "click" | "engage"; p: string; l?: string; h?: string; r?: string; us?: string; um?: string; uc?: string; ms?: number; d?: number };
 
 const rid = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(36).padStart(2, "0")).join("").slice(0, 20);
 
@@ -48,11 +48,17 @@ function targetOf(el: HTMLElement): string | undefined {
 }
 
 // One tracker per page load, so its state lives at module level.
-const state: { queue: Ev[]; page: { path: string; visibleSince: number | null; ms: number } | null; firstView: boolean; off: boolean } = {
+const state: { queue: Ev[]; page: { path: string; visibleSince: number | null; ms: number; depth: number } | null; firstView: boolean; off: boolean } = {
   queue: [],
   page: null,
   firstView: true,
   off: false,
+};
+
+/** How far down the page the visitor has seen, in % of the page height. */
+const seenPct = () => {
+  const h = document.documentElement.scrollHeight;
+  return h > 0 ? Math.min(100, Math.round(((window.scrollY + window.innerHeight) / h) * 100)) : 100;
 };
 
 // Send everything queued (sendBeacon survives page unload).
@@ -71,7 +77,7 @@ function endPage() {
   const p = state.page;
   if (!p) return;
   const ms = p.ms + (p.visibleSince ? Date.now() - p.visibleSince : 0);
-  if (ms >= 1000) state.queue.push({ t: "engage", p: p.path, ms: Math.min(ms, 3_600_000) });
+  if (ms >= 1000) state.queue.push({ t: "engage", p: p.path, ms: Math.min(ms, 3_600_000), d: p.depth });
   state.page = null;
 }
 
@@ -100,11 +106,20 @@ export function Tracker() {
         endPage();
         flush();
         // Coming back continues the same page view with a fresh counter.
-        if (keep) state.page = { path: keep.path, visibleSince: null, ms: 0 };
+        if (keep) state.page = { path: keep.path, visibleSince: null, ms: 0, depth: keep.depth };
       } else if (p && !p.visibleSince) {
         p.visibleSince = Date.now();
       }
     };
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (state.page) state.page.depth = Math.max(state.page.depth, seenPct());
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("click", onClick, true);
     document.addEventListener("visibilitychange", onVisibility);
     const onPageHide = () => {
@@ -117,7 +132,7 @@ export function Tracker() {
     const tick = () => {
       const p = state.page;
       if (p?.visibleSince && p.ms + Date.now() - p.visibleSince >= 15_000) {
-        state.queue.push({ t: "engage", p: p.path, ms: Math.min(p.ms + Date.now() - p.visibleSince, 3_600_000) });
+        state.queue.push({ t: "engage", p: p.path, ms: Math.min(p.ms + Date.now() - p.visibleSince, 3_600_000), d: p.depth });
         p.ms = 0;
         p.visibleSince = Date.now();
       }
@@ -125,6 +140,7 @@ export function Tracker() {
     };
     const timer = window.setInterval(tick, 5000);
     return () => {
+      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", onPageHide);
@@ -147,7 +163,7 @@ export function Tracker() {
       uc: q.get("utm_campaign") ?? undefined,
     });
     state.firstView = false;
-    state.page = { path: pathname, visibleSince: document.visibilityState === "visible" ? Date.now() : null, ms: 0 };
+    state.page = { path: pathname, visibleSince: document.visibilityState === "visible" ? Date.now() : null, ms: 0, depth: seenPct() };
     flush();
   }, [pathname]);
 

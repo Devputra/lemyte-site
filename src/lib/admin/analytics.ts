@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 export type Report = {
   totals: { visitors: number; sessions: number; pageviews: number; clicks: number; engaged_sessions: number; avg_engaged_s: number; signed_in_visitors: number };
   daily: { day: string; visitors: number; sessions: number; pageviews: number; engaged: number }[];
-  pages: { path: string; views: number; visitors: number; avg_engaged_s: number }[];
+  pages: { path: string; views: number; visitors: number; avg_engaged_s: number; avg_scroll: number | null; reach_75: number | null }[];
   clicks: { label: string; path: string; target: string | null; clicks: number; visitors: number }[];
   sources: { source: string; sessions: number; engaged: number }[];
   devices: { name: string; sessions: number }[];

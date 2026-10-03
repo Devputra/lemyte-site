@@ -25,7 +25,7 @@ export async function generateMetadata() {
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
 
 export default async function PricingPage() {
-  const [plans, { totals }] = await Promise.all([loadActivePlans(), getCatalog()]);
+  const [plans, { totals, rankedTests }] = await Promise.all([loadActivePlans(), getCatalog()]);
   const planList = plans
     .map((p) => {
       const tier = currentTier(p.schedule);
@@ -37,7 +37,7 @@ export default async function PricingPage() {
     { q: "How much does Lemyte cost?", a: `${planList}. Every plan includes everything; only the length of access differs.` },
     {
       q: "What do I get with a plan?",
-      a: `All ${totals.papers} official GATE papers across ${totals.subjects} subjects as timed tests, topic practice on any topic, ranked tests when they are open, and a full report with worked solutions after every test.`,
+      a: `All ${totals.papers} official GATE papers across ${totals.subjects} subjects as timed tests, topic practice on any topic, ${rankedTests > 0 ? "ranked tests" : "ranked tests once they are scheduled (none yet)"}, and a full report with worked solutions after every test.`,
     },
     { q: "Is there a free option?", a: "Yes. The General Aptitude demo test is free and needs no payment details. It uses the same exam screen and report as the paid tests." },
     { q: "Does my plan renew automatically?", a: "No. Plans are one-time payments and never renew. When a plan ends, you can buy another one if you need more time." },
@@ -69,7 +69,7 @@ export default async function PricingPage() {
   return (
     <>
       <JsonLd data={offersLd} />
-      <PricingClient initialPlans={plans} totals={totals} />
+      <PricingClient initialPlans={plans} totals={totals} rankedTests={rankedTests} />
       <section className="border-t border-zinc-100 bg-white" aria-labelledby="pricing-faq">
         <Container className="py-14 sm:py-20">
           <h2 id="pricing-faq" className={type.h2}>Questions about plans</h2>

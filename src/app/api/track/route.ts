@@ -23,6 +23,7 @@ const Event = z.object({
   um: Str(100), // utm_medium
   uc: Str(150), // utm_campaign
   ms: z.number().int().min(0).max(3_600_000).optional(), // engaged time
+  d: z.number().int().min(0).max(100).optional(), // max % of the page seen
 });
 const Body = z.object({ v: Id, s: Id, e: z.array(Event).min(1).max(20) });
 
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
       device: device(ua),
       country,
       engaged_ms: e.ms ?? null,
+      scroll_pct: e.d ?? null,
     }));
   if (rows.length) {
     const { error } = await supabaseAdmin.schema("gate").from("site_events").insert(rows);

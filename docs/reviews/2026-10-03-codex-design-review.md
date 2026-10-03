@@ -157,3 +157,13 @@ Measure **actual attempt creation**, report views and successful paid access—n
 - #6 partly: `Reveal` already respects reduced motion; the faded ₹299 card is a mid-fade capture. Still worth removing
   entrance fades from prices and buy buttons.
 - #7 matches the earlier note: "PYQs" (answer keys) vs "Test series › PYQ" is the weakest part of the nav.
+
+### Implemented (3 Oct 2026)
+1 one-screen demo intro, no declaration · 2 demo report next step (subject chips, plans, refund) · 3 chosen plan kept
+through sign-in with a confirm bar (never auto-charged) · 4 readable sample report on the home page (real GATE 2024 CS
+Set 2 Q37, example scores labelled) · 5 "Lowest monthly cost", one featured plan, end date on every card · 6 no entrance
+fades on plan cards · 7 PYQs ↔ Test series › PYQ cross-links (labels kept as chosen) · 8 Topic-wise plan notice +
+selection kept through sign-in/plans · 9 answer-sheet scene uses exam palette states · 10 home reordered (sample
+report and subjects/prices before the explanations) · 11 paper-page jump links + test CTA after samples · 12 ranked-test
+wording follows the data (none scheduled yet). Also: scroll-depth tracking on /admin/analytics, "last checked" date on
+/gate/2027, debug "Order:" badge removed from reports.

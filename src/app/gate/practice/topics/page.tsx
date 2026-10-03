@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+
+import { useAccess } from "@/components/site/AccessCta";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Layers3, Search } from "lucide-react";
 import { safeJson } from "@/lib/fetch-helpers";
@@ -26,6 +28,29 @@ interface Topic {
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 30];
 
+// A topic picked before sign-in or buying a plan: ?topic=&count= in the URL, else this tab's sessionStorage.
+type Pick = { topicId: string; count: number };
+const PICK_KEY = "lm_topic_pick";
+function readPick(): Pick | null {
+  const q = new URLSearchParams(window.location.search);
+  if (q.get("topic")) return { topicId: q.get("topic")!, count: Number(q.get("count")) || 10 };
+  try {
+    return JSON.parse(sessionStorage.getItem(PICK_KEY) ?? "null");
+  } catch {
+    return null;
+  }
+}
+function savePick(p: Pick) {
+  try {
+    sessionStorage.setItem(PICK_KEY, JSON.stringify(p));
+  } catch {}
+}
+function clearPick() {
+  try {
+    sessionStorage.removeItem(PICK_KEY);
+  } catch {}
+}
+
 export default function TopicPracticePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -39,6 +64,7 @@ export default function TopicPracticePage() {
   const [count, setCount] = useState(10);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
+  const access = useAccess();
 
   useEffect(() => {
     let cancelled = false;
@@ -48,10 +74,18 @@ export default function TopicPracticePage() {
         if (cancelled) return;
         if (j.error) throw new Error(j.error);
         const nextSubjects = j.subjects ?? [];
+        const nextTopics: Topic[] = j.topics ?? [];
         setSubjects(nextSubjects);
-        setTopics(j.topics ?? []);
+        setTopics(nextTopics);
         if (nextSubjects.length > 0) {
           setSelectedSubjectId(nextSubjects[0].id);
+        }
+        const saved = readPick();
+        const t = saved && nextTopics.find((x) => x.id === saved.topicId);
+        if (t) {
+          if (t.subjectId) setSelectedSubjectId(t.subjectId);
+          setSelectedTopicId(t.id);
+          if (COUNT_OPTIONS.includes(saved.count)) setCount(saved.count);
         }
       })
       .catch(
@@ -99,12 +133,14 @@ export default function TopicPracticePage() {
       });
       const data = await safeJson(res);
 
-      if (res.status === 401) {
-        router.push("/gate/auth/sign-in?next=/gate/practice/topics");
-        return;
-      }
-      if (res.status === 403) {
-        router.push("/gate/pricing");
+      if (res.status === 401 || res.status === 403) {
+        // Keep the student's choice through sign-in or buying a plan; it is restored on return.
+        savePick({ topicId: selectedTopicId, count });
+        router.push(
+          res.status === 401
+            ? `/gate/auth/sign-in?next=${encodeURIComponent(`/gate/practice/topics?topic=${selectedTopicId}&count=${count}`)}`
+            : "/gate/pricing",
+        );
         return;
       }
       if (!res.ok) {
@@ -113,6 +149,7 @@ export default function TopicPracticePage() {
         );
       }
 
+      clearPick();
       router.push(
         `/gate/instructions?test=${data.testVersionId}&mode=PRACTICE`,
       );
@@ -295,7 +332,7 @@ export default function TopicPracticePage() {
                     <button
                       key={n}
                       onClick={() => setCount(n)}
-                      className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                      className={`min-h-11 min-w-11 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                         count === n
                           ? "border-brand bg-brand text-white"
                           : "border-zinc-300 hover:border-zinc-950"
@@ -309,6 +346,13 @@ export default function TopicPracticePage() {
                   You get about 2 minutes per question, up to 60 minutes.
                 </p>
               </div>
+
+              {access && !access.hasPlan && (
+                <p className="mt-5 rounded-xl bg-brand-50 px-4 py-3 text-sm leading-6 text-zinc-700">
+                  Topic-wise tests are included with every plan.{" "}
+                  {access.signedIn ? "Pick a topic, then choose a plan;" : "Pick a topic, then sign in;"} your choice is kept.
+                </p>
+              )}
 
               <button
                 onClick={startTopicPractice}
