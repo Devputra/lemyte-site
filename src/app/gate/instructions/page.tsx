@@ -364,7 +364,7 @@ function PaperSpecific({ info, mode }: { info: TestInfo | null; mode: Mode }) {
       </p>
       {mode === "RANKED" && (
         <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          This is a ranked test. Only your first submitted attempt counts towards your rank, and the timer keeps running
+          This is a ranked test. You get one counted attempt, including if time runs out. The timer keeps running
           if you close the tab.
         </p>
       )}

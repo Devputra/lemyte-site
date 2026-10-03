@@ -1,4 +1,5 @@
 // src/app/api/gate/attempts/[attemptId]/report/route.ts
+import { rankedStanding } from "@/lib/gate/ranking";
 import { attemptedAccuracy, weakestTopics } from "@/lib/gate/report-topics";
 
 import { signMedia } from "@/lib/gate/media";
@@ -90,14 +91,7 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
     return Response.json({ error: "Attempt was abandoned" }, { status: 409 });
   }
 
-  if (attempt.status === "EXPIRED") {
-    return Response.json(
-      { error: "Attempt expired before report generation" },
-      { status: 409 },
-    );
-  }
-
-  if (attempt.status !== "SUBMITTED") {
+  if (attempt.status !== "SUBMITTED" && attempt.status !== "EXPIRED") {
     return Response.json(
       { error: `Unsupported attempt status: ${attempt.status}` },
       { status: 400 },
@@ -444,6 +438,26 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
       }
     : deriveResultsFromQuestionScores(questionScores, passPercent);
 
+  let standing: ReturnType<typeof rankedStanding> = null;
+  if (attempt.mode === "RANKED" && resultsRes.data) {
+    // Count on the server: no row cap, no score list or other students' data sent to the client.
+    const population = () => supabaseAdmin.schema("gate")
+      .from("attempt_results")
+      .select("attempt_id, attempts!inner(id)", { count: "exact", head: true })
+      .eq("attempts.test_version_id", attempt.test_version_id)
+      .eq("attempts.mode", "RANKED")
+      .in("attempts.status", ["SUBMITTED", "EXPIRED"])
+      .not("score", "is", null);
+    const [totalRes, higherRes] = await Promise.all([
+      population(),
+      population().gt("score", resultsRes.data.score),
+    ]);
+    if (totalRes.error || higherRes.error) {
+      return Response.json({ error: "Failed to load ranked results" }, { status: 500 });
+    }
+    standing = rankedStanding(totalRes.count ?? 0, higherRes.count ?? 0);
+  }
+
   return Response.json(await signMedia({
     attempt: {
       id: attempt.id,
@@ -459,6 +473,7 @@ export const GET = attemptRoute("report", async (req, attemptId) => {
       passPercent,
     },
     results: results ? { score: results.score, max_score: results.max_score, percent: results.percent } : null,
+    standing,
     weakestTopics: weakestTopics(reviewQuestions, new Map((topics ?? []).map((t) => [String(t.id), String(t.name)]))),
     summary: {
       totalQuestions,

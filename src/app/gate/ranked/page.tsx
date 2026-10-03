@@ -1,6 +1,8 @@
 // src/app/gate/ranked/page.tsx
 "use client";
 
+import Link from "next/link";
+
 import { fetchJson } from "@/lib/fetch-helpers";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -26,6 +28,7 @@ interface CatalogTest {
   availableFrom?: string | null;
   availableUntil?: string | null;
   maxAttemptsPerUser?: number | null;
+  countedAttemptId?: string | null; // set once this student has used their counted attempt
 }
 
 function fmtMinutes(secs: number | null): string {
@@ -38,6 +41,18 @@ function fmtDate(value?: string | null): string | null {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+}
+
+/** Tests grouped by paper (subject), papers in alphabetical order of code. */
+function groupBySubject(tests: CatalogTest[]) {
+  const groups = new Map<string, { name: string; tests: CatalogTest[] }>();
+  for (const t of tests) {
+    const code = t.subject?.code ?? "Other";
+    const g = groups.get(code) ?? { name: t.subject ? `${t.subject.name} (${code})` : "Other papers", tests: [] };
+    g.tests.push(t);
+    groups.set(code, g);
+  }
+  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
 export default function GateRankedPage() {
@@ -86,7 +101,8 @@ export default function GateRankedPage() {
             <h2 className="font-semibold text-ink">Before you start</h2>
           </div>
           <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-6 text-zinc-600">
-            <li>Only your first submitted attempt counts towards your rank.</li>
+            <li>Each test is 65 past GATE questions in the official pattern: 100 marks, 3 hours.</li>
+            <li>You get one counted attempt. It counts when you submit or when time runs out.</li>
             <li>The timer keeps running if you close the tab.</li>
             <li>Not ready yet? Take a past paper in practice mode first.</li>
           </ul>
@@ -115,8 +131,12 @@ export default function GateRankedPage() {
             this page.
           </div>
         ) : (
+          <div className="space-y-10">
+          {groupBySubject(tests).map(([code, group]) => (
+          <section key={code} aria-label={group.name}>
+          <h3 className="mb-4 text-base font-semibold text-ink">{group.name}</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {tests.map((t, i) => {
+            {group.tests.map((t, i) => {
               const until = fmtDate(t.availableUntil);
               return (
                 <Reveal
@@ -156,7 +176,14 @@ export default function GateRankedPage() {
                     ) : null}
                   </div>
 
-                  {confirmId === t.id ? (
+                  {t.countedAttemptId ? (
+                    <Link
+                      href={`/gate/report/${t.countedAttemptId}`}
+                      className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-ink transition hover:border-brand hover:text-brand"
+                    >
+                      View your rank and report <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : confirmId === t.id ? (
                     <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm">
                       <div className="flex gap-3">
                         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
@@ -197,6 +224,9 @@ export default function GateRankedPage() {
                 </Reveal>
               );
             })}
+          </div>
+          </section>
+          ))}
           </div>
         )}
       </section>

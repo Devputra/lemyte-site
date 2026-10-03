@@ -26,6 +26,7 @@ type FilterKey = "ALL" | "CORRECT" | "WRONG" | "UNANSWERED";
 type ResultStatus = "CORRECT" | "WRONG" | "UNANSWERED";
 
 interface AttemptReport {
+  standing?: { rank: number; total: number; percentile: number } | null;
   attempt: {
     id: string;
     mode: string;
@@ -555,6 +556,14 @@ export default function GateReportPage() {
             )}
           </div>
         </section>
+
+        {report?.attempt.mode === "RANKED" && report.standing && report.standing.total > 0 && (
+          <section className="rounded-2xl border border-zinc-200 p-6 tabular-nums">
+            <h2 className="text-xl font-semibold text-ink">Rank {report.standing.rank} of {report.standing.total}</h2>
+            <p className="mt-2 text-sm text-zinc-600">Percentile: {report.standing.percentile.toFixed(2)}</p>
+            <p className="mt-1 text-sm text-zinc-500">Percentage of graded attempts scoring at or below you. Ties share a rank. Standings update as results arrive.</p>
+          </section>
+        )}
 
         {/* Summary cards */}
         <Reveal as="section" className="grid grid-cols-2 gap-4 xl:grid-cols-5">

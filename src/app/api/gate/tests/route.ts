@@ -8,6 +8,7 @@
 // test_versions (which are inserted with is_active=false for that reason).
 
 import { NextRequest } from "next/server";
+import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
     .eq("kind", kindParam)
     .eq("is_active", true)
     .eq("is_demo", false)
-    .not("description", "ilike", "[adhoc-topic-practice]%")
+    .or("description.is.null,description.not.ilike.[adhoc-%")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -78,9 +79,28 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const countedByTest = new Map<string, string>();
+  if (kindParam === "RANKED" && data?.length) {
+    const supabase = await supabaseServer();
+    const { data: auth } = await supabase.auth.getUser();
+    if (auth.user) {
+      const { data: attempts, error: attemptsError } = await supabaseAdmin.schema("gate")
+        .from("attempts").select("id, test_version_id")
+        .eq("user_id", auth.user.id).eq("mode", "RANKED")
+        .in("status", ["SUBMITTED", "EXPIRED"])
+        .in("test_version_id", data.map(t => t.id))
+        .order("created_at", { ascending: true });
+      if (attemptsError) return Response.json({ error: "Failed to load ranked attempts" }, { status: 500 });
+      for (const attempt of attempts ?? []) {
+        if (!countedByTest.has(attempt.test_version_id)) countedByTest.set(attempt.test_version_id, attempt.id);
+      }
+    }
+  }
+
   return Response.json({
     tests: (data ?? []).map((t) => ({
       id: t.id as string,
+      countedAttemptId: countedByTest.get(t.id) ?? null,
       title: t.title as string,
       description: (t.description as string | null) ?? null,
       kind: t.kind as string,
