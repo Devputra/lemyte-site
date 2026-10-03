@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import GateMarkdown, { GateOptionMarkdown } from "@/components/GateMarkdown";
 import { SyllabusBadge } from "@/components/gate/SyllabusBadge";
 import { FaqList } from "@/components/site/FaqList";
+import { TrialButton } from "@/components/site/AccessCta";
 import { ButtonLink, Container, Eyebrow, type } from "@/components/site/ui";
 import { NEGATIVE_MARKING, ORGANISER, PAPER_HOURS } from "@/lib/gate/exam-facts";
 import { getPaper, getPapers, type Paper } from "@/lib/gate/papers.server";
@@ -148,7 +149,7 @@ export default async function PaperPage({ params }: Props) {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <ButtonLink href="/gate/practice" size="lg">Take this paper as a timed test</ButtonLink>
-            <ButtonLink href="/gate/demo" variant="secondary" size="lg">Try the free demo</ButtonLink>
+            <TrialButton variant="secondary" size="lg" label="Try the free demo" />
           </div>
           <dl className="mt-10 grid max-w-3xl grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
             {[

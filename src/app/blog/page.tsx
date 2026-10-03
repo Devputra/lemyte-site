@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 import { pageMeta } from "@/lib/seo";
 
+import { TrialButton } from "@/components/site/AccessCta";
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
 import { PaperStackScene } from "@/components/motion/scenes";
 import { PageHero } from "@/components/site/PageHero";
@@ -28,7 +29,7 @@ export default function BlogPage() {
           art={<PaperStackScene />}
         >
           <div className="mt-8 flex flex-wrap gap-3">
-            <ButtonLink href="/gate/demo">Take a free GATE test</ButtonLink>
+            <TrialButton label="Take a free GATE test" paidLabel="Start a PYQ test" paidHref="/gate/practice" />
             <ButtonLink href="/gate" variant="secondary">
               About GATE assessment
             </ButtonLink>

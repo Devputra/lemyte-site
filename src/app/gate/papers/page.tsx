@@ -2,6 +2,7 @@
 // its own page with the answer key, topic-wise marks and solved questions.
 import { PaperFilter } from "@/components/gate/PaperFilter";
 import { FaqList } from "@/components/site/FaqList";
+import { TrialButton } from "@/components/site/AccessCta";
 import { PageHero } from "@/components/site/PageHero";
 import { ButtonLink, Container, type } from "@/components/site/ui";
 import { PaperStackScene } from "@/components/motion/scenes";
@@ -52,7 +53,7 @@ export default async function PapersPage() {
         art={<PaperStackScene />}
       >
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href="/gate/demo" size="lg">Try the free demo</ButtonLink>
+          <TrialButton size="lg" label="Try the free demo" paidLabel="Start a PYQ test" paidHref="/gate/practice" />
           <ButtonLink href="/gate/pricing" variant="secondary" size="lg">See plans</ButtonLink>
         </div>
       </PageHero>

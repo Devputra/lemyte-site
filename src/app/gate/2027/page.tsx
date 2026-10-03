@@ -4,6 +4,7 @@ import { ArrowRight, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
 import { FaqList } from "@/components/site/FaqList";
+import { TrialButton } from "@/components/site/AccessCta";
 import { ButtonLink, Container, Eyebrow, type } from "@/components/site/ui";
 import { fmtInr } from "@/lib/gate/catalog";
 import { getCatalog } from "@/lib/gate/catalog.server";
@@ -81,7 +82,7 @@ export default async function Gate2027Page() {
               <ButtonLink href="/gate/pricing" size="lg">
                 {examPlan ? `${examPlan.name}: ${fmtInr(examPlan.priceInr)}` : "See plans"}
               </ButtonLink>
-              <ButtonLink href="/gate/demo" variant="secondary" size="lg">Take the free demo</ButtonLink>
+              <TrialButton variant="secondary" size="lg" label="Take the free demo" paidLabel="Start a PYQ test" paidHref="/gate/practice" />
             </div>
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-white p-6">

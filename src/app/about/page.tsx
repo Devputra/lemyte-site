@@ -3,10 +3,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Linkedin } from "lucide-react";
+import { Linkedin } from "lucide-react";
 
 import { Constellation, Reveal } from "@/components/motion";
 import { DotMarkScene } from "@/components/motion/scenes";
+import { TrialButton } from "@/components/site/AccessCta";
 import { SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
 import { Container, Eyebrow, type } from "@/components/site/ui";
 import { FOUNDER, KURAL } from "@/lib/about";
@@ -274,12 +275,7 @@ export default function AboutPage() {
                 The free demo takes a few minutes and needs no card.
               </p>
               <div className="relative mt-8 flex flex-wrap justify-center gap-3">
-                <Link
-                  href="/gate/demo"
-                  className="inline-flex h-12 items-center gap-2 rounded-[10px] bg-ink px-6 font-medium text-white transition-colors hover:bg-black"
-                >
-                  Take the free test <ArrowRight className="h-4 w-4" />
-                </Link>
+                <TrialButton variant="dark" size="lg" arrow label="Take the free test" paidLabel="Start a PYQ test" paidHref="/gate/practice" />
                 <Link
                   href="/contact"
                   className="inline-flex h-12 items-center rounded-[10px] border border-white/40 px-6 font-medium text-white transition-colors hover:bg-white/10"
