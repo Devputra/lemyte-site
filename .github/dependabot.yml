@@ -1,0 +1,24 @@
+# Weekly pull requests for package updates, grouped so it's one or two PRs a week, not dozens.
+# Security fixes come as their own PRs as soon as an advisory is published (enable "Dependabot security
+# updates" in GitHub → Settings → Code security). CI runs on every Dependabot PR before you merge it.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Major versions (e.g. Next 16, React 20) need a planned upgrade, not an automatic PR.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

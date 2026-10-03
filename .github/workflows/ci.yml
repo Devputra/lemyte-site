@@ -1,0 +1,37 @@
+# Checks every push and pull request to main: types, lint, tests, and known-critical dependency holes.
+# A red ✗ on GitHub means something is broken. The same tests also run inside the Vercel build (vercel.json
+# buildCommand), which is what actually stops a broken version from going live.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Types
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Tests
+        run: npm test
+      - name: Dependencies with critical security holes
+        run: npm audit --omit=dev --audit-level=critical

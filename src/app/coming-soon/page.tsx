@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 
@@ -68,7 +69,7 @@ export default function ComingSoon() {
         {msg && <p className="mt-3 text-sm text-zinc-500">{msg}</p>}
 
         <p className="mt-8 text-sm">
-          <a href="/gate" className="font-medium text-brand hover:text-brand-700">Go to GATE assessment →</a>
+          <Link href="/gate" className="font-medium text-brand hover:text-brand-700">Go to GATE assessment →</Link>
         </p>
       </div>
     </main>
