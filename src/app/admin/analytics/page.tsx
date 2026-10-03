@@ -101,7 +101,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
             <h1 className="text-3xl font-semibold tracking-tight">Visitors and engagement</h1>
             <p className="mt-1 text-sm text-zinc-500">
               First-party analytics, live. Bots and visitors who ask not to be tracked are excluded.{" "}
-              <Link href="/admin/metrics" className="text-brand underline underline-offset-2">Business metrics</Link>
+              <Link href="/admin/metrics" className="text-brand underline underline-offset-2">Business metrics</Link> · <Link href="/admin/system" className="text-brand underline underline-offset-2">System</Link>
             </p>
           </div>
           <nav className="flex overflow-hidden rounded-lg border border-zinc-200 bg-white text-sm">

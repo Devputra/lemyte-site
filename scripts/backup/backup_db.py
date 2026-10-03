@@ -131,6 +131,16 @@ def schema_snapshot():
     return {k: sql(v) for k, v in q.items()}
 
 
+def heartbeat(ok: bool, detail: dict):
+    """Record the outcome in gate.system_heartbeats so /admin/system can show when the last backup ran."""
+    try:
+        sql("insert into gate.system_heartbeats (name, at, ok, detail) values ('backup', now(), "
+            f"{'true' if ok else 'false'}, '{json.dumps(detail).replace(chr(39), chr(39) * 2)}'::jsonb) "
+            "on conflict (name) do update set at = excluded.at, ok = excluded.ok, detail = excluded.detail")
+    except Exception as e:  # the backup itself matters more than the report
+        print(f"(could not record heartbeat: {e})", file=sys.stderr)
+
+
 def main():
     today = datetime.date.today().isoformat()
     out_dir = os.path.join(DEST, today)
@@ -164,12 +174,16 @@ def main():
     for old in done[:-KEEP]:
         shutil.rmtree(os.path.join(DEST, old), ignore_errors=True)
     total_rows = sum(t["rows"] for t in manifest["tables"].values())
+    downloaded = sum(1 for t in manifest["tables"].values() if t["how"] == "downloaded")
     print(f"OK: {len(manifest['tables'])} tables, {total_rows} rows, {manifest['bytes'] / 1e6:.1f} MB on disk")
+    heartbeat(True, {"tables": len(manifest["tables"]), "rows": total_rows, "bytes": manifest["bytes"],
+                     "downloaded_tables": downloaded, "kept": min(len(done), KEEP)})
 
 
 if __name__ == "__main__":
     try:
         main()
-    except Exception as e:  # make failures visible in the systemd journal and exit non-zero
+    except Exception as e:  # make failures visible in the systemd journal and on /admin/system, exit non-zero
         print(f"BACKUP FAILED: {e}", file=sys.stderr)
+        heartbeat(False, {"error": str(e)[:300]})
         sys.exit(1)

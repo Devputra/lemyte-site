@@ -111,6 +111,38 @@ export async function rateLimit(bucket: string, id: string, limit: number, windo
 }
 
 /**
+ * Health snapshot for /admin/system: ping time, memory, clients and how many tests are in progress.
+ * Read-only. The attempt-key count uses SCAN with a fixed cap, so it can't run long on a big keyspace.
+ */
+export async function redisHealth() {
+  const redis = getRedis();
+  const t0 = Date.now();
+  await redis.ping();
+  const pingMs = Date.now() - t0;
+  const [info, keys] = await Promise.all([redis.info(), redis.dbsize()]);
+  const field = (name: string) => info.match(new RegExp(`^${name}:(.*)$`, "m"))?.[1]?.trim() ?? null;
+  let attempts = 0;
+  let cursor = "0";
+  for (let i = 0; i < 50; i++) {
+    const [next, batch] = await redis.scan(cursor, "MATCH", "lm:attempt:*", "COUNT", 500);
+    attempts += batch.length;
+    cursor = next;
+    if (cursor === "0") break;
+  }
+  return {
+    pingMs,
+    keys,
+    attempts,
+    usedMemory: Number(field("used_memory") ?? 0),
+    maxMemory: Number(field("maxmemory") ?? 0),
+    clients: Number(field("connected_clients") ?? 0),
+    version: field("redis_version"),
+    uptimeDays: Math.floor(Number(field("uptime_in_seconds") ?? 0) / 86400),
+    evicted: Number(field("evicted_keys") ?? 0),
+  };
+}
+
+/**
  * Delete an attempt session from Redis.
  */
 export async function deleteAttemptSession(attemptId: string): Promise<void> {

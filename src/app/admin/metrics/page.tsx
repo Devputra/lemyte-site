@@ -100,7 +100,7 @@ export default async function MetricsPage() {
             Last {m.days} days unless stated. Live from the database.{" "}
             <a href="/admin/analytics" className="text-brand underline underline-offset-2">
               Visitors, clicks and engagement
-            </a>
+            </a> · <a href="/admin/system" className="text-brand underline underline-offset-2">System</a>
           </p>
         </div>
 
