@@ -18,14 +18,15 @@ const PLATFORM_NAV: NavItem[] = [
   { href: "/contact", label: "Contact" },
 ];
 
-// Inside the GATE product. Tests groups every way of taking a test; PYQs is reading papers and answer keys.
+// Inside the GATE product. "Test series" groups every way of taking a test (the term students search for);
+// PYQs is reading papers and answer keys.
 export const GATE_NAV: NavItem[] = [
   { href: "/gate", label: "Overview" },
   { href: "/gate/2027", label: "GATE 2027" },
   // Subject pages (/gate/ee …) list a subject's PYQs, so they count as the PYQs section.
   { href: "/gate/papers", label: "PYQs", match: "prefix", also: "^/gate/(ae|ce|cs|da|ec|ee|me)$" },
   {
-    label: "Tests",
+    label: "Test series",
     items: [
       { href: "/gate/practice", label: "PYQ" },
       { href: "/gate/practice/topics", label: "Topic-wise" },
@@ -49,7 +50,7 @@ export function SiteHeader({ nav = PLATFORM_NAV }: { nav?: NavItem[] }) {
           <HeaderActions />
         </div>
       </Container>
-      <div className="border-t border-zinc-100 md:hidden">
+      <div className="border-t border-zinc-100 lg:hidden">
         <Container>
           <MobileNav items={nav} />
         </Container>

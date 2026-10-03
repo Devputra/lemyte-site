@@ -129,7 +129,7 @@ export default function TopicPracticePage() {
   return (
     <div className="bg-white">
       <PageHero
-        eyebrow="Tests · Topic-wise"
+        eyebrow="Test series · Topic-wise"
         title="Practise one topic at a time"
         lead="Pick a subject and a topic, choose how many questions you want, and get a short timed test made of past GATE questions from that topic."
         art={<TopicRingScene />}
@@ -172,7 +172,7 @@ export default function TopicPracticePage() {
             Topics aren&apos;t available right now. Please check back soon.
           </div>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-[280px_1fr_340px]">
+          <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)_340px]">
             <aside className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
               <h2 className="px-2 text-xs font-semibold uppercase tracking-[0.08em] text-zinc-500">
                 Subject
@@ -267,7 +267,7 @@ export default function TopicPracticePage() {
               )}
             </main>
 
-            <aside className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm lg:sticky lg:top-24 lg:self-start">
+            <aside className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm lg:col-span-2 xl:sticky xl:top-24 xl:col-span-1 xl:self-start">
               <Layers3 className="h-7 w-7 text-brand" />
               <h2 className="mt-4 text-xl font-semibold text-ink">
                 Your practice set

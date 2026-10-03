@@ -113,7 +113,7 @@ export function MainNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname() ?? "/";
   const visible = useVisible(pathname === "/" ? items : [HOME, ...items]);
   return (
-    <nav className="hidden items-center gap-0.5 md:flex" aria-label="Main">
+    <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Main">
       {visible.map((item) => {
         if (isMenu(item)) return <Dropdown key={item.label} menu={item} pathname={pathname} />;
         const on = isCurrent(item, pathname);
