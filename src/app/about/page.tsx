@@ -119,7 +119,7 @@ export default function AboutPage() {
               <Reveal>
                 <Eyebrow>Why Lemyte exists</Eyebrow>
                 <h2 className={`${type.h2} mt-3 max-w-xl`}>
-                  What if the book could talk back?
+                  What if the book could check my work?
                 </h2>
               </Reveal>
               <div className="mt-8 space-y-6">
