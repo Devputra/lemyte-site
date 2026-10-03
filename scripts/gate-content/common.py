@@ -1,6 +1,7 @@
 """Shared helpers for the GATE content pipeline (see docs/GATE_CONTENT_PLAYBOOK.md)."""
 import json
 import os
+import re
 import subprocess
 import time
 import urllib.error
@@ -43,17 +44,36 @@ def _open(req, tries=4):
             time.sleep(3 * (i + 1))
 
 
+MAX_PAGES = 50  # 50,000 rows; the whole question bank is under 10,000
+
+
 def get(path):
-    """GET a PostgREST path (gate schema), paginating past the 1000-row cap."""
-    out, off = [], 0
+    """GET a PostgREST path (gate schema), paginating past the 1000-row cap.
+
+    Do not put limit= or offset= in `path`: this function pages itself. On 1 Oct 2026 a path that already had
+    limit/offset made PostgREST return the same 1,000 rows on every page, so the loop never ended and pulled
+    ~52 GB of egress (Supabase free quota is 5 GB). Hence the checks below."""
+    if re.search(r"[?&](limit|offset)=", path):
+        raise ValueError("get() pages by itself; remove limit=/offset= from the path (or use get_page)")
+    out, off, seen_first = [], 0, set()
     sep = "&" if "?" in path else "?"
-    while True:
+    for _ in range(MAX_PAGES):
         req = urllib.request.Request(f"{URL}/rest/v1/{path}{sep}limit=1000&offset={off}", headers=HEADERS)
         batch = _open(req)
+        if batch and json.dumps(batch[0], sort_keys=True) in seen_first:
+            raise RuntimeError(f"get(): page at offset {off} repeats an earlier page; stopping ({path[:80]})")
+        if batch:
+            seen_first.add(json.dumps(batch[0], sort_keys=True))
         out += batch
         off += 1000
         if len(batch) < 1000:
             return out
+    raise RuntimeError(f"get(): more than {MAX_PAGES} pages for {path[:80]}; stopping")
+
+
+def get_page(path):
+    """One PostgREST request, no paging (for paths that set their own limit/offset)."""
+    return _open(urllib.request.Request(f"{URL}/rest/v1/{path}", headers=HEADERS))
 
 
 def patch(path, body):
