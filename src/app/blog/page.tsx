@@ -24,7 +24,7 @@ export default function BlogPage() {
         <PageHero
           eyebrow="Blog"
           title="Articles are on the way"
-          lead="We're writing our first pieces on preparing for GATE: how to read a test report, how negative marking affects your strategy, and how to use past papers well. They'll appear here once they're ready."
+          lead="We're writing our first pieces on preparing for GATE: how to read a test report, how negative marking affects your strategy, and how to use PYQs well. They'll appear here once they're ready."
           art={<PaperStackScene />}
         >
           <div className="mt-8 flex flex-wrap gap-3">

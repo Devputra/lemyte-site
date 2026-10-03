@@ -33,7 +33,7 @@ export const revalidate = 3600; // numbers and prices come from the database
 export async function generateMetadata(): Promise<Metadata> {
   const { totals } = await getCatalog();
   return pageMeta({
-    title: "GATE 2027 online test series from official past papers",
+    title: "GATE 2027 online test series from official PYQs",
     description: `Take ${totals.papers} official GATE papers as timed tests, marked with the official answer key. Then practise the topics where you lost marks.`,
     path: "/gate",
   });
@@ -380,7 +380,7 @@ export default async function GateOverviewPage() {
           <p className="mt-6 text-sm text-zinc-500">
             Browse every paper and its answer key in{" "}
             <Link href="/gate/papers" className="text-brand underline underline-offset-2">
-              GATE past papers
+              GATE PYQs
             </Link>
             .
           </p>

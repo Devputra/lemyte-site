@@ -14,7 +14,7 @@ export async function generateStaticParams() {
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const paper = await getPaper((await params).slug);
   return ogImage({
-    eyebrow: paper ? `GATE ${paper.year} · ${paper.subject}` : "GATE past papers",
+    eyebrow: paper ? `GATE ${paper.year} · ${paper.subject}` : "GATE PYQs",
     title: paper ? `${paper.name} question paper with answer key and solutions` : "GATE question papers with answer keys",
     stats: paper
       ? [

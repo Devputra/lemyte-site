@@ -75,7 +75,7 @@ export default async function Gate2027Page() {
             <h1 className={`${type.display} mt-4 !text-[2.25rem] sm:!text-5xl`}>GATE 2027: dates, syllabus changes and how to prepare</h1>
             <p className={`${type.lead} mt-5 max-w-2xl`}>
               GATE 2027 is organised by IIT Madras from 6 to 21 February 2027, and the syllabus of most papers has been revised.
-              Here is what the official brochure says, what changed in each subject, and how to prepare with past papers.
+              Here is what the official brochure says, what changed in each subject, and how to prepare with PYQs.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/gate/pricing" size="lg">
@@ -193,7 +193,7 @@ export default async function Gate2027Page() {
             <ButtonLink href="/gate/pricing" size="lg">
               {examPlan ? `Get ${examPlan.name} for ${fmtInr(examPlan.priceInr)}` : "See plans"}
             </ButtonLink>
-            <ButtonLink href="/gate/papers" variant="secondary" size="lg">Browse past papers</ButtonLink>
+            <ButtonLink href="/gate/papers" variant="secondary" size="lg">Browse PYQs</ButtonLink>
           </div>
         </section>
 

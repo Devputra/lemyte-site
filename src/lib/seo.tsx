@@ -56,7 +56,7 @@ export const organizationLd = {
   email: LEGAL.email,
   telephone: LEGAL.phone,
   description:
-    "Lemyte builds exam-style online tests for competitive exams in India, starting with GATE: official past papers marked with the official answer key.",
+    "Lemyte builds exam-style online tests for competitive exams in India, starting with GATE: official PYQs marked with the official answer key.",
   address: {
     "@type": "PostalAddress",
     streetAddress: "KCG Innovation Incubation and Entrepreneurship Centre, KCG College of Technology, Karapakkam",

@@ -37,7 +37,7 @@ Lemyte is run by ${LEGAL.company}, Chennai, India. It is not affiliated with IIS
 ## Main pages
 - [GATE 2027](${abs("/gate/2027")}): dates, pattern and syllabus changes by subject
 - [GATE overview](${abs("/gate")}): how the tests, reports and topic practice work
-- [GATE past papers](${abs("/gate/papers")}): all papers with answer keys
+- [GATE PYQs](${abs("/gate/papers")}): all papers with answer keys
 - [Pricing](${abs("/gate/pricing")}): plans and what each includes
 - [Free demo test](${abs("/gate/demo")})
 - [About Lemyte](${abs("/about")}): who runs it and why

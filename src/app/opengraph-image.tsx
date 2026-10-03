@@ -3,7 +3,7 @@ import { getCatalog } from "@/lib/gate/catalog.server";
 import { fmtInt } from "@/lib/gate/catalog";
 import { OG_SIZE, ogImage } from "@/lib/og";
 
-export const alt = "Lemyte — official GATE past papers as timed tests";
+export const alt = "Lemyte — official GATE PYQs as timed tests";
 export const size = OG_SIZE;
 export const contentType = "image/png";
 export const revalidate = 86400;

@@ -51,7 +51,7 @@ export default async function PricingPage() {
     "@context": "https://schema.org",
     "@type": "Product",
     name: "Lemyte GATE test series",
-    description: `Official GATE past papers (${totals.papers} papers, ${totals.subjects} subjects) as timed tests marked with the official answer key, with topic practice and reports.`,
+    description: `Official GATE PYQs (${totals.papers} papers, ${totals.subjects} subjects) as timed tests marked with the official answer key, with topic practice and reports.`,
     brand: { "@type": "Brand", name: "Lemyte" },
     url: abs("/gate/pricing"),
     image: abs("/opengraph-image"),

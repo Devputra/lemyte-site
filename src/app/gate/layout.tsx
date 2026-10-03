@@ -9,7 +9,7 @@ import { SiteFooter, SiteHeader, type NavItem } from "@/components/site/SiteChro
 export const metadata: Metadata = {
   title: "GATE practice tests — Lemyte",
   description:
-    "Official GATE past papers as timed tests, marked with the official answer key, with topic practice and a progress tracker.",
+    "Official GATE PYQs as timed tests, marked with the official answer key, with topic practice and a progress tracker.",
 };
 
 const GATE_NAV: NavItem[] = [

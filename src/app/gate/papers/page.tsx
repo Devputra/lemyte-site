@@ -44,9 +44,9 @@ export default async function PapersPage() {
 
   return (
     <div className="bg-white text-ink">
-      <JsonLd data={breadcrumbLd([{ name: "GATE", path: "/gate" }, { name: "Past papers", path: "/gate/papers" }])} />
+      <JsonLd data={breadcrumbLd([{ name: "GATE", path: "/gate" }, { name: "PYQs", path: "/gate/papers" }])} />
       <PageHero
-        eyebrow="GATE past papers"
+        eyebrow="GATE PYQs"
         title="GATE previous year papers with answer keys"
         lead={`${papers.length} official GATE papers. Each page has the official answer key, how the marks were split by topic, and solved questions. Take any paper as a timed test marked the way GATE marks it.`}
         art={<PaperStackScene />}
@@ -67,7 +67,7 @@ export default async function PapersPage() {
         />
 
         <section aria-labelledby="faq">
-          <h2 id="faq" className={type.h2}>Questions about GATE past papers</h2>
+          <h2 id="faq" className={type.h2}>Questions about GATE PYQs</h2>
           <FaqList faqs={faqs} className="mt-6 max-w-3xl" />
         </section>
       </Container>

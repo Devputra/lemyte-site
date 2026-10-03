@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Lemyte — GATE practice tests",
     short_name: "Lemyte",
-    description: "Official GATE past papers as timed tests, marked with the official answer key.",
+    description: "Official GATE PYQs as timed tests, marked with the official answer key.",
     start_url: "/gate",
     display: "standalone",
     background_color: "#ffffff",

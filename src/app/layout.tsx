@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(CANONICAL_ORIGIN),
   title: "Lemyte — Practice tests for competitive exams",
   description:
-    "Exam-style online tests for GATE, built from official past papers and marked the way GATE marks them. See which topics cost you marks and practise those first.",
+    "Exam-style online tests for GATE, built from official PYQs and marked the way GATE marks them. See which topics cost you marks and practise those first.",
   applicationName: "Lemyte",
   authors: [{ name: "Lemyte", url: CANONICAL_ORIGIN }],
   publisher: LEGAL.company,

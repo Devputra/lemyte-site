@@ -484,7 +484,7 @@ function GateProduct() {
           <p className="text-sm font-medium text-brand-100">Our first product</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">GATE assessment</h2>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Real past papers on an exam-like screen, marked the official way.
+            Real PYQs on an exam-like screen, marked the official way.
           </p>
           <ul className="mt-8 space-y-3 text-[15px] text-zinc-300">
             {["Full PYQ papers: 65 questions, 3 hours, official marking", "Topic practice: 5 to 30 questions from one topic", "Ranked tests with one counted attempt", "A free demo test, no card needed"].map((m) => (
