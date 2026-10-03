@@ -18,6 +18,11 @@ updates:
       # Major versions (e.g. Next 16, React 20) need a planned upgrade, not an automatic PR.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # The KaTeX stylesheet must match the KaTeX that rehype-katex renders with (0.16.x). A newer top-level
+      # katex changes the CSS but not the HTML, and formulas break (subscripts drawn full size). Lift this
+      # when rehype-katex moves to katex 0.17+.
+      - dependency-name: "katex"
+        versions: [">=0.17.0"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
