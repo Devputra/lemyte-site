@@ -24,6 +24,8 @@ import {
 import { safeJson } from "@/lib/fetch-helpers";
 import { LEVELS } from "@/lib/gate/tracker";
 import { LoadingScene, Reveal } from "@/components/motion";
+import { PlanTime } from "@/components/gate/PlanTime";
+import type { PlanPass } from "@/lib/gate/plan-timeline";
 
 type PeerStat = { coverage: number; accuracy: number; solved: number; tests: number; timeSec: number; points: number };
 
@@ -41,6 +43,7 @@ interface TrackerData {
 
 interface Dashboard {
   accessPass: { endsAt: string | null; plan: { name: string } | null } | null;
+  planPasses?: PlanPass[];
   inProgressAttemptId: string | null;
   recentAttempts: Array<{
     id: string;
@@ -217,8 +220,9 @@ export default function GateDashboardPage() {
                 </p>
                 <p className="mt-1 text-sm italic text-zinc-500">{tagline(data)}</p>
               </div>
-              <div className="flex min-w-0 max-w-full items-center gap-2">
+              <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                 {loading && <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />}
+                {dash?.planPasses && dash.planPasses.length > 0 && <PlanTime passes={dash.planPasses} />}
                 <select
                   value={data.subject.code}
                   onChange={(e) => changeSubject(e.target.value)}

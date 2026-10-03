@@ -211,8 +211,22 @@ export async function GET() {
     }
   }
 
+  // Every plan still to run (current + queued after it), for the plan-time bar.
+  const upcoming = passes.filter((p) => p.status === "ACTIVE" && p.starts_at && p.ends_at && new Date(p.ends_at) > new Date(nowIso));
+  const planIds = [...new Set(upcoming.map((p) => p.plan_id).filter(Boolean))] as string[];
+  const { data: planRows } = planIds.length
+    ? await supabaseAdmin.schema("gate").from("plans").select("id, name").in("id", planIds)
+    : { data: [] };
+  const planName = new Map((planRows ?? []).map((p) => [p.id as string, p.name as string]));
+  const planPasses = upcoming.map((p) => ({
+    planName: planName.get(p.plan_id as string) ?? "Plan",
+    startsAt: p.starts_at as string,
+    endsAt: p.ends_at as string,
+  }));
+
   return Response.json({
     user: { id: userId, email: auth.user.email ?? null },
+    planPasses,
     accessPass: activePass
       ? {
           id: activePass.id,
