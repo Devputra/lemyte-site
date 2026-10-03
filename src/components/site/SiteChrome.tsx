@@ -14,19 +14,7 @@ export type NavItem = MenuItem;
 const PLATFORM_NAV: NavItem[] = [
   {
     label: "Products",
-    products: [
-      {
-        name: "GATE",
-        tagline: "Official PYQs as timed tests, topic practice and the GATE 2027 syllabus",
-        href: "/gate",
-        links: [
-          { href: "/gate", label: "Overview" },
-          { href: "/gate/2027", label: "GATE 2027" },
-          { href: "/gate/papers", label: "PYQs" },
-          { href: "/gate/pricing", label: "Pricing" },
-        ],
-      },
-    ],
+    products: [{ name: "GATE", href: "/gate" }],
   },
   { href: "/about", label: "About" },
   { href: "/blog", label: "Blog" },

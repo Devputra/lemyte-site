@@ -1,6 +1,6 @@
 // src/components/site/MainNav.tsx — header navigation. Lemyte is a platform with one product (GATE) for now, so
 // "Products" opens a menu listing the products; every page except the home page also gets a "Home" link.
-// The menu opens on hover (mouse), click/tap, or keyboard (Enter/Space, Escape closes).
+// A plain dropdown of product names; it opens on hover (mouse), click/tap, or keyboard (Escape closes).
 "use client";
 
 import { ChevronDown } from "lucide-react";
@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 export type NavLink = { href: string; label: string };
 export type NavMenu = { label: string; products: Product[] };
 export type NavItem = NavLink | NavMenu;
-export type Product = { name: string; tagline: string; href: string; links: NavLink[] };
+export type Product = { name: string; href: string };
 
 const HOME: NavLink = { href: "/", label: "Home" };
 const isMenu = (i: NavItem): i is NavMenu => "products" in i;
@@ -54,29 +54,19 @@ function ProductsMenu({ menu }: { menu: NavMenu }) {
         <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} strokeWidth={1.75} />
       </button>
       {open && (
-        <div className="absolute left-1/2 top-full z-50 w-[22rem] -translate-x-1/2 pt-2">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.25)]">
+        <div className="absolute left-0 top-full z-50 min-w-44 pt-1">
+          <ul className="overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.3)]">
             {menu.products.map((p) => (
-              <div key={p.name} className="rounded-xl p-3 hover:bg-zinc-50">
-                <Link href={p.href} className="block">
-                  <span className="text-sm font-semibold text-ink">{p.name}</span>
-                  <span className="mt-0.5 block text-sm text-zinc-500">{p.tagline}</span>
+              <li key={p.href}>
+                <Link
+                  href={p.href}
+                  className="flex min-h-11 items-center px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-brand-50 hover:text-brand"
+                >
+                  {p.name}
                 </Link>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {p.links.map((l) => (
-                    <Link
-                      key={l.href}
-                      href={l.href}
-                      className="inline-flex min-h-8 items-center rounded-md border border-zinc-200 bg-white px-2.5 text-xs font-medium text-zinc-700 hover:border-brand hover:text-brand"
-                    >
-                      {l.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              </li>
             ))}
-            <p className="px-3 pb-2 pt-1 text-xs text-zinc-500">More exams are on the way.</p>
-          </div>
+          </ul>
         </div>
       )}
     </div>
