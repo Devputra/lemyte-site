@@ -58,6 +58,8 @@ export async function updateInProgress(
       ...actor,
     });
     if (!allowed) failure = Response.json({ error: "FORBIDDEN" }, { status: 403 });
+    // After submitting, the report shows the solutions: answers must be frozen even if time is left.
+    else if (session.status !== "IN_PROGRESS") failure = Response.json({ error: "ATTEMPT_SUBMITTED" }, { status: 409 });
     else if (now >= new Date(session.endsAt)) failure = Response.json({ error: "ATTEMPT_ENDED" }, { status: 409 });
     else if (!session.questionOrder.includes(questionId))
       failure = Response.json({ error: "QUESTION_NOT_IN_ATTEMPT" }, { status: 400 });
