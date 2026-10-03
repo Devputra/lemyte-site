@@ -37,10 +37,12 @@ async function loadCatalog(): Promise<Catalog> {
       .eq("kind", "RANKED")
       .eq("is_active", true)
       .eq("is_demo", false)
+      .or("description.is.null,description.not.ilike.[adhoc-%")
       .or(`available_until.is.null,available_until.gt.${new Date().toISOString()}`),
   ]);
   if (papersRes.error) throw papersRes.error;
   if (plansRes.error) throw plansRes.error;
+  if (rankedRes.error) throw rankedRes.error;
 
   const bySubject = new Map<string, CatalogSubject & { yearList: number[] }>();
   const papers: Catalog["papers"] = [];

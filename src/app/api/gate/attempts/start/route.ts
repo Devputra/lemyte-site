@@ -272,7 +272,7 @@ export async function POST(req: NextRequest) {
         return Response.json(
           {
             error:
-              "You have already submitted this ranked test. View the report from your dashboard.",
+              "You have used your one counted attempt for this ranked test. Open Ranked tests to view your report.",
           },
           { status: 422 }
         );
@@ -340,7 +340,7 @@ export async function POST(req: NextRequest) {
 
     // ========== SHUFFLE ==========
     const seed = createShuffleSeed();
-    const questionOrder = getQuestionOrder(questionVersionIds, seed);
+    const questionOrder = input.mode === "RANKED" ? questionVersionIds : getQuestionOrder(questionVersionIds, seed);
     const orderHash = hashQuestionOrder(questionOrder);
 
     // ========== INSERT ATTEMPT ==========
