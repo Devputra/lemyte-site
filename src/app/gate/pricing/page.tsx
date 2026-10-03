@@ -4,6 +4,7 @@ import { FaqList } from "@/components/site/FaqList";
 import { Container, type } from "@/components/site/ui";
 import { fmtInr } from "@/lib/gate/catalog";
 import { getCatalog } from "@/lib/gate/catalog.server";
+import { currentTier } from "@/lib/gate/plan-price";
 import { loadActivePlans } from "@/lib/gate/plans.server";
 import { LEGAL } from "@/lib/legal";
 import { abs, type Faq, JsonLd, pageMeta } from "@/lib/seo";
@@ -26,7 +27,11 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day
 export default async function PricingPage() {
   const [plans, { totals }] = await Promise.all([loadActivePlans(), getCatalog()]);
   const planList = plans
-    .map((p) => `${p.name}: ${fmtInr(p.priceInr)}${p.endsAt ? ` (access until ${fmtDate(p.endsAt)})` : ""}`)
+    .map((p) => {
+      const tier = currentTier(p.schedule);
+      const steps = p.schedule && p.schedule.length > 1 ? `; the price steps down to ${p.schedule.filter((t) => t.price < p.priceInr).map((t) => fmtInr(t.price)).join(", ")} as the exam gets closer` : "";
+      return `${p.name}: ${fmtInr(p.priceInr)}${p.endsAt ? ` (access until ${fmtDate(p.endsAt)}${tier?.until ? `; this price until ${fmtDate(tier.until)}` : ""}${steps})` : ""}`;
+    })
     .join("; ");
   const faqs: Faq[] = [
     { q: "How much does Lemyte cost?", a: `${planList}. Every plan includes everything; only the length of access differs.` },
@@ -57,7 +62,7 @@ export default async function PricingPage() {
       priceCurrency: "INR",
       availability: "https://schema.org/InStock",
       url: abs("/gate/pricing"),
-      ...(p.endsAt && { priceValidUntil: p.endsAt.slice(0, 10) }),
+      ...(p.endsAt && { priceValidUntil: currentTier(p.schedule)?.until ?? p.endsAt.slice(0, 10) }),
     })),
   };
 

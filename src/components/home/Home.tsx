@@ -31,58 +31,41 @@ import {
   SplitWords,
   useSectionProgress,
 } from "@/components/motion";
-import { AnswerSheetScene, JourneyScene, PlanScene, RecallScene } from "@/components/motion/scenes";
+import { AnswerSheetScene, PlanScene, RecallScene } from "@/components/motion/scenes";
 import { type Catalog, fmtInr, fmtInt } from "@/lib/gate/catalog";
 import { LEGAL } from "@/lib/legal";
 
-const KINDS = [
-  { when: "Before you start", name: "Diagnostic", text: "Shows where you are starting from, so you don't spend weeks on topics you already know." },
-  { when: "While you prepare", name: "Formative", text: "Short, regular checks that decide what you study next. Most practice on Lemyte is this kind." },
-  { when: "Close to the exam", name: "Summative", text: "A full-length paper under exam conditions that tells you how ready you are." },
-];
-
 const WHY = [
-  {
-    title: "Recalling beats rereading",
-    text: "Pulling an answer out of memory strengthens it far more than reading your notes again. Psychologists call this the testing effect, and it is one of the most reliable findings in learning research.",
-  },
-  {
-    title: "You can only fix what you can see",
-    text: "A score tells you how you did. A breakdown by topic and question tells you what to do next, which is the part that actually moves your marks.",
-  },
-  {
-    title: "Exam technique is a skill too",
-    text: "Pacing three hours, handling negative marks and using an on-screen calculator all take practice. A mock is a much better place to learn them than the exam hall.",
-  },
+  { title: "Recalling beats rereading", text: "Answering from memory makes it stick far better than reading your notes again (the testing effect)." },
+  { title: "You can only fix what you can see", text: "A score says how you did. A topic-by-topic breakdown says what to do next." },
+  { title: "Exam technique is a skill too", text: "Pacing three hours, negative marks and the on-screen calculator take practice. Better in a mock than in the exam hall." },
 ];
 
 const STEPS = [
-  { icon: ClipboardList, title: "Pick a test", text: "A full PYQ paper, or ten questions from one topic. Every question comes from an official GATE paper." },
-  { icon: Timer, title: "Take it like the real exam", text: "Countdown timer, question palette, mark for review and an on-screen calculator. MCQ, MSQ and numerical answers work the way they do on exam day." },
-  { icon: ListChecks, title: "Get marked the official way", text: "Marks and negative marks follow GATE's own scheme and answer key, including questions where marks were awarded to everyone." },
-  { icon: LineChart, title: "Review, then practise", text: "Compare each answer with the correct one and read the worked solution. Your weakest topics move to the top of your practice list." },
+  { icon: ClipboardList, title: "Pick a test", text: "A full past paper, or ten questions from one topic." },
+  { icon: Timer, title: "Take it like the real exam", text: "Timer, question palette, mark for review and the on-screen calculator." },
+  { icon: ListChecks, title: "Get marked the GATE way", text: "Official answer key and negative marking, including marks-to-all questions." },
+  { icon: LineChart, title: "Review, then practise", text: "Worked solutions for every question. Your weakest topics move to the top of your practice list." },
 ];
 
 const GETS = [
-  { icon: Medal, title: "Know your real score", text: "Marked against the official answer key, with negative marking applied, so the number means something." },
-  { icon: BarChart3, title: "Stop guessing what to revise", text: "Accuracy by topic shows which topics cost you marks and which are already safe." },
-  { icon: BookOpenCheck, title: "Learn from every mistake", text: "Every question has a step-by-step solution, not just the final answer." },
-  { icon: LineChart, title: "See yourself improve", text: "Coverage, accuracy, daily streak and level for each paper you prepare for." },
-  { icon: CheckCircle2, title: "Benchmark against others", text: "Ranked tests show where you stand among everyone who took the same paper." },
-  { icon: ListChecks, title: "Always know the next step", text: "One click starts ten questions from the topic you most need to work on." },
+  { icon: BarChart3, title: "Know what to revise", text: "Accuracy by topic shows which topics cost you marks." },
+  { icon: BookOpenCheck, title: "Learn from every mistake", text: "A step-by-step solution for every question." },
+  { icon: Medal, title: "See where you stand", text: "Ranked tests compare you with everyone who took the same paper." },
+  { icon: LineChart, title: "Watch yourself improve", text: "Coverage, accuracy and a daily streak for each paper." },
 ];
 
 const PLAN = [
-  { when: "Week 1", what: "Take one full PYQ paper under exam conditions to get your baseline." },
-  { when: "Weeks 2–6", what: "Practise your three weakest topics daily, ten questions at a time. One full paper each weekend." },
-  { when: "Weeks 7–8", what: "Two to three full papers a week, reviewing every wrong answer. A ranked test to check readiness." },
+  { when: "Week 1", what: "One full past paper under exam conditions, as your baseline." },
+  { when: "Weeks 2–6", what: "Ten questions a day from your three weakest topics. One full paper each weekend." },
+  { when: "Weeks 7–8", what: "Two or three full papers a week, then a ranked test." },
 ];
 
 const faqFor = (c: Catalog) => [
-  { q: "Where do the questions come from?", a: "From official GATE question papers. Each one is checked against the published answer key, figures are taken from the original paper, and every question has a worked solution." },
-  { q: "Can I try it before paying?", a: "Yes. The demo test is free and you don't need a card. You can also create an account and look around before choosing a plan." },
-  { q: "Does my plan renew automatically?", a: `No. Plans are one-time payments: ${c.plans.map((p) => (p.endsAt ? p.name[0].toLowerCase() + p.name.slice(1) : p.name.toLowerCase())).join(", ").replace(/, ([^,]+)$/, " or $1")}. If a plan isn't right for you, you can get a full refund within ${LEGAL.refundWindowDays} days as long as you have started no more than ${LEGAL.refundMaxAttempts} tests.` },
-  { q: "Which GATE papers are covered?", a: `${c.subjects.map((s) => s.name).join(", ")}. More papers are being added.` },
+  { q: "Where do the questions come from?", a: "Official GATE papers, with answers from the official keys and figures from the original papers." },
+  { q: "Can I try it before paying?", a: "Yes. The demo test is free and needs no card." },
+  { q: "Does my plan renew automatically?", a: `No. Plans are one-time payments: ${c.plans.map((p) => (p.endsAt ? p.name[0].toLowerCase() + p.name.slice(1) : p.name.toLowerCase())).join(", ").replace(/, ([^,]+)$/, " or $1")}. Full refund within ${LEGAL.refundWindowDays} days if you have started no more than ${LEGAL.refundMaxAttempts} tests.` },
+  { q: "Which GATE papers are covered?", a: `${c.subjects.map((s) => s.name).join(", ")}.` },
 ];
 
 const CatalogContext = createContext<Catalog | null>(null);
@@ -94,7 +77,6 @@ export default function Home({ catalog }: { catalog: Catalog }) {
       <ScrollProgress />
       <Hero />
       <ProofStrip />
-      <WhatSection />
       <WhySection />
       <HowItWorks />
       <Benefits />
@@ -128,9 +110,8 @@ function Hero() {
           </h1>
           <Reveal delay={0.35}>
             <p className={`${type.lead} mt-6 max-w-xl`}>
-              Lemyte runs exam-style online tests and turns every attempt into a clear list of what to work on. We are
-              starting with GATE: {fmtInt(totals.questions)} questions from {totals.papers} official papers, marked
-              exactly the way GATE marks them.
+              {fmtInt(totals.questions)} questions from {totals.papers} official GATE papers, marked the way GATE marks
+              them. Every test ends with a list of what to work on next.
             </p>
           </Reveal>
           <Reveal delay={0.5}>
@@ -253,39 +234,6 @@ function ProofStrip() {
   );
 }
 
-/* ---------------- What an assessment is ---------------- */
-function WhatSection() {
-  return (
-    <section id="what" className="py-20 sm:py-28">
-      <Container className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-        <div>
-          <Reveal>
-            <SectionHeader
-              eyebrow="What an assessment is"
-              title="A test with a purpose"
-              lead="An assessment is a structured way to find out what someone knows and can do. A school exam is one kind; a short quiz after a lecture is another. What matters is the purpose: honest evidence of where you stand right now."
-            />
-          </Reveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            {KINDS.map((k, i) => (
-              <Reveal key={k.name} delay={i * 0.1}>
-                <div className="h-full rounded-2xl border border-zinc-200 bg-white p-5 transition-colors hover:border-brand/40">
-                  <p className="text-xs text-zinc-500">{k.when}</p>
-                  <h3 className={`${type.h3} mt-1`}>{k.name}</h3>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600">{k.text}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-        <Reveal delay={0.2}>
-          <JourneyScene />
-        </Reveal>
-      </Container>
-    </section>
-  );
-}
-
 /* ---------------- Why it matters (parallax art) ---------------- */
 function WhySection() {
   const ref = useRef<HTMLElement>(null);
@@ -299,10 +247,7 @@ function WhySection() {
           <Reveal>
             <p className="text-sm font-medium text-brand-100">Why it matters</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">Testing yourself is how learning sticks</h2>
-            <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-              Reading, watching lectures and making notes all feel productive. Tests are what show whether any of it will
-              hold up on exam day.
-            </p>
+            <p className="mt-4 text-lg leading-relaxed text-zinc-300">Notes and lectures feel productive. Tests show what will hold up on exam day.</p>
           </Reveal>
           <div className="mt-10 divide-y divide-zinc-800 border-y border-zinc-800">
             {WHY.map((w, i) => (
@@ -334,7 +279,6 @@ function HowItWorks() {
           <SectionHeader
             eyebrow="How Lemyte's assessment works"
             title="From one test to a clear next step"
-            lead="Every attempt follows the same four steps, whether it is a full paper or ten questions on a single topic."
           />
         </Reveal>
         <div className="mt-14 grid gap-12 lg:grid-cols-2">
@@ -508,7 +452,7 @@ function Benefits() {
     <section id="what-you-get" className="border-t border-zinc-100 bg-zinc-50/70 py-20 sm:py-28">
       <Container>
         <Reveal>
-          <SectionHeader eyebrow="What you get" title="Everything you need after a test, in one place" />
+          <SectionHeader eyebrow="What you get" title="After every test" />
         </Reveal>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {GETS.map((g, i) => (
@@ -540,8 +484,7 @@ function GateProduct() {
           <p className="text-sm font-medium text-brand-100">Our first product</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">GATE assessment</h2>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Take real past papers on a screen that works like the exam, get marked the official way, and spend your
-            remaining time on the topics that need it.
+            Real past papers on an exam-like screen, marked the official way.
           </p>
           <ul className="mt-8 space-y-3 text-[15px] text-zinc-300">
             {["Full PYQ papers: 65 questions, 3 hours, official marking", "Topic practice: 5 to 30 questions from one topic", "Ranked tests with one counted attempt", "A free demo test, no card needed"].map((m) => (
@@ -608,7 +551,7 @@ function UseCase() {
             <SectionHeader
               eyebrow="Putting it together"
               title="An example plan for the last eight weeks"
-              lead="This is one way to use Lemyte before the exam. Adjust it to your own timetable; the idea is the same: test, find the gaps, fix them, test again."
+              lead="Test, find the gaps, fix them, test again. Adjust it to your own timetable."
             />
           </Reveal>
           <ol className="mt-10 space-y-4">
@@ -663,12 +606,8 @@ function AboutTeaser() {
         <Reveal delay={0.1}>
           <div className={`${type.lead} space-y-4`}>
             <p>
-              Lemyte is an education company based in India. We make assessments that help students prepare with evidence
-              instead of guesswork.
-            </p>
-            <p>
-              GATE is our first product. We check every question against the official paper and answer key before it goes
-              live, and we would rather have fewer questions than wrong ones.
+              An Indian education company building exam-style assessments, starting with GATE. Every question is checked
+              against the official paper and key; we would rather have fewer questions than wrong ones.
             </p>
             <Link href="/about" className="inline-flex items-center gap-1 font-medium text-brand hover:text-brand-700">
               Our story <ArrowRight className="h-4 w-4" />
@@ -690,7 +629,7 @@ function FinalCta() {
             <Constellation className="opacity-50" density={0.00012} rgb="255,255,255" />
             <div className="relative">
               <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">See where you stand today.</h2>
-              <p className="mx-auto mt-4 max-w-xl text-lg text-brand-100">Take the free demo test and look at your report. It takes a few minutes.</p>
+              <p className="mx-auto mt-4 max-w-xl text-lg text-brand-100">Take the free demo and look at your report.</p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Magnetic>
                   <TrialButton variant="dark" size="lg" paidLabel="Start a PYQ paper" paidHref="/gate/practice" />

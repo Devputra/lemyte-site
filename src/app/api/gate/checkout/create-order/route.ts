@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createRazorpayOrder, isRazorpayConfigured } from "@/lib/gate/razorpay";
+import { priceOn } from "@/lib/gate/plan-price";
 import { latestActiveEnd } from "@/lib/gate/access";
 import { LEGAL } from "@/lib/legal";
 import { handleRouteError, getErrorMessage } from "@/lib/gate/errors";
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     const { data: plan, error: planErr } = await supabaseAdmin
       .schema("gate")
       .from("plans")
-      .select("id, code, name, duration_months, price_inr, is_active, ends_at")
+      .select("id, code, name, duration_months, price_inr, price_schedule, is_active, ends_at")
       .eq("id", input.planId)
       .maybeSingle();
 
@@ -64,6 +65,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Today's price: a plan with a published schedule gets cheaper over time (src/lib/gate/plan-price.ts).
+    const amountInr = priceOn(plan);
+
     const { data: ord, error: ordErr } = await supabaseAdmin
       .schema("gate")
       .from("payment_orders")
@@ -71,7 +75,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         plan_id: plan.id,
         provider: "razorpay",
-        amount_inr: plan.price_inr,
+        amount_inr: amountInr,
         currency: "INR",
         status: "CREATED",
       })
@@ -89,7 +93,7 @@ export async function POST(req: NextRequest) {
     let rzpOrder;
     try {
       rzpOrder = await createRazorpayOrder({
-        amountInr: Number(plan.price_inr),
+        amountInr,
         receipt: `lm_${ord.id}`.slice(0, 40),
         notes: {
           user_id: userId,
@@ -130,7 +134,7 @@ export async function POST(req: NextRequest) {
     return Response.json({
       paymentOrderId: ord.id,
       razorpayOrderId: rzpOrder.id,
-      amountInr: plan.price_inr,
+      amountInr,
       amountPaise: rzpOrder.amount,
       currency: rzpOrder.currency,
       keyId: process.env.RAZORPAY_KEY_ID ?? null, // key ids are public by design; one variable for server and checkout

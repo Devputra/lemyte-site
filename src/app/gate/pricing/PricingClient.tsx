@@ -12,6 +12,10 @@ import { useAccess } from "@/components/site/AccessCta";
 import { safeJson } from "@/lib/fetch-helpers";
 import { Constellation, Reveal } from "@/components/motion";
 import { LEGAL } from "@/lib/legal";
+import { currentTier, type PriceTier } from "@/lib/gate/plan-price";
+
+const shortDay = (iso: string) => new Date(`${iso}T00:00:00+05:30`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
+const nextDay = (iso: string) => new Date(new Date(`${iso}T00:00:00Z`).getTime() + DAY).toISOString().slice(0, 10);
 
 export interface Plan {
   id: string;
@@ -20,6 +24,7 @@ export interface Plan {
   durationMonths: number;
   priceInr: number;
   endsAt: string | null; // fixed-date plan, e.g. "Until GATE 2027"
+  schedule?: PriceTier[] | null; // published price steps (plan-price.ts)
 }
 
 const DAY = 86_400_000;
@@ -215,10 +220,7 @@ export function PricingClient({
                   Simple plans, paid once
                 </h1>
                 <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600">
-                  Every plan unlocks everything on Lemyte for its duration.
-                  Plans don&apos;t renew, and you can get a full refund within{" "}
-                  {LEGAL.refundWindowDays} days if you have started no more than{" "}
-                  {LEGAL.refundMaxAttempts} tests.
+                  Every plan unlocks everything. Plans don&apos;t renew.
                 </p>
               </>
             )}
@@ -237,7 +239,7 @@ export function PricingClient({
             const from = current?.endsAt && new Date(current.endsAt) > new Date() ? new Date(current.endsAt) : new Date();
             const days = Math.max(0, Math.ceil((end.getTime() - from.getTime()) / DAY));
             const covered = days === 0;
-            const perMonth = days ? Math.round(plan.priceInr / (days / 30.44)) : 0;
+            const tier = currentTier(plan.schedule);
             return (
               <Reveal
                 key={plan.id}
@@ -250,13 +252,32 @@ export function PricingClient({
                     {covered
                       ? `Your current plan already runs past ${fmtDate(plan.endsAt)}, so you're covered for GATE 2027.`
                       : current
-                        ? `Extends your plan to ${fmtDate(plan.endsAt)}: ${days} more days, through the exam and a week after the last paper.`
-                        : `Full access until ${fmtDate(plan.endsAt)}: ${days} days from today, through the exam and a week after the last paper. One payment, no renewal.`}
+                        ? `Extends your plan to ${fmtDate(plan.endsAt)} (${days} more days), through the exam.`
+                        : `Access until ${fmtDate(plan.endsAt)} (${days} days), through the exam.`}
                   </p>
+                  {plan.schedule && plan.schedule.length > 1 && !covered && (
+                    <div className="mt-4">
+                      <p className="text-xs font-medium text-zinc-500">The price drops as the exam gets closer:</p>
+                      <ol className="mt-2 flex flex-wrap gap-1.5">
+                        {plan.schedule.map((t, i) => {
+                          const label = t.until ? `till ${shortDay(t.until)}` : `from ${shortDay(nextDay(plan.schedule![i - 1].until!))}`;
+                          const now = t === tier;
+                          return (
+                            <li
+                              key={label}
+                              className={`rounded-md border px-2 py-1 text-xs tabular-nums ${now ? "border-brand bg-brand text-white" : "border-zinc-200 bg-white text-zinc-600"}`}
+                            >
+                              {label}: ₹{t.price.toLocaleString("en-IN")}
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    </div>
+                  )}
                 </div>
                 <div className="md:text-right">
                   <p className="text-4xl font-semibold tracking-tight tabular-nums">₹{plan.priceInr.toLocaleString("en-IN")}</p>
-                  {!covered && <p className="mt-1 text-sm text-zinc-500">about ₹{perMonth.toLocaleString("en-IN")} a month, paid once</p>}
+                  {!covered && <p className="mt-1 text-sm text-zinc-500">{tier?.until ? `this price till ${shortDay(tier.until)}` : "paid once"}</p>}
                   <button
                     onClick={() => startCheckout(plan)}
                     disabled={busyPlanId !== null || covered}
@@ -387,11 +408,9 @@ export function PricingClient({
                 <h2 className="font-semibold text-ink">Payments and refunds</h2>
               </div>
               <p className="mt-4 text-[15px] leading-relaxed text-zinc-600">
-                Payments are handled by Razorpay (UPI, cards, net banking and
-                wallets). Your plan starts as soon as the payment is confirmed,
-                usually within a minute. If a plan isn&apos;t right for you, ask
-                for a refund within {LEGAL.refundWindowDays} days, as long as you have
-                started no more than {LEGAL.refundMaxAttempts} tests.
+                Paid through Razorpay (UPI, cards, net banking, wallets); access starts within a minute. Full
+                refund within {LEGAL.refundWindowDays} days if you have started no more than{" "}
+                {LEGAL.refundMaxAttempts} tests.
               </p>
               <p className="mt-4 text-sm leading-6 text-zinc-500">
                 By buying a plan you agree to our{" "}

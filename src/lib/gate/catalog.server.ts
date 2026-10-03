@@ -5,6 +5,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import type { Catalog, CatalogSubject } from "@/lib/gate/catalog";
+import { priceOn } from "@/lib/gate/plan-price";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type PaperRow = {
@@ -27,10 +28,9 @@ async function loadCatalog(): Promise<Catalog> {
       .returns<PaperRow[]>(),
     db
       .from("plans")
-      .select("name, duration_months, price_inr, ends_at")
+      .select("name, duration_months, price_inr, ends_at, price_schedule")
       .eq("is_active", true)
-      .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`)
-      .order("price_inr"),
+      .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`),
   ]);
   if (papersRes.error) throw papersRes.error;
   if (plansRes.error) throw plansRes.error;
@@ -55,9 +55,10 @@ async function loadCatalog(): Promise<Catalog> {
   const plans = (plansRes.data ?? []).map((p) => ({
     name: p.name,
     months: p.duration_months,
-    priceInr: p.price_inr,
+    priceInr: priceOn(p),
     endsAt: p.ends_at ?? null,
   }));
+  plans.sort((a, b) => a.priceInr - b.priceInr);
 
   return {
     subjects,

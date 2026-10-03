@@ -26,7 +26,6 @@ import {
 import { fmtInr } from "@/lib/gate/catalog";
 import { getCatalog } from "@/lib/gate/catalog.server";
 import { LEGAL } from "@/lib/legal";
-import { NEGATIVE_MARKING } from "@/lib/gate/exam-facts";
 import { pageMeta } from "@/lib/seo";
 
 export const revalidate = 3600; // numbers and prices come from the database
@@ -49,17 +48,17 @@ const SCREEN = [
   {
     icon: LayoutGrid,
     title: "Question palette",
-    text: "See at a glance what you've answered, skipped and marked, and jump to any question.",
+    text: "See what you've answered, skipped and marked; jump to any question.",
   },
   {
     icon: Flag,
     title: "Mark for review",
-    text: "Flag a question and come back to it before you submit, just like the real exam.",
+    text: "Flag a question and come back to it before you submit.",
   },
   {
     icon: Calculator,
     title: "On-screen calculator",
-    text: "Use the calculator on the screen, as you will on exam day.",
+    text: "The same kind of calculator as on exam day.",
   },
 ];
 
@@ -166,7 +165,7 @@ export default async function GateOverviewPage() {
                 <SectionHeader
                   eyebrow="Subjects"
                   title={`${totals.subjects} GATE subjects, with more on the way`}
-                  lead="Each subject includes the General Aptitude section of its papers. The map shows every year we cover: hover a subject to see its papers."
+                  lead="General Aptitude is included with every subject. Hover a subject to see its years."
                 />
               </Reveal>
             }
@@ -209,7 +208,6 @@ export default async function GateOverviewPage() {
             <SectionHeader
               eyebrow="The exam screen"
               title="Practise on a screen that works like GATE"
-              lead="Getting used to the interface is part of preparing. The test screen is modelled on the real exam, with the same kinds of controls."
             />
           </Reveal>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -239,7 +237,7 @@ export default async function GateOverviewPage() {
             <SectionHeader
               eyebrow="Marking"
               title="Marked the way GATE marks"
-              lead="Scores use the official answer key and GATE's own rules, so the number you see is the number you would have got."
+              lead="Official answer key, GATE's own rules."
             />
             <dl className="mt-8 divide-y divide-zinc-200 border-y border-zinc-200 text-sm">
               {MARKING.map(([k, v]) => (
@@ -291,11 +289,6 @@ export default async function GateOverviewPage() {
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
               Every question checked against the official paper
             </h2>
-            <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-              A practice test is only useful if the questions and answers are
-              right. Before a paper goes live, each question goes through the
-              same checks.
-            </p>
           </Reveal>
           <ul className="divide-y divide-zinc-800 border-y border-zinc-800">
             {CHECKS.map((c, i) => (
@@ -323,7 +316,7 @@ export default async function GateOverviewPage() {
             center
             eyebrow="Plans"
             title="One payment, no subscription"
-            lead="Every plan includes all subjects, full past papers, topic practice and ranked tests. Plans don't renew automatically."
+            lead="Every plan includes everything. No auto-renewal."
           />
           <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
             {plans.map(({ name: d, priceInr }, i) => (
@@ -371,28 +364,16 @@ export default async function GateOverviewPage() {
             className="mt-8 max-w-3xl"
             faqs={[
               {
-                q: "What is Lemyte?",
-                a: `An online GATE test series built from official past papers. You take any of ${totals.papers} official papers as a timed 3-hour test on an exam-style screen, it is marked with the official answer key, and your report shows which topics cost you marks.`,
-              },
-              {
                 q: "Which GATE subjects does Lemyte cover?",
                 a: `${subjects.map((s) => `${s.name} (${s.code}, ${s.years})`).join(", ")}.`,
               },
               {
-                q: "Are the questions the real GATE questions?",
-                a: "Yes. Question text and figures come from the official papers, and every answer comes from the official answer key, including marks-to-all decisions and range answers for numerical questions.",
-              },
-              {
-                q: "Is it marked like the real GATE exam?",
-                a: `Yes. ${NEGATIVE_MARKING}`,
-              },
-              {
                 q: "Is there a free GATE mock test?",
-                a: "Yes. The demo is 10 General Aptitude questions from real GATE papers in 30 minutes, with the same screen and report as the full tests. It needs no payment details.",
+                a: "Yes. 10 random General Aptitude questions from real GATE papers in 30 minutes, with the full report. No card needed.",
               },
               {
                 q: "Where can I see a paper's answer key before paying?",
-                a: "Every paper has a free page with its official answer key, topic-wise marks and a few fully solved questions, under GATE past papers.",
+                a: "Every paper has a free page with its official answer key, topic-wise marks and solved questions.",
               },
             ]}
           />

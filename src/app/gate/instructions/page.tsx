@@ -51,6 +51,19 @@ export default function InstructionsPage() {
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Someone who has read the general instructions before starts on the declaration screen (remembered in
+  // this browser) and can still open the general instructions with "Previous".
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("lm_seen_instructions") === "1") setStep(2);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    if (step !== 2) return;
+    try {
+      localStorage.setItem("lm_seen_instructions", "1");
+    } catch {}
+  }, [step]);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
