@@ -30,6 +30,9 @@ export async function checkEntitlement(
     .select("id, status, plan_id, starts_at, ends_at")
     .eq("user_id", userId)
     .eq("status", "ACTIVE")
+    // Only passes that have already started: a plan bought on top of another is queued to start later, and
+    // picking that future pass would wrongly lock the student out of the plan they are on now.
+    .lte("starts_at", nowIso)
     .gt("ends_at", nowIso)
     .order("ends_at", { ascending: false })
     .limit(1)
