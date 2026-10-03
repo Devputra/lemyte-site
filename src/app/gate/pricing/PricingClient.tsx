@@ -215,7 +215,7 @@ export function PricingClient({
               </>
             ) : (
               <>
-                <p className="text-sm font-medium text-brand">Pricing</p>
+                <p className="text-sm font-medium text-brand">Plans</p>
                 <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">
                   Simple plans, paid once
                 </h1>

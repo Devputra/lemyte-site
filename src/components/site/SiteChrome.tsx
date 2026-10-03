@@ -27,13 +27,14 @@ export const GATE_NAV: NavItem[] = [
   {
     label: "Tests",
     items: [
-      { href: "/gate/practice", label: "Full papers", note: "Complete PYQ papers, 3 hours" },
-      { href: "/gate/practice/topics", label: "Topic practice", note: "5 to 30 questions from one topic" },
-      { href: "/gate/ranked", label: "Ranked tests", note: "One counted attempt, ranked" },
-      { href: "/gate/demo", label: "Free demo", note: "10 questions, no card needed", visitorsOnly: true },
+      { href: "/gate/practice", label: "PYQ" },
+      { href: "/gate/practice/topics", label: "Topic-wise" },
+      { href: "/gate/ranked", label: "Ranked" },
+      { href: "/gate/demo", label: "Demo", visitorsOnly: true },
     ],
   },
-  { href: "/gate/pricing", label: "Pricing" },
+  // "Plans", not "Pricing": what students buy is a plan; singular "Plan" would read as a study plan.
+  { href: "/gate/pricing", label: "Plans" },
 ];
 
 export function SiteHeader({ nav = PLATFORM_NAV }: { nav?: NavItem[] }) {
@@ -64,11 +65,11 @@ const FOOTER: { heading: string; links: NavLink[] }[] = [
       { href: "/gate", label: "Overview" },
       { href: "/gate/2027", label: "GATE 2027 dates & syllabus" },
       { href: "/gate/papers", label: "PYQs & answer keys", match: "prefix", also: "^/gate/(ae|ce|cs|da|ec|ee|me)$" },
-      { href: "/gate/practice", label: "Full PYQ tests" },
-      { href: "/gate/practice/topics", label: "Topic practice" },
+      { href: "/gate/practice", label: "PYQ tests" },
+      { href: "/gate/practice/topics", label: "Topic-wise tests" },
       { href: "/gate/ranked", label: "Ranked tests" },
-      { href: "/gate/demo", label: "Free test", visitorsOnly: true },
-      { href: "/gate/pricing", label: "Pricing" },
+      { href: "/gate/demo", label: "Demo test", visitorsOnly: true },
+      { href: "/gate/pricing", label: "Plans" },
     ],
   },
   {

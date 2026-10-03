@@ -76,7 +76,7 @@ export default function GateRankedPage() {
   return (
     <div className="bg-white">
       <PageHero
-        eyebrow="Tests · Ranked tests"
+        eyebrow="Tests · Ranked"
         title="See how you compare"
         lead="A ranked test gives you one counted attempt. Your score is ranked against everyone who takes the same test, so treat it like the real exam: sit somewhere quiet, keep your connection stable and give it the full time."
         art={<LeaderboardScene className="mx-auto max-w-sm" />}

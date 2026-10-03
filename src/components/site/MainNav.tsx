@@ -82,7 +82,7 @@ function Dropdown({ menu, pathname }: { menu: NavMenu; pathname: string }) {
         {active && <Bar />}
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-50 w-max min-w-52 max-w-xs pt-1">
+        <div className="absolute left-0 top-full z-50 min-w-40 pt-1">
           <ul className="overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.3)]">
             {menu.items.map((l) => {
               const on = isCurrent(l, pathname);

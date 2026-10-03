@@ -129,7 +129,7 @@ export default function TopicPracticePage() {
   return (
     <div className="bg-white">
       <PageHero
-        eyebrow="Tests · Topic practice"
+        eyebrow="Tests · Topic-wise"
         title="Practise one topic at a time"
         lead="Pick a subject and a topic, choose how many questions you want, and get a short timed test made of past GATE questions from that topic."
         art={<TopicRingScene />}

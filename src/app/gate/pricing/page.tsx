@@ -16,7 +16,7 @@ export const revalidate = 300;
 export async function generateMetadata() {
   const [plans, { totals }] = await Promise.all([loadActivePlans(), getCatalog()]);
   return pageMeta({
-    title: "GATE test series pricing",
+    title: "GATE test series plans and pricing",
     description: `Plans from ${fmtInr(Math.min(...plans.map((p) => p.priceInr)))} for all ${totals.papers} official GATE papers in ${totals.subjects} subjects, topic practice and ranked tests. No auto-renewal; refund within ${LEGAL.refundWindowDays} days.`,
     path: "/gate/pricing",
   });
