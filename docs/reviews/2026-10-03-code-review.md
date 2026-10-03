@@ -14,7 +14,7 @@ comments and blank lines stripped, in 7 batches of ~3k tokens (~23k input tokens
 | Refund-before-grant / concurrent grants / fixed-date double orders race (`access.ts`) | Codex | Plausible | **Fixed** 3 Oct: `gate.grant_access_for_order` / `revoke_access_for_order`, per-user lock, one transaction |
 | Refund webhook with empty notes ignored | Codex | Plausible | **Fixed** 3 Oct: webhook finds the order by Razorpay order id |
 | Redis WATCH shared across requests (`redis.ts`) | Codex | Confirmed (WATCH is per connection; one shared connection) | **Fixed** 3 Oct: compare-and-swap Lua script (`redis-cas.ts`), tested with 40 concurrent writers on real Redis |
-| Students can read solutions via direct Supabase queries if RLS policies are deployed | Codex | To check (depends on deployed grants) | Open |
+| Students can read solutions via direct Supabase queries | Codex | **Confirmed critical**: the public anon key could read all 4,680 published questions with answer keys and solutions | **Fixed** 3 Oct: policy dropped, anon/authenticated access revoked; verified 401 with the anon key |
 | gate-worker uses `.from("gate.attempts")` | Codex | Worker is a separate Docker service, not on Vercel | Check whether it runs at all |
 | Media route lets any signed-in user fetch any question image | Codex + Groq | Confirmed by design (images, not answers) | Low priority |
 | No rate limits on subscribe / track / create-order | Codex + Groq | Confirmed | **Fixed** 3 Oct: create-order 10/hour/user; track 120/min/visitor + 1,200/min/IP; subscribe 5/hour/IP + double opt-in |

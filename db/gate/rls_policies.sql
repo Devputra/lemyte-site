@@ -115,10 +115,9 @@ CREATE POLICY "SMEs insert versions"
     AND gate.current_user_role() IN ('SME', 'ADMIN')
   );
 
--- Published questions readable by all authenticated users
-CREATE POLICY "All read published questions"
-  ON gate.question_versions FOR SELECT
-  USING (status = 'PUBLISHED');
+-- No public/student read policy on question_versions: rows carry answer keys and worked solutions (paid
+-- content), and the anon key is public. The app reads questions only through server routes (service role).
+-- See db/gate/migrations/2026-10-03_lock_question_versions.sql.
 
 -- Admins see everything
 CREATE POLICY "Admins full access to question_versions"
