@@ -5,47 +5,49 @@ import Link from "next/link";
 import { LEGAL } from "@/lib/legal";
 
 import { HeaderActions } from "./AccessCta";
+import { MainNav, MobileNav, type NavItem as MenuItem } from "./MainNav";
 import { Container } from "./ui";
 
-export type NavItem = { href: string; label: string };
+export type NavItem = MenuItem;
 
-const HOME_NAV: NavItem[] = [
-  { href: "/gate", label: "GATE" },
-  { href: "/gate/2027", label: "GATE 2027" },
-  { href: "/gate/papers", label: "Past papers" },
-  { href: "/#how-it-works", label: "How it works" },
-  { href: "/gate/pricing", label: "Pricing" },
+// Lemyte is an assessment platform; GATE is the first product. Add new exams to `products`.
+const PLATFORM_NAV: NavItem[] = [
+  {
+    label: "Products",
+    products: [
+      {
+        name: "GATE",
+        tagline: "Official PYQs as timed tests, topic practice and the GATE 2027 syllabus",
+        href: "/gate",
+        links: [
+          { href: "/gate", label: "Overview" },
+          { href: "/gate/2027", label: "GATE 2027" },
+          { href: "/gate/papers", label: "PYQs" },
+          { href: "/gate/pricing", label: "Pricing" },
+        ],
+      },
+    ],
+  },
+  { href: "/about", label: "About" },
+  { href: "/blog", label: "Blog" },
+  { href: "/contact", label: "Contact" },
 ];
 
-export function SiteHeader({ nav = HOME_NAV }: { nav?: NavItem[] }) {
+export function SiteHeader({ nav = PLATFORM_NAV }: { nav?: NavItem[] }) {
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/90 backdrop-blur">
       <Container className="flex h-16 items-center justify-between gap-6">
         <Link href="/" className="shrink-0" aria-label="Lemyte home">
           <Image src="/lemyte-logo.svg" alt="Lemyte" width={1346} height={430} priority unoptimized className="h-6 w-auto" />
         </Link>
-        <nav className="hidden items-center gap-1 md:flex">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:text-ink"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <MainNav items={nav} />
         <div className="flex shrink-0 items-center gap-2">
           <HeaderActions />
         </div>
       </Container>
       <div className="border-t border-zinc-100 md:hidden">
-        <Container className="flex gap-1 overflow-x-auto py-2">
-          {nav.map((item) => (
-            <Link key={item.href} href={item.href} className="shrink-0 rounded-md px-3 py-1.5 text-sm font-medium text-zinc-600">
-              {item.label}
-            </Link>
-          ))}
+        <Container>
+          <MobileNav items={nav} />
         </Container>
       </div>
     </header>
@@ -58,7 +60,7 @@ const FOOTER = [
     links: [
       { href: "/gate", label: "Overview" },
       { href: "/gate/2027", label: "GATE 2027 dates & syllabus" },
-      { href: "/gate/papers", label: "Past papers & answer keys" },
+      { href: "/gate/papers", label: "PYQs & answer keys" },
       { href: "/gate/practice", label: "PYQ tests" },
       { href: "/gate/practice/topics", label: "Topic practice" },
       { href: "/gate/demo", label: "Free test" },
@@ -69,6 +71,7 @@ const FOOTER = [
     heading: "Company",
     links: [
       { href: "/about", label: "About" },
+      { href: "/blog", label: "Blog" },
       { href: "/contact", label: "Contact" },
     ],
   },
